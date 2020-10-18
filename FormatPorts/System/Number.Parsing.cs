@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
+using FormatPorts;
 
 namespace System
 {
@@ -389,11 +390,11 @@ namespace System
                 {
                     char* temp = p;
                     ch = ++p < strEnd ? *p : '\0';
-                    if ((next = MatchChars(p, strEnd, info._positiveSign)) != null)
+                    if ((next = MatchChars(p, strEnd, info.PositiveSign)) != null)
                     {
                         ch = (p = next) < strEnd ? *p : '\0';
                     }
-                    else if ((next = MatchChars(p, strEnd, info._negativeSign)) != null)
+                    else if ((next = MatchChars(p, strEnd, info.NegativeSign)) != null)
                     {
                         ch = (p = next) < strEnd ? *p : '\0';
                         negExp = true;
@@ -537,7 +538,7 @@ namespace System
             int sign = 1;
             if ((styles & NumberStyles.AllowLeadingSign) != 0)
             {
-                if (info.HasInvariantNumberSigns)
+                if (info.HasInvariantNumberSigns())
                 {
                     if (num == '-')
                     {
@@ -560,14 +561,14 @@ namespace System
                     value = value.Slice(index);
                     index = 0;
                     string positiveSign = info.PositiveSign, negativeSign = info.NegativeSign;
-                    if (!string.IsNullOrEmpty(positiveSign) && value.StartsWith(positiveSign))
+                    if (!string.IsNullOrEmpty(positiveSign) && value.StartsWith(positiveSign.AsSpan()))
                     {
                         index += positiveSign.Length;
                         if ((uint)index >= (uint)value.Length)
                             goto FalseExit;
                         num = value[index];
                     }
-                    else if (!string.IsNullOrEmpty(negativeSign) && value.StartsWith(negativeSign))
+                    else if (!string.IsNullOrEmpty(negativeSign) && value.StartsWith(negativeSign.AsSpan()))
                     {
                         sign = -1;
                         index += negativeSign.Length;
@@ -644,9 +645,10 @@ namespace System
             {
                 goto OverflowExit;
             }
+     
         DoneAtEnd:
             result = answer * sign;
-            ParsingStatus status = ParsingStatus.OK;
+            var status = ParsingStatus.OK;
         Exit:
             return status;
 
@@ -688,7 +690,7 @@ namespace System
             if (value.IsEmpty)
                 goto FalseExit;
 
-            int index = 0;
+            var index = 0;
             int num = value[0];
 
             // Skip past any whitespace at the beginning.
@@ -708,7 +710,7 @@ namespace System
             int sign = 1;
             if ((styles & NumberStyles.AllowLeadingSign) != 0)
             {
-                if (info.HasInvariantNumberSigns)
+                if (info.HasInvariantNumberSigns())
                 {
                     if (num == '-')
                     {
@@ -731,14 +733,14 @@ namespace System
                     value = value.Slice(index);
                     index = 0;
                     string positiveSign = info.PositiveSign, negativeSign = info.NegativeSign;
-                    if (!string.IsNullOrEmpty(positiveSign) && value.StartsWith(positiveSign))
+                    if (!string.IsNullOrEmpty(positiveSign) && value.StartsWith(positiveSign.AsSpan()))
                     {
                         index += positiveSign.Length;
                         if ((uint)index >= (uint)value.Length)
                             goto FalseExit;
                         num = value[index];
                     }
-                    else if (!string.IsNullOrEmpty(negativeSign) && value.StartsWith(negativeSign))
+                    else if (!string.IsNullOrEmpty(negativeSign) && value.StartsWith(negativeSign.AsSpan()))
                     {
                         sign = -1;
                         index += negativeSign.Length;
@@ -952,7 +954,7 @@ namespace System
             bool overflow = false;
             if ((styles & NumberStyles.AllowLeadingSign) != 0)
             {
-                if (info.HasInvariantNumberSigns)
+                if (info.HasInvariantNumberSigns())
                 {
                     if (num == '+')
                     {
@@ -975,14 +977,14 @@ namespace System
                     value = value.Slice(index);
                     index = 0;
                     string positiveSign = info.PositiveSign, negativeSign = info.NegativeSign;
-                    if (!string.IsNullOrEmpty(positiveSign) && value.StartsWith(positiveSign))
+                    if (!string.IsNullOrEmpty(positiveSign) && value.StartsWith(positiveSign.AsSpan()))
                     {
                         index += positiveSign.Length;
                         if ((uint)index >= (uint)value.Length)
                             goto FalseExit;
                         num = value[index];
                     }
-                    else if (!string.IsNullOrEmpty(negativeSign) && value.StartsWith(negativeSign))
+                    else if (!string.IsNullOrEmpty(negativeSign) && value.StartsWith(negativeSign.AsSpan()))
                     {
                         overflow = true;
                         index += negativeSign.Length;
@@ -1280,7 +1282,7 @@ namespace System
             bool overflow = false;
             if ((styles & NumberStyles.AllowLeadingSign) != 0)
             {
-                if (info.HasInvariantNumberSigns)
+                if (info.HasInvariantNumberSigns())
                 {
                     if (num == '+')
                     {
@@ -1303,14 +1305,14 @@ namespace System
                     value = value.Slice(index);
                     index = 0;
                     string positiveSign = info.PositiveSign, negativeSign = info.NegativeSign;
-                    if (!string.IsNullOrEmpty(positiveSign) && value.StartsWith(positiveSign))
+                    if (!string.IsNullOrEmpty(positiveSign) && value.StartsWith(positiveSign.AsSpan()))
                     {
                         index += positiveSign.Length;
                         if ((uint)index >= (uint)value.Length)
                             goto FalseExit;
                         num = value[index];
                     }
-                    else if (!string.IsNullOrEmpty(negativeSign) && value.StartsWith(negativeSign))
+                    else if (!string.IsNullOrEmpty(negativeSign) && value.StartsWith(negativeSign.AsSpan()))
                     {
                         overflow = true;
                         index += negativeSign.Length;
@@ -1567,7 +1569,7 @@ namespace System
             {
                 // To avoid risking an app-compat issue with pre 4.5 (where some app was illegally using Reflection to examine the internal scale bits), we'll only force
                 // the scale to 0 if the scale was previously positive (previously, such cases were unparsable to a bug.)
-                value = new decimal(0, 0, 0, sign, (byte)Math.Clamp(-e, 0, 28));
+                value = new decimal(0, 0, 0, sign, (byte)global::FormatPorts.Math.Clamp(-e, 0, 28));
                 return true;
             }
 
@@ -1727,12 +1729,12 @@ namespace System
 
         internal static unsafe bool TryParseDouble(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info, out double result)
         {
-            byte* pDigits = stackalloc byte[DoubleNumberBufferLength];
-            NumberBuffer number = new NumberBuffer(NumberBufferKind.FloatingPoint, pDigits, DoubleNumberBufferLength);
+            var pDigits = stackalloc byte[DoubleNumberBufferLength];
+            var number = new NumberBuffer(NumberBufferKind.FloatingPoint, pDigits, DoubleNumberBufferLength);
 
             if (!TryStringToNumber(value, styles, ref number, info))
             {
-                ReadOnlySpan<char> valueTrim = value.Trim();
+                var valueTrim = value.Trim();
 
                 // This code would be simpler if we only had the concept of `InfinitySymbol`, but
                 // we don't so we'll check the existing cases first and then handle `PositiveSign` +
@@ -1750,7 +1752,7 @@ namespace System
                 {
                     result = double.NaN;
                 }
-                else if (valueTrim.StartsWith(info.PositiveSign, StringComparison.OrdinalIgnoreCase))
+                else if (valueTrim.StartsWith(info.PositiveSign.AsSpan(), StringComparison.OrdinalIgnoreCase))
                 {
                     valueTrim = valueTrim.Slice(info.PositiveSign.Length);
 
@@ -1768,7 +1770,7 @@ namespace System
                         return false;
                     }
                 }
-                else if (valueTrim.StartsWith(info.NegativeSign, StringComparison.OrdinalIgnoreCase) &&
+                else if (valueTrim.StartsWith(info.NegativeSign.AsSpan(), StringComparison.OrdinalIgnoreCase) &&
                         valueTrim.Slice(info.NegativeSign.Length).EqualsOrdinalIgnoreCase(info.NaNSymbol))
                 {
                     result = double.NaN;
@@ -1883,7 +1885,7 @@ namespace System
                 {
                     result = float.NaN;
                 }
-                else if (valueTrim.StartsWith(info.PositiveSign, StringComparison.OrdinalIgnoreCase))
+                else if (valueTrim.StartsWith(info.PositiveSign.AsSpan(), StringComparison.OrdinalIgnoreCase))
                 {
                     valueTrim = valueTrim.Slice(info.PositiveSign.Length);
 
@@ -1901,7 +1903,7 @@ namespace System
                         return false;
                     }
                 }
-                else if (valueTrim.StartsWith(info.NegativeSign, StringComparison.OrdinalIgnoreCase) &&
+                else if (valueTrim.StartsWith(info.NegativeSign.AsSpan(), StringComparison.OrdinalIgnoreCase) &&
                          !info.NaNSymbol.StartsWith(info.NegativeSign, StringComparison.OrdinalIgnoreCase) &&
                          valueTrim.Slice(info.NegativeSign.Length).EqualsOrdinalIgnoreCase(info.NaNSymbol))
                 {
@@ -1926,7 +1928,7 @@ namespace System
             Debug.Assert(info != null);
             fixed (char* stringPointer = &MemoryMarshal.GetReference(value))
             {
-                char* p = stringPointer;
+                var p = stringPointer;
                 if (!TryParseNumber(ref p, p + value.Length, styles, ref number, info)
                     || ((int)(p - stringPointer) < value.Length && !TrailingZeros(value, (int)(p - stringPointer))))
                 {
@@ -1942,12 +1944,10 @@ namespace System
         private static bool TrailingZeros(ReadOnlySpan<char> value, int index)
         {
             // For compatibility, we need to allow trailing zeros at the end of a number string
-            for (int i = index; (uint)i < (uint)value.Length; i++)
+            for (var i = index; (uint)i < (uint)value.Length; i++)
             {
                 if (value[i] != '\0')
-                {
                     return false;
-                }
             }
 
             return true;
@@ -1960,24 +1960,22 @@ namespace System
             Debug.Assert(p != null && pEnd != null && p <= pEnd && value != null);
             fixed (char* stringPointer = value)
             {
-                char* str = stringPointer;
-                if (*str != '\0')
+                var str = stringPointer;
+                if (*str == '\0') return null;
+                // We only hurt the failure case
+                // This fix is for French or Kazakh cultures. Since a user cannot type 0xA0 or 0x202F as a
+                // space character we use 0x20 space character instead to mean the same.
+                while (true)
                 {
-                    // We only hurt the failure case
-                    // This fix is for French or Kazakh cultures. Since a user cannot type 0xA0 or 0x202F as a
-                    // space character we use 0x20 space character instead to mean the same.
-                    while (true)
+                    var cp = p < pEnd ? *p : '\0';
+                    if (cp != *str && !(IsSpaceReplacingChar(*str) && cp == '\u0020'))
                     {
-                        char cp = p < pEnd ? *p : '\0';
-                        if (cp != *str && !(IsSpaceReplacingChar(*str) && cp == '\u0020'))
-                        {
-                            break;
-                        }
-                        p++;
-                        str++;
-                        if (*str == '\0')
-                            return p;
+                        break;
                     }
+                    p++;
+                    str++;
+                    if (*str == '\0')
+                        return p;
                 }
             }
 
@@ -1985,9 +1983,10 @@ namespace System
         }
 
         // Ternary op is a workaround for https://github.com/dotnet/runtime/issues/4207
+        // ReSharper disable once RedundantTernaryExpression
         private static bool IsWhite(int ch) => ch == 0x20 || (uint)(ch - 0x09) <= (0x0D - 0x09) ? true : false;
 
-        private static bool IsDigit(int ch) => ((uint)ch - '0') <= 9;
+        private static bool IsDigit(int ch) => (uint)ch - '0' <= 9;
 
         internal enum ParsingStatus
         {
@@ -1996,7 +1995,7 @@ namespace System
             Overflow
         }
 
-        internal static void ThrowOverflowOrFormatException(ParsingStatus status, TypeCode type = 0) => throw GetException(status, type);
+        internal static void ThrowOverflowOrFormatException(ParsingStatus status, TypeCode type = TypeCode.Empty) => throw GetException(status, type);
 
         internal static void ThrowOverflowException(TypeCode type) => throw GetException(ParsingStatus.Overflow, type);
 
