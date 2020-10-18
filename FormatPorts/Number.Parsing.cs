@@ -2003,41 +2003,22 @@ namespace System
         private static Exception GetException(ParsingStatus status, TypeCode type)
         {
             if (status == ParsingStatus.Failed)
-                return new FormatException(SR.Format_InvalidString);
+                return new FormatException("Invalid string");
 
-            string s;
-            switch (type)
+            var message = type switch
             {
-                case TypeCode.SByte:
-                    s = SR.Overflow_SByte;
-                    break;
-                case TypeCode.Byte:
-                    s = SR.Overflow_Byte;
-                    break;
-                case TypeCode.Int16:
-                    s = SR.Overflow_Int16;
-                    break;
-                case TypeCode.UInt16:
-                    s = SR.Overflow_UInt16;
-                    break;
-                case TypeCode.Int32:
-                    s = SR.Overflow_Int32;
-                    break;
-                case TypeCode.UInt32:
-                    s = SR.Overflow_UInt32;
-                    break;
-                case TypeCode.Int64:
-                    s = SR.Overflow_Int64;
-                    break;
-                case TypeCode.UInt64:
-                    s = SR.Overflow_UInt64;
-                    break;
-                default:
-                    Debug.Assert(type == TypeCode.Decimal);
-                    s = SR.Overflow_Decimal;
-                    break;
-            }
-            return new OverflowException(s);
+                TypeCode.SByte => "Signed byte overflow",
+                TypeCode.Byte => "Unsigned byte overflow",
+                TypeCode.Int16 => "Signed short overflow",
+                TypeCode.UInt16 => "Unsigned short overflow",
+                TypeCode.Int32 => "Signed int overflow",
+                TypeCode.UInt32 => "Unsigned int overflow",
+                TypeCode.Int64 => "Signed long overflow",
+                TypeCode.UInt64 => "Unsigned long overflow",
+                _ => "Decimal overflow"
+            };
+
+            return new OverflowException(message);
         }
 
         internal static double NumberToDouble(ref NumberBuffer number)
