@@ -2042,22 +2042,16 @@ namespace System
 
         internal static double NumberToDouble(ref NumberBuffer number)
         {
+            // This is for debug purposes
             number.CheckConsistency();
-            double result;
 
-            if ((number.DigitsCount == 0) || (number.Scale < DoubleMinExponent))
+            var result = number switch
             {
-                result = 0;
-            }
-            else if (number.Scale > DoubleMaxExponent)
-            {
-                result = double.PositiveInfinity;
-            }
-            else
-            {
-                ulong bits = NumberToFloatingPointBits(ref number, in FloatingPointInfo.Double);
-                result = BitConverter.Int64BitsToDouble((long)(bits));
-            }
+                {DigitsCount: 0} or {Scale: < DoubleMinExponent} => 0,
+                {Scale: > DoubleMaxExponent} => double.PositiveInfinity,
+                _ => BitConverter.Int64BitsToDouble(
+                    (long) NumberToFloatingPointBits(ref number, in FloatingPointInfo.Double))
+            };
 
             return number.IsNegative ? -result : result;
         }
