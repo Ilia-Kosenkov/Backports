@@ -1695,15 +1695,15 @@ namespace System
             return result;
         }
 
-        internal static Half ParseHalf(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info)
-        {
-            if (!TryParseHalf(value, styles, info, out Half result))
-            {
-                ThrowOverflowOrFormatException(ParsingStatus.Failed);
-            }
+        //internal static Half ParseHalf(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info)
+        //{
+        //    if (!TryParseHalf(value, styles, info, out Half result))
+        //    {
+        //        ThrowOverflowOrFormatException(ParsingStatus.Failed);
+        //    }
 
-            return result;
-        }
+        //    return result;
+        //}
 
         internal static unsafe ParsingStatus TryParseDecimal(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info, out decimal result)
         {
@@ -1787,72 +1787,72 @@ namespace System
             return true;
         }
 
-        internal static unsafe bool TryParseHalf(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info, out Half result)
-        {
-            byte* pDigits = stackalloc byte[HalfNumberBufferLength];
-            NumberBuffer number = new NumberBuffer(NumberBufferKind.FloatingPoint, pDigits, HalfNumberBufferLength);
+        //internal static unsafe bool TryParseHalf(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info, out Half result)
+        //{
+        //    byte* pDigits = stackalloc byte[HalfNumberBufferLength];
+        //    NumberBuffer number = new NumberBuffer(NumberBufferKind.FloatingPoint, pDigits, HalfNumberBufferLength);
 
-            if (!TryStringToNumber(value, styles, ref number, info))
-            {
-                ReadOnlySpan<char> valueTrim = value.Trim();
+        //    if (!TryStringToNumber(value, styles, ref number, info))
+        //    {
+        //        ReadOnlySpan<char> valueTrim = value.Trim();
 
-                // This code would be simpler if we only had the concept of `InfinitySymbol`, but
-                // we don't so we'll check the existing cases first and then handle `PositiveSign` +
-                // `PositiveInfinitySymbol` and `PositiveSign/NegativeSign` + `NaNSymbol` last.
-                //
-                // Additionally, since some cultures ("wo") actually define `PositiveInfinitySymbol`
-                // to include `PositiveSign`, we need to check whether `PositiveInfinitySymbol` fits
-                // that case so that we don't start parsing things like `++infini`.
+        //        // This code would be simpler if we only had the concept of `InfinitySymbol`, but
+        //        // we don't so we'll check the existing cases first and then handle `PositiveSign` +
+        //        // `PositiveInfinitySymbol` and `PositiveSign/NegativeSign` + `NaNSymbol` last.
+        //        //
+        //        // Additionally, since some cultures ("wo") actually define `PositiveInfinitySymbol`
+        //        // to include `PositiveSign`, we need to check whether `PositiveInfinitySymbol` fits
+        //        // that case so that we don't start parsing things like `++infini`.
 
-                if (valueTrim.EqualsOrdinalIgnoreCase(info.PositiveInfinitySymbol))
-                {
-                    result = Half.PositiveInfinity;
-                }
-                else if (valueTrim.EqualsOrdinalIgnoreCase(info.NegativeInfinitySymbol))
-                {
-                    result = Half.NegativeInfinity;
-                }
-                else if (valueTrim.EqualsOrdinalIgnoreCase(info.NaNSymbol))
-                {
-                    result = Half.NaN;
-                }
-                else if (valueTrim.StartsWith(info.PositiveSign, StringComparison.OrdinalIgnoreCase))
-                {
-                    valueTrim = valueTrim.Slice(info.PositiveSign.Length);
+        //        if (valueTrim.EqualsOrdinalIgnoreCase(info.PositiveInfinitySymbol))
+        //        {
+        //            result = Half.PositiveInfinity;
+        //        }
+        //        else if (valueTrim.EqualsOrdinalIgnoreCase(info.NegativeInfinitySymbol))
+        //        {
+        //            result = Half.NegativeInfinity;
+        //        }
+        //        else if (valueTrim.EqualsOrdinalIgnoreCase(info.NaNSymbol))
+        //        {
+        //            result = Half.NaN;
+        //        }
+        //        else if (valueTrim.StartsWith(info.PositiveSign, StringComparison.OrdinalIgnoreCase))
+        //        {
+        //            valueTrim = valueTrim.Slice(info.PositiveSign.Length);
 
-                    if (!info.PositiveInfinitySymbol.StartsWith(info.PositiveSign, StringComparison.OrdinalIgnoreCase) && valueTrim.EqualsOrdinalIgnoreCase(info.PositiveInfinitySymbol))
-                    {
-                        result = Half.PositiveInfinity;
-                    }
-                    else if (!info.NaNSymbol.StartsWith(info.PositiveSign, StringComparison.OrdinalIgnoreCase) && valueTrim.EqualsOrdinalIgnoreCase(info.NaNSymbol))
-                    {
-                        result = Half.NaN;
-                    }
-                    else
-                    {
-                        result = (Half)0;
-                        return false;
-                    }
-                }
-                else if (valueTrim.StartsWith(info.NegativeSign, StringComparison.OrdinalIgnoreCase) &&
-                         !info.NaNSymbol.StartsWith(info.NegativeSign, StringComparison.OrdinalIgnoreCase) &&
-                         valueTrim.Slice(info.NegativeSign.Length).EqualsOrdinalIgnoreCase(info.NaNSymbol))
-                {
-                    result = Half.NaN;
-                }
-                else
-                {
-                    result = (Half)0;
-                    return false; // We really failed
-                }
-            }
-            else
-            {
-                result = NumberToHalf(ref number);
-            }
+        //            if (!info.PositiveInfinitySymbol.StartsWith(info.PositiveSign, StringComparison.OrdinalIgnoreCase) && valueTrim.EqualsOrdinalIgnoreCase(info.PositiveInfinitySymbol))
+        //            {
+        //                result = Half.PositiveInfinity;
+        //            }
+        //            else if (!info.NaNSymbol.StartsWith(info.PositiveSign, StringComparison.OrdinalIgnoreCase) && valueTrim.EqualsOrdinalIgnoreCase(info.NaNSymbol))
+        //            {
+        //                result = Half.NaN;
+        //            }
+        //            else
+        //            {
+        //                result = (Half)0;
+        //                return false;
+        //            }
+        //        }
+        //        else if (valueTrim.StartsWith(info.NegativeSign, StringComparison.OrdinalIgnoreCase) &&
+        //                 !info.NaNSymbol.StartsWith(info.NegativeSign, StringComparison.OrdinalIgnoreCase) &&
+        //                 valueTrim.Slice(info.NegativeSign.Length).EqualsOrdinalIgnoreCase(info.NaNSymbol))
+        //        {
+        //            result = Half.NaN;
+        //        }
+        //        else
+        //        {
+        //            result = (Half)0;
+        //            return false; // We really failed
+        //        }
+        //    }
+        //    else
+        //    {
+        //        result = NumberToHalf(ref number);
+        //    }
 
-            return true;
-        }
+        //    return true;
+        //}
 
         internal static unsafe bool TryParseSingle(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info, out float result)
         {
@@ -1996,10 +1996,8 @@ namespace System
             Overflow
         }
 
-        [DoesNotReturn]
         internal static void ThrowOverflowOrFormatException(ParsingStatus status, TypeCode type = 0) => throw GetException(status, type);
 
-        [DoesNotReturn]
         internal static void ThrowOverflowException(TypeCode type) => throw GetException(ParsingStatus.Overflow, type);
 
         private static Exception GetException(ParsingStatus status, TypeCode type)
@@ -2064,47 +2062,41 @@ namespace System
             return number.IsNegative ? -result : result;
         }
 
-        internal static Half NumberToHalf(ref NumberBuffer number)
-        {
-            number.CheckConsistency();
-            Half result;
+        //internal static Half NumberToHalf(ref NumberBuffer number)
+        //{
+        //    number.CheckConsistency();
+        //    Half result;
 
-            if ((number.DigitsCount == 0) || (number.Scale < HalfMinExponent))
-            {
-                result = default;
-            }
-            else if (number.Scale > HalfMaxExponent)
-            {
-                result = Half.PositiveInfinity;
-            }
-            else
-            {
-                ushort bits = (ushort)(NumberToFloatingPointBits(ref number, in FloatingPointInfo.Half));
-                result = new Half(bits);
-            }
+        //    if ((number.DigitsCount == 0) || (number.Scale < HalfMinExponent))
+        //    {
+        //        result = default;
+        //    }
+        //    else if (number.Scale > HalfMaxExponent)
+        //    {
+        //        result = Half.PositiveInfinity;
+        //    }
+        //    else
+        //    {
+        //        ushort bits = (ushort)(NumberToFloatingPointBits(ref number, in FloatingPointInfo.Half));
+        //        result = new Half(bits);
+        //    }
 
-            return number.IsNegative ? Half.Negate(result) : result;
-        }
+        //    return number.IsNegative ? Half.Negate(result) : result;
+        //}
 
         internal static float NumberToSingle(ref NumberBuffer number)
         {
+            // This is for debug purposes
             number.CheckConsistency();
-            float result;
 
-            if ((number.DigitsCount == 0) || (number.Scale < SingleMinExponent))
+            var result = number switch
             {
-                result = 0;
-            }
-            else if (number.Scale > SingleMaxExponent)
-            {
-                result = float.PositiveInfinity;
-            }
-            else
-            {
-                uint bits = (uint)(NumberToFloatingPointBits(ref number, in FloatingPointInfo.Single));
-                result = BitConverter.Int32BitsToSingle((int)(bits));
-            }
-
+                {DigitsCount: 0} or {Scale: < SingleMinExponent} => 0,
+                {Scale: > SingleMaxExponent} => float.PositiveInfinity,
+                _ => BackPorts.BitConverter.Int32BitsToSingle(
+                    (int) (uint) NumberToFloatingPointBits(ref number, in FloatingPointInfo.Single))
+            };
+            
             return number.IsNegative ? -result : result;
         }
     }
