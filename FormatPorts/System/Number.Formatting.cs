@@ -1,6 +1,7 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using System;
 using System.Buffers.Text;
 using System.Diagnostics;
 using System.Globalization;
@@ -669,89 +670,89 @@ namespace Backports.System
             return null;
         }
 
-        public static string FormatHalf(Half value, string? format, NumberFormatInfo info)
-        {
-            var sb = new ValueStringBuilder(stackalloc char[CharStackBufferSize]);
-            return FormatHalf(ref sb, value, format, info) ?? sb.ToString();
-        }
+        //public static string FormatHalf(Half value, string? format, NumberFormatInfo info)
+        //{
+        //    var sb = new ValueStringBuilder(stackalloc char[CharStackBufferSize]);
+        //    return FormatHalf(ref sb, value, format, info) ?? sb.ToString();
+        //}
 
         /// <summary>Formats the specified value according to the specified format and info.</summary>
         /// <returns>
         /// Non-null if an existing string can be returned, in which case the builder will be unmodified.
         /// Null if no existing string was returned, in which case the formatted output is in the builder.
         /// </returns>
-        private static unsafe string? FormatHalf(ref ValueStringBuilder sb, Half value, ReadOnlySpan<char> format, NumberFormatInfo info)
-        {
-            if (!Half.IsFinite(value))
-            {
-                if (Half.IsNaN(value))
-                {
-                    return info.NaNSymbol;
-                }
+        //private static unsafe string? FormatHalf(ref ValueStringBuilder sb, Half value, ReadOnlySpan<char> format, NumberFormatInfo info)
+        //{
+        //    if (!Half.IsFinite(value))
+        //    {
+        //        if (Half.IsNaN(value))
+        //        {
+        //            return info.NaNSymbol;
+        //        }
 
-                return Half.IsNegative(value) ? info.NegativeInfinitySymbol : info.PositiveInfinitySymbol;
-            }
+        //        return Half.IsNegative(value) ? info.NegativeInfinitySymbol : info.PositiveInfinitySymbol;
+        //    }
 
-            char fmt = ParseFormatSpecifier(format, out int precision);
-            byte* pDigits = stackalloc byte[HalfNumberBufferLength];
+        //    char fmt = ParseFormatSpecifier(format, out int precision);
+        //    byte* pDigits = stackalloc byte[HalfNumberBufferLength];
 
-            if (fmt == '\0')
-            {
-                precision = HalfPrecisionCustomFormat;
-            }
+        //    if (fmt == '\0')
+        //    {
+        //        precision = HalfPrecisionCustomFormat;
+        //    }
 
-            NumberBuffer number = new NumberBuffer(NumberBufferKind.FloatingPoint, pDigits, HalfNumberBufferLength);
-            number.IsNegative = Half.IsNegative(value);
+        //    NumberBuffer number = new NumberBuffer(NumberBufferKind.FloatingPoint, pDigits, HalfNumberBufferLength);
+        //    number.IsNegative = Half.IsNegative(value);
 
-            // We need to track the original precision requested since some formats
-            // accept values like 0 and others may require additional fixups.
-            int nMaxDigits = GetFloatingPointMaxDigitsAndPrecision(fmt, ref precision, info, out bool isSignificantDigits);
+        //    // We need to track the original precision requested since some formats
+        //    // accept values like 0 and others may require additional fixups.
+        //    int nMaxDigits = GetFloatingPointMaxDigitsAndPrecision(fmt, ref precision, info, out bool isSignificantDigits);
 
-            if ((value != default) && (!isSignificantDigits || !Grisu3.TryRunHalf(value, precision, ref number)))
-            {
-                Dragon4Half(value, precision, isSignificantDigits, ref number);
-            }
+        //    if ((value != default) && (!isSignificantDigits || !Grisu3.TryRunHalf(value, precision, ref number)))
+        //    {
+        //        Dragon4Half(value, precision, isSignificantDigits, ref number);
+        //    }
 
-            number.CheckConsistency();
+        //    number.CheckConsistency();
 
-            // When the number is known to be roundtrippable (either because we requested it be, or
-            // because we know we have enough digits to satisfy roundtrippability), we should validate
-            // that the number actually roundtrips back to the original result.
+        //    // When the number is known to be roundtrippable (either because we requested it be, or
+        //    // because we know we have enough digits to satisfy roundtrippability), we should validate
+        //    // that the number actually roundtrips back to the original result.
 
-            Debug.Assert(((precision != -1) && (precision < HalfPrecision)) || (BitConverter.HalfToInt16Bits(value) == BitConverter.HalfToInt16Bits(NumberToHalf(ref number))));
+        //    Debug.Assert(((precision != -1) && (precision < HalfPrecision)) || (BitConverter.HalfToInt16Bits(value) == BitConverter.HalfToInt16Bits(NumberToHalf(ref number))));
 
-            if (fmt != 0)
-            {
-                if (precision == -1)
-                {
-                    Debug.Assert((fmt == 'G') || (fmt == 'g') || (fmt == 'R') || (fmt == 'r'));
+        //    if (fmt != 0)
+        //    {
+        //        if (precision == -1)
+        //        {
+        //            Debug.Assert((fmt == 'G') || (fmt == 'g') || (fmt == 'R') || (fmt == 'r'));
 
-                    // For the roundtrip and general format specifiers, when returning the shortest roundtrippable
-                    // string, we need to update the maximum number of digits to be the greater of number.DigitsCount
-                    // or SinglePrecision. This ensures that we continue returning "pretty" strings for values with
-                    // less digits. One example this fixes is "-60", which would otherwise be formatted as "-6E+01"
-                    // since DigitsCount would be 1 and the formatter would almost immediately switch to scientific notation.
+        //            // For the roundtrip and general format specifiers, when returning the shortest roundtrippable
+        //            // string, we need to update the maximum number of digits to be the greater of number.DigitsCount
+        //            // or SinglePrecision. This ensures that we continue returning "pretty" strings for values with
+        //            // less digits. One example this fixes is "-60", which would otherwise be formatted as "-6E+01"
+        //            // since DigitsCount would be 1 and the formatter would almost immediately switch to scientific notation.
 
-                    nMaxDigits = Math.Max(number.DigitsCount, HalfPrecision);
-                }
-                NumberToString(ref sb, ref number, fmt, nMaxDigits, info);
-            }
-            else
-            {
-                Debug.Assert(precision == HalfPrecisionCustomFormat);
-                NumberToStringFormat(ref sb, ref number, format, info);
-            }
-            return null;
-        }
+        //            nMaxDigits = Math.Max(number.DigitsCount, HalfPrecision);
+        //        }
+        //        NumberToString(ref sb, ref number, fmt, nMaxDigits, info);
+        //    }
+        //    else
+        //    {
+        //        Debug.Assert(precision == HalfPrecisionCustomFormat);
+        //        NumberToStringFormat(ref sb, ref number, format, info);
+        //    }
+        //    return null;
+        //}
 
-        public static bool TryFormatHalf(Half value, ReadOnlySpan<char> format, NumberFormatInfo info, Span<char> destination, out int charsWritten)
-        {
-            var sb = new ValueStringBuilder(stackalloc char[CharStackBufferSize]);
-            string? s = FormatHalf(ref sb, value, format, info);
-            return s != null ?
-                TryCopyTo(s, destination, out charsWritten) :
-                sb.TryCopyTo(destination, out charsWritten);
-        }
+        //public static bool TryFormatHalf(Half value, ReadOnlySpan<char> format, NumberFormatInfo info, Span<char> destination, out int charsWritten)
+        //{
+        //    var sb = new ValueStringBuilder(stackalloc char[CharStackBufferSize]);
+        //    string? s = FormatHalf(ref sb, value, format, info);
+        //    return s != null ?
+        //        TryCopyTo(s, destination, out charsWritten) :
+        //        sb.TryCopyTo(destination, out charsWritten);
+        //}
 
 
         private static bool TryCopyTo(string source, Span<char> destination, out int charsWritten)
@@ -2650,37 +2651,37 @@ namespace Backports.System
             return fraction;
         }
 
-        private static ushort ExtractFractionAndBiasedExponent(Half value, out int exponent)
-        {
-            ushort bits = (ushort)BitConverter.HalfToInt16Bits(value);
-            ushort fraction = (ushort)(bits & 0x3FF);
-            exponent = ((int)(bits >> 10) & 0x1F);
+        //private static ushort ExtractFractionAndBiasedExponent(Half value, out int exponent)
+        //{
+        //    ushort bits = (ushort)BitConverter.HalfToInt16Bits(value);
+        //    ushort fraction = (ushort)(bits & 0x3FF);
+        //    exponent = ((int)(bits >> 10) & 0x1F);
 
-            if (exponent != 0)
-            {
-                // For normalized value, according to https://en.wikipedia.org/wiki/Half-precision_floating-point_format
-                // value = 1.fraction * 2^(exp - 15)
-                //       = (1 + mantissa / 2^10) * 2^(exp - 15)
-                //       = (2^10 + mantissa) * 2^(exp - 15 - 10)
-                //
-                // So f = (2^10 + mantissa), e = exp - 25;
+        //    if (exponent != 0)
+        //    {
+        //        // For normalized value, according to https://en.wikipedia.org/wiki/Half-precision_floating-point_format
+        //        // value = 1.fraction * 2^(exp - 15)
+        //        //       = (1 + mantissa / 2^10) * 2^(exp - 15)
+        //        //       = (2^10 + mantissa) * 2^(exp - 15 - 10)
+        //        //
+        //        // So f = (2^10 + mantissa), e = exp - 25;
 
-                fraction |= (ushort)(1U << 10);
-                exponent -= 25;
-            }
-            else
-            {
-                // For denormalized value, according to https://en.wikipedia.org/wiki/Half-precision_floating-point_format
-                // value = 0.fraction * 2^(1 - 15)
-                //       = (mantissa / 2^10) * 2^(-14)
-                //       = mantissa * 2^(-14 - 10)
-                //       = mantissa * 2^(-24)
-                // So f = mantissa, e = -24
-                exponent = -24;
-            }
+        //        fraction |= (ushort)(1U << 10);
+        //        exponent -= 25;
+        //    }
+        //    else
+        //    {
+        //        // For denormalized value, according to https://en.wikipedia.org/wiki/Half-precision_floating-point_format
+        //        // value = 0.fraction * 2^(1 - 15)
+        //        //       = (mantissa / 2^10) * 2^(-14)
+        //        //       = mantissa * 2^(-14 - 10)
+        //        //       = mantissa * 2^(-24)
+        //        // So f = mantissa, e = -24
+        //        exponent = -24;
+        //    }
 
-            return fraction;
-        }
+        //    return fraction;
+        //}
 
         private static uint ExtractFractionAndBiasedExponent(float value, out int exponent)
         {

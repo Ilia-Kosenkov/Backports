@@ -1,6 +1,7 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using System;
 using System.Diagnostics;
 
 namespace Backports.System
@@ -122,7 +123,7 @@ namespace Backports.System
 
             while (remaining != 0)
             {
-                uint count = Math.Min(remaining, 9);
+                uint count = global::System.Math.Min(remaining, 9);
                 uint value = DigitsToUInt32(src, (int)(count));
 
                 result.MultiplyPow10(count);
@@ -261,7 +262,7 @@ namespace Backports.System
                 return AssembleFloatingPointBits(in info, value.ToUInt64(), baseExponent, !hasNonZeroFractionalPart);
             }
 
-            uint topBlockIndex = Math.DivRem(integerBitsOfPrecision, 32, out uint topBlockBits);
+            uint topBlockIndex = MathP.DivRem(integerBitsOfPrecision, 32, out uint topBlockBits);
             uint middleBlockIndex = topBlockIndex - 1;
             uint bottomBlockIndex = middleBlockIndex - 1;
 
@@ -336,7 +337,7 @@ namespace Backports.System
             return res;
         }
 
-        private static ulong NumberToFloatingPointBits(ref NumberBuffer number, in FloatingPointInfo info)W
+        private static ulong NumberToFloatingPointBits(ref NumberBuffer number, in FloatingPointInfo info)
         {
             Debug.Assert(number.GetDigitsPointer()[0] != '0');
 
