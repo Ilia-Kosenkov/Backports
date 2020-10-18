@@ -7,7 +7,6 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-using Backports;
 
 namespace Backports.System
 {
@@ -1739,16 +1738,16 @@ namespace Backports.System
                 // This code would be simpler if we only had the concept of `InfinitySymbol`, but
                 // we don't so we'll check the existing cases first and then handle `PositiveSign` +
                 // `PositiveInfinitySymbol` and `PositiveSign/NegativeSign` + `NaNSymbol` last.
-
-                if (valueTrim.EqualsOrdinalIgnoreCase(info.PositiveInfinitySymbol))
+                
+                if (valueTrim.Equals(info.PositiveInfinitySymbol.AsSpan(), StringComparison.OrdinalIgnoreCase))
                 {
                     result = double.PositiveInfinity;
                 }
-                else if (valueTrim.EqualsOrdinalIgnoreCase(info.NegativeInfinitySymbol))
+                else if (valueTrim.Equals(info.NegativeInfinitySymbol.AsSpan(), StringComparison.OrdinalIgnoreCase))
                 {
                     result = double.NegativeInfinity;
                 }
-                else if (valueTrim.EqualsOrdinalIgnoreCase(info.NaNSymbol))
+                else if (valueTrim.Equals(info.NaNSymbol.AsSpan(), StringComparison.OrdinalIgnoreCase))
                 {
                     result = double.NaN;
                 }
@@ -1756,11 +1755,11 @@ namespace Backports.System
                 {
                     valueTrim = valueTrim.Slice(info.PositiveSign.Length);
 
-                    if (valueTrim.EqualsOrdinalIgnoreCase(info.PositiveInfinitySymbol))
+                    if (valueTrim.Equals(info.PositiveInfinitySymbol.AsSpan(), StringComparison.OrdinalIgnoreCase))
                     {
                         result = double.PositiveInfinity;
                     }
-                    else if (valueTrim.EqualsOrdinalIgnoreCase(info.NaNSymbol))
+                    else if (valueTrim.Equals(info.NaNSymbol.AsSpan(), StringComparison.OrdinalIgnoreCase))
                     {
                         result = double.NaN;
                     }
@@ -1771,7 +1770,7 @@ namespace Backports.System
                     }
                 }
                 else if (valueTrim.StartsWith(info.NegativeSign.AsSpan(), StringComparison.OrdinalIgnoreCase) &&
-                        valueTrim.Slice(info.NegativeSign.Length).EqualsOrdinalIgnoreCase(info.NaNSymbol))
+                        valueTrim.Slice(info.NegativeSign.Length).Equals(info.NaNSymbol.AsSpan(), StringComparison.OrdinalIgnoreCase))
                 {
                     result = double.NaN;
                 }
@@ -1872,16 +1871,16 @@ namespace Backports.System
                 // Additionally, since some cultures ("wo") actually define `PositiveInfinitySymbol`
                 // to include `PositiveSign`, we need to check whether `PositiveInfinitySymbol` fits
                 // that case so that we don't start parsing things like `++infini`.
-
-                if (valueTrim.EqualsOrdinalIgnoreCase(info.PositiveInfinitySymbol))
+                
+                if (valueTrim.Equals(info.PositiveInfinitySymbol.AsSpan(), StringComparison.OrdinalIgnoreCase))
                 {
                     result = float.PositiveInfinity;
                 }
-                else if (valueTrim.EqualsOrdinalIgnoreCase(info.NegativeInfinitySymbol))
+                else if (valueTrim.Equals(info.NegativeInfinitySymbol.AsSpan(), StringComparison.Ordinal))
                 {
                     result = float.NegativeInfinity;
                 }
-                else if (valueTrim.EqualsOrdinalIgnoreCase(info.NaNSymbol))
+                else if (valueTrim.Equals(info.NaNSymbol.AsSpan(), StringComparison.OrdinalIgnoreCase))
                 {
                     result = float.NaN;
                 }
@@ -1889,11 +1888,13 @@ namespace Backports.System
                 {
                     valueTrim = valueTrim.Slice(info.PositiveSign.Length);
 
-                    if (!info.PositiveInfinitySymbol.StartsWith(info.PositiveSign, StringComparison.OrdinalIgnoreCase) && valueTrim.EqualsOrdinalIgnoreCase(info.PositiveInfinitySymbol))
+                    if (!info.PositiveInfinitySymbol.StartsWith(info.PositiveSign, StringComparison.OrdinalIgnoreCase) 
+                        && valueTrim.Equals(info.PositiveInfinitySymbol.AsSpan(), StringComparison.OrdinalIgnoreCase))
                     {
                         result = float.PositiveInfinity;
                     }
-                    else if (!info.NaNSymbol.StartsWith(info.PositiveSign, StringComparison.OrdinalIgnoreCase) && valueTrim.EqualsOrdinalIgnoreCase(info.NaNSymbol))
+                    else if (!info.NaNSymbol.StartsWith(info.PositiveSign, StringComparison.OrdinalIgnoreCase) 
+                             && valueTrim.Equals(info.NaNSymbol.AsSpan(), StringComparison.OrdinalIgnoreCase))
                     {
                         result = float.NaN;
                     }
@@ -1905,7 +1906,7 @@ namespace Backports.System
                 }
                 else if (valueTrim.StartsWith(info.NegativeSign.AsSpan(), StringComparison.OrdinalIgnoreCase) &&
                          !info.NaNSymbol.StartsWith(info.NegativeSign, StringComparison.OrdinalIgnoreCase) &&
-                         valueTrim.Slice(info.NegativeSign.Length).EqualsOrdinalIgnoreCase(info.NaNSymbol))
+                         valueTrim.Slice(info.NegativeSign.Length).Equals(info.NaNSymbol.AsSpan(), StringComparison.OrdinalIgnoreCase))
                 {
                     result = float.NaN;
                 }
@@ -2029,7 +2030,7 @@ namespace Backports.System
             {
                 {DigitsCount: 0} or {Scale: < DoubleMinExponent} => 0,
                 {Scale: > DoubleMaxExponent} => double.PositiveInfinity,
-                _ => BitConverter.Int64BitsToDouble(
+                _ => global::System.BitConverter.Int64BitsToDouble(
                     (long) NumberToFloatingPointBits(ref number, in FloatingPointInfo.Double))
             };
 
@@ -2067,7 +2068,7 @@ namespace Backports.System
             {
                 {DigitsCount: 0} or {Scale: < SingleMinExponent} => 0,
                 {Scale: > SingleMaxExponent} => float.PositiveInfinity,
-                _ => BackPorts.BitConverter.Int32BitsToSingle(
+                _ => BitConverter.Int32BitsToSingle(
                     (int) (uint) NumberToFloatingPointBits(ref number, in FloatingPointInfo.Single))
             };
             

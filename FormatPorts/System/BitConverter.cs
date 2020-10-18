@@ -1,6 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 
-namespace System.BackPorts
+namespace Backports.System
 {
     internal static class BitConverter
     {
