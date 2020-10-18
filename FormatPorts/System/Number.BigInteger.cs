@@ -6,7 +6,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using Internal.Runtime.CompilerServices;
 
-namespace System
+namespace Backports.System
 {
     internal static partial class Number
     {

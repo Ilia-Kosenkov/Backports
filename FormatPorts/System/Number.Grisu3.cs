@@ -3,7 +3,7 @@
 
 using System.Diagnostics;
 
-namespace System
+namespace Backports.System
 {
     internal static partial class Number
     {

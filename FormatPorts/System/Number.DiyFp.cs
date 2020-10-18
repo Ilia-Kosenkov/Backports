@@ -4,7 +4,7 @@
 using System.Diagnostics;
 using System.Numerics;
 
-namespace System
+namespace Backports.System
 {
     internal static partial class Number
     {

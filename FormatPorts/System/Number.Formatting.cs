@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace System
+namespace Backports.System
 {
     // The Format methods provided by the numeric classes convert
     // the numeric value to a string using the format string given by the

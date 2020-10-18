@@ -1,15 +1,15 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using System;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-using FormatPorts;
+using Backports;
 
-namespace System
+namespace Backports.System
 {
     // The Parse methods provided by the numeric classes convert a
     // string to a numeric value. The optional style parameter specifies the
@@ -1569,7 +1569,7 @@ namespace System
             {
                 // To avoid risking an app-compat issue with pre 4.5 (where some app was illegally using Reflection to examine the internal scale bits), we'll only force
                 // the scale to 0 if the scale was previously positive (previously, such cases were unparsable to a bug.)
-                value = new decimal(0, 0, 0, sign, (byte)global::FormatPorts.Math.Clamp(-e, 0, 28));
+                value = new decimal(0, 0, 0, sign, (byte)global::Backports.Math.Clamp(-e, 0, 28));
                 return true;
             }
 

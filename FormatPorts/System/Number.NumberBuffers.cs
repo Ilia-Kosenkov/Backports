@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace System
+namespace Backports.System
 {
     internal static partial class Number
     {

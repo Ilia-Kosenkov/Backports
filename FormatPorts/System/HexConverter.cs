@@ -5,7 +5,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-namespace System
+namespace Backports.System
 {
     internal static class HexConverter
     {

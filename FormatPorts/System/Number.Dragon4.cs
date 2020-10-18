@@ -3,7 +3,7 @@
 
 using System.Diagnostics;
 
-namespace System
+namespace Backports.System
 {
     // This is a port of the `Dragon4` implementation here: http://www.ryanjuckett.com/programming/printing-floating-point-numbers/part-2/
     // The backing algorithm and the proofs behind it are described in more detail here:  https://www.cs.indiana.edu/~dyb/pubs/FP-Printing-PLDI96.pdf

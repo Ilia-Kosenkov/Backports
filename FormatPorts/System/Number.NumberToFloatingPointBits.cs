@@ -3,7 +3,7 @@
 
 using System.Diagnostics;
 
-namespace System
+namespace Backports.System
 {
     internal unsafe partial class Number
     {
