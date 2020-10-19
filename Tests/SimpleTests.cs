@@ -34,6 +34,25 @@ namespace Tests
             Assert.AreEqual(value, numRaw);
         }
 
+        [Test]
+        public void Test_TryParseFloat_Scientific()
+        {
+            var numRaw = (float) Math.PI;
+            var num = numRaw.ToString("E7");
+
+            Assert.IsTrue(num.AsSpan().TryParseInto(NumberStyles.Any, NumberFormatInfo.InvariantInfo, out float value));
+            Assert.AreEqual(value, numRaw);
+        }
+
+        [Test]
+        public void Test_TryParseDouble_Scientific()
+        {
+            var numRaw = Math.PI;
+            var num = numRaw.ToString("E16");
+
+            Assert.IsTrue(num.AsSpan().TryParseInto(NumberStyles.Any, NumberFormatInfo.InvariantInfo, out double value));
+            Assert.AreEqual(value, numRaw);
+        }
 
         [Test]
         public void Test_TryParseInt8()
