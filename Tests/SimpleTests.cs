@@ -19,7 +19,15 @@ namespace Tests
 
             Assert.IsTrue(num.TryParseInto(out int value));
             Assert.AreEqual(value, 123456);
+        }
 
+        [Test]
+        public void Test_TryParseSingle()
+        {
+            var numRaw = (float)Math.PI;
+            var num = numRaw.ToString("R");
+            Assert.IsTrue(num.AsSpan().TryParseInto(out float value));
+            Assert.AreEqual(numRaw, value);
         }
 
         [Test]
