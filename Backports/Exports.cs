@@ -28,7 +28,14 @@ namespace Backports
                 value = (T)(object)result;
                 return wasSuccessful;
             }
-            if(typeof(T) == typeof(double))
+            if (typeof(T) == typeof(float))
+            {
+                var wasSuccessful = Number.TryParseSingle(input, NumberStyles.Float | NumberStyles.AllowThousands,
+                    NumberFormatInfo.CurrentInfo, out var result);
+                value = (T)(object)result;
+                return wasSuccessful;
+            }
+            if (typeof(T) == typeof(double))
             {
                 var wasSuccessful = Number.TryParseDouble(input, NumberStyles.Float | NumberStyles.AllowThousands,
                     NumberFormatInfo.CurrentInfo, out var result);
@@ -44,6 +51,12 @@ namespace Backports
             {
                 var wasSuccessful = int.TryParse(input, out var result);
                 value = (T)(object)result;
+                return wasSuccessful;
+            }
+            if (typeof(T) == typeof(float)) 
+            {
+                var wasSuccessful = float.TryParse(input, out var result);
+                value = (T) (object) result;
                 return wasSuccessful;
             }
             if (typeof(T) == typeof(double)) 
