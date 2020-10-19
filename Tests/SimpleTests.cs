@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using Backports;
 using NUnit.Framework;
 
@@ -11,6 +12,28 @@ namespace Tests
         {
             
         }
+
+
+        [Test]
+        public void Test_TryParseInt8_Hex()
+        {
+            sbyte numRaw = 123;
+            var num = numRaw.ToString("X");
+
+            Assert.IsTrue(num.AsSpan().TryParseInto(NumberStyles.HexNumber, NumberFormatInfo.InvariantInfo, out sbyte value));
+            Assert.AreEqual(value, numRaw);
+        }
+
+        [Test]
+        public void Test_TryParseUInt8_Hex()
+        {
+            byte numRaw = 123;
+            var num = numRaw.ToString("X");
+
+            Assert.IsTrue(num.AsSpan().TryParseInto(NumberStyles.HexNumber, NumberFormatInfo.InvariantInfo, out byte value));
+            Assert.AreEqual(value, numRaw);
+        }
+
 
         [Test]
         public void Test_TryParseInt8()
@@ -65,7 +88,7 @@ namespace Tests
         [Test]
         public void Test_TryParseUInt32()
         {
-            var numRaw = 123456u;
+            var numRaw = 123456U;
             var num = numRaw.ToString();
 
             Assert.IsTrue(num.AsSpan().TryParseInto(out uint value));
@@ -75,7 +98,7 @@ namespace Tests
         [Test]
         public void Test_TryParseInt64()
         {
-            var numRaw = 123456l;
+            var numRaw = 123456L;
             var num = numRaw.ToString();
 
             Assert.IsTrue(num.AsSpan().TryParseInto(out long value));
@@ -85,7 +108,7 @@ namespace Tests
         [Test]
         public void Test_TryParseUInt64()
         {
-            var numRaw = 123456ul;
+            var numRaw = 123456UL;
             var num = numRaw.ToString();
 
             Assert.IsTrue(num.AsSpan().TryParseInto(out ulong value));

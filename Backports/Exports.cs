@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-#if NETSTANDARD2_0
 using System.Globalization;
+#if NETSTANDARD2_0
 using Backports.System;
 #endif
 
@@ -20,27 +20,90 @@ namespace Backports
 #endif
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryParseInto<T>(this ReadOnlySpan<char> input, NumberStyles style, IFormatProvider format, out T value) where T : unmanaged
+        {
 #if NETSTANDARD2_0
+            return TryParseIntoBackported(input, style, format, out value);
+#else
+            return TryParseIntoRuntime(input, style, format, out value);
+#endif
+        }
+
+#if NETSTANDARD2_0
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool TryParseIntoBackported<T>(this ReadOnlySpan<char> input, out T value) where T : unmanaged
+        {
+            if(typeof(T) == typeof(sbyte)
+            || typeof(T) == typeof(byte) 
+            || typeof(T) == typeof(short)
+            || typeof(T) == typeof(ushort))
+                return TryParseIntoBackported(input, NumberStyles.Integer, NumberFormatInfo.CurrentInfo, out value);
+
+            if (typeof(T) == typeof(int))
+            {
+                var parseStatus =
+                    Number.TryParseInt32IntegerStyle(input, NumberStyles.Integer, NumberFormatInfo.CurrentInfo, out var result);
+                value = Unsafe.As<int, T>(ref result);
+                return parseStatus is Number.ParsingStatus.OK;
+            }
+
+            if (typeof(T) == typeof(uint))
+            {
+                var parseStatus =
+                    Number.TryParseUInt32IntegerStyle(input, NumberStyles.Integer, NumberFormatInfo.CurrentInfo, out var result);
+                value = Unsafe.As<uint, T>(ref result);
+                return parseStatus is Number.ParsingStatus.OK;
+            }
+
+            if (typeof(T) == typeof(long))
+            {
+                var parseStatus =
+                    Number.TryParseInt64IntegerStyle(input, NumberStyles.Integer, NumberFormatInfo.CurrentInfo, out var result);
+                value = Unsafe.As<long, T>(ref result);
+                return parseStatus is Number.ParsingStatus.OK;
+            }
+
+            if (typeof(T) == typeof(ulong))
+            {
+                var parseStatus =
+                    Number.TryParseUInt64IntegerStyle(input, NumberStyles.Integer, NumberFormatInfo.CurrentInfo, out var result);
+                value = Unsafe.As<ulong, T>(ref result);
+                return parseStatus is Number.ParsingStatus.OK;
+            }
+
+            if (typeof(T) == typeof(float)
+                || typeof(T) == typeof(double))
+                return TryParseIntoBackported(input, NumberStyles.Float | NumberStyles.AllowThousands,
+                    NumberFormatInfo.CurrentInfo, out value);
+            throw ThrowTypeNotSupported<T>();
+        }
+
+        private static bool TryParseIntoBackported<T>(this ReadOnlySpan<char> input, NumberStyles style, IFormatProvider format,
+            out T value) where T : unmanaged
         {
             if (typeof(T) == typeof(sbyte))
             {
+                style.ValidateParseStyleInteger();
                 // For hex number styles AllowHexSpecifier >> 2 == 0x80 and cancels out MinValue so the check is effectively: (uint)i > byte.MaxValue
                 // For integer styles it's zero and the effective check is (uint)(i - MinValue) > byte.MaxValue
-                if (Number.TryParseInt32(input, NumberStyles.Integer, NumberFormatInfo.CurrentInfo, out var i) != Number.ParsingStatus.OK
-                    || (uint)(i - sbyte.MinValue) > byte.MaxValue)
+                if (Number.TryParseInt32(input, style, NumberFormatInfo.GetInstance(format), out var i) != Number.ParsingStatus.OK
+                    || (uint)(i - sbyte.MinValue - ((int)(style & NumberStyles.AllowHexSpecifier) >> 2)) > byte.MaxValue)
                 {
                     value = default;
                     return false;
                 }
-                var sbyteVal = (sbyte)i;
+
+                var sbyteVal = (sbyte) i;
                 value = Unsafe.As<sbyte, T>(ref sbyteVal);
                 return true;
             }
 
             if (typeof(T) == typeof(byte))
             {
-                if (Number.TryParseUInt32(input, NumberStyles.Integer, NumberFormatInfo.CurrentInfo, out var i) != Number.ParsingStatus.OK
+                style.ValidateParseStyleInteger();
+
+                if (Number.TryParseUInt32(input, style, NumberFormatInfo.GetInstance(format), out var i) != Number.ParsingStatus.OK
                     || i > byte.MaxValue)
                 {
                     value = default;
@@ -51,78 +114,99 @@ namespace Backports
                 value = Unsafe.As<byte, T>(ref byteVal);
                 return true;
             }
+
             if (typeof(T) == typeof(short))
             {
+                style.ValidateParseStyleInteger();
+
                 // For hex number styles AllowHexSpecifier << 6 == 0x8000 and cancels out MinValue so the check is effectively: (uint)i > ushort.MaxValue
                 // For integer styles it's zero and the effective check is (uint)(i - MinValue) > ushort.MaxValue
-                if (Number.TryParseInt32(input, NumberStyles.Integer, NumberFormatInfo.CurrentInfo, out var i) != Number.ParsingStatus.OK
-                    || (uint)(i - short.MinValue) > ushort.MaxValue)
+                if (Number.TryParseInt32(input, style, NumberFormatInfo.GetInstance(format), out var i) != Number.ParsingStatus.OK
+                    || (uint)(i - short.MinValue - ((int)(style & NumberStyles.AllowHexSpecifier) << 6)) > ushort.MaxValue)
                 {
                     value = default;
                     return false;
                 }
-
-                var shortVal = (short) i;
+                var shortVal = (short)i;
                 value = Unsafe.As<short, T>(ref shortVal);
                 return true;
-
             }
+
             if (typeof(T) == typeof(ushort))
             {
-                if (Number.TryParseUInt32(input, NumberStyles.Integer, NumberFormatInfo.CurrentInfo, out var i) != Number.ParsingStatus.OK
+                style.ValidateParseStyleInteger();
+
+                if (Number.TryParseUInt32(input, style, NumberFormatInfo.GetInstance(format), out var i) != Number.ParsingStatus.OK
                     || i > ushort.MaxValue)
                 {
                     value = default;
                     return false;
                 }
 
-                var ushortVal = (ushort) i;
+                var ushortVal = (ushort)i;
                 value = Unsafe.As<ushort, T>(ref ushortVal);
                 return true;
             }
+
             if (typeof(T) == typeof(int))
             {
-                var wasSuccessful = Number.TryParseInt32IntegerStyle(input, NumberStyles.Integer,
-                    NumberFormatInfo.CurrentInfo, out var result) is Number.ParsingStatus.OK;
+                style.ValidateParseStyleInteger();
+
+                var parseStatus =
+                    Number.TryParseInt32(input, style, NumberFormatInfo.GetInstance(format), out var result);
                 value = Unsafe.As<int, T>(ref result);
-                return wasSuccessful;
+                return parseStatus is Number.ParsingStatus.OK;
             }
+
             if (typeof(T) == typeof(uint))
             {
-                var wasSuccessful = Number.TryParseUInt32IntegerStyle(input, NumberStyles.Integer,
-                    NumberFormatInfo.CurrentInfo, out var result) is Number.ParsingStatus.OK;
+                style.ValidateParseStyleInteger();
+
+                var parseStatus =
+                    Number.TryParseUInt32(input, style, NumberFormatInfo.GetInstance(format), out var result);
                 value = Unsafe.As<uint, T>(ref result);
-                return wasSuccessful;
+                return parseStatus is Number.ParsingStatus.OK;
             }
+
             if (typeof(T) == typeof(long))
             {
-                var wasSuccessful = Number.TryParseInt64IntegerStyle(input, NumberStyles.Integer,
-                    NumberFormatInfo.CurrentInfo, out var result) is Number.ParsingStatus.OK;
+                style.ValidateParseStyleInteger();
+
+                var parseStatus =
+                    Number.TryParseInt64(input, style, NumberFormatInfo.GetInstance(format), out var result);
                 value = Unsafe.As<long, T>(ref result);
-                return wasSuccessful;
+                return parseStatus is Number.ParsingStatus.OK;
             }
+
             if (typeof(T) == typeof(ulong))
             {
-                var wasSuccessful = Number.TryParseUInt64IntegerStyle(input, NumberStyles.Integer,
-                    NumberFormatInfo.CurrentInfo, out var result) is Number.ParsingStatus.OK;
+                style.ValidateParseStyleInteger();
+
+                var parseStatus =
+                    Number.TryParseUInt64(input, style, NumberFormatInfo.GetInstance(format), out var result);
                 value = Unsafe.As<ulong, T>(ref result);
-                return wasSuccessful;
+                return parseStatus is Number.ParsingStatus.OK;
             }
+
             if (typeof(T) == typeof(float))
             {
-                var wasSuccessful = Number.TryParseSingle(input, NumberStyles.Float | NumberStyles.AllowThousands,
-                    NumberFormatInfo.CurrentInfo, out var result);
-                value = Unsafe.As<float, T>(ref result);;
+                style.ValidateParseStyleFloatingPoint();
+                var wasSuccessful =
+                    Number.TryParseSingle(input, style, NumberFormatInfo.GetInstance(format), out var result);
+                value = Unsafe.As<float, T>(ref result);
                 return wasSuccessful;
             }
+
             if (typeof(T) == typeof(double))
             {
-                var wasSuccessful = Number.TryParseDouble(input, NumberStyles.Float | NumberStyles.AllowThousands,
-                    NumberFormatInfo.CurrentInfo, out var result);
-                value = Unsafe.As<double, T>(ref result);;
+                style.ValidateParseStyleFloatingPoint();
+                var wasSuccessful =
+                    Number.TryParseDouble(input, style, NumberFormatInfo.GetInstance(format), out var result);
+                value = Unsafe.As<double, T>(ref result);
                 return wasSuccessful;
             }
-            throw new NotSupportedException($"{typeof(T)} has no compatible TryParse method");
+
+            throw ThrowTypeNotSupported<T>();
         }
 #else
         private static bool TryParseIntoRuntime<T>(this ReadOnlySpan<char> input, out T value) where T : unmanaged
@@ -189,8 +273,78 @@ namespace Backports
                 value = Unsafe.As<double, T>(ref result);
                 return wasSuccessful;
             }
-            throw new NotSupportedException($"{typeof(T)} has no compatible TryParse method");
+            
+            throw ThrowTypeNotSupported<T>();
+        }
+
+        private static bool TryParseIntoRuntime<T>(this ReadOnlySpan<char> input, NumberStyles style, IFormatProvider format,
+            out T value) where T : unmanaged
+        {
+            if (typeof(T) == typeof(sbyte))
+            {
+                var wasSuccessful = sbyte.TryParse(input, style, format, out var result);
+                value = Unsafe.As<sbyte, T>(ref result);
+                return wasSuccessful;
+            }
+            if (typeof(T) == typeof(byte))
+            {
+                var wasSuccessful = byte.TryParse(input, style, format, out var result);
+                value = Unsafe.As<byte, T>(ref result);
+                return wasSuccessful;
+            }
+
+            if (typeof(T) == typeof(short))
+            {
+                var wasSuccessful = short.TryParse(input, style, format, out var result);
+                value = Unsafe.As<short, T>(ref result);
+                return wasSuccessful;
+            }
+            if (typeof(T) == typeof(ushort))
+            {
+                var wasSuccessful = ushort.TryParse(input, style, format, out var result);
+                value = Unsafe.As<ushort, T>(ref result);
+                return wasSuccessful;
+            }
+            if (typeof(T) == typeof(int))
+            {
+                var wasSuccessful = int.TryParse(input, style, format, out var result);
+                value = Unsafe.As<int, T>(ref result);
+                return wasSuccessful;
+            }
+            if (typeof(T) == typeof(uint))
+            {
+                var wasSuccessful = uint.TryParse(input, style, format, out var result);
+                value = Unsafe.As<uint, T>(ref result);
+                return wasSuccessful;
+            }
+            if (typeof(T) == typeof(long))
+            {
+                var wasSuccessful = long.TryParse(input, style, format, out var result);
+                value = Unsafe.As<long, T>(ref result);
+                return wasSuccessful;
+            }
+            if (typeof(T) == typeof(ulong))
+            {
+                var wasSuccessful = ulong.TryParse(input, style, format, out var result);
+                value = Unsafe.As<ulong, T>(ref result);
+                return wasSuccessful;
+            }
+            if (typeof(T) == typeof(float))
+            {
+                var wasSuccessful = float.TryParse(input, style, format, out var result);
+                value = Unsafe.As<float, T>(ref result);
+                return wasSuccessful;
+            }
+            if (typeof(T) == typeof(double))
+            {
+                var wasSuccessful = double.TryParse(input, style, format, out var result);
+                value = Unsafe.As<double, T>(ref result);
+                return wasSuccessful;
+            }
+            throw ThrowTypeNotSupported<T>();
         }
 #endif
+
+        private static Exception ThrowTypeNotSupported<T>() where T : unmanaged => new NotSupportedException($"{typeof(T)} has no compatible TryParse method");
     }
 }
