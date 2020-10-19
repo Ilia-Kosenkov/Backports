@@ -1,10 +1,10 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using System;
 using System.Diagnostics;
-using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Internal.Runtime.CompilerServices;
 
 namespace Backports.System
 {
@@ -446,7 +446,7 @@ namespace Backports.System
 
                 if ((lhsLength == 1) && (rhsLength == 1))
                 {
-                    uint quotient = Math.DivRem(lhs._blocks[0], rhs._blocks[0], out uint remainder);
+                    uint quotient = MathP.DivRem(lhs._blocks[0], rhs._blocks[0], out uint remainder);
                     SetUInt32(out quo, quotient);
                     SetUInt32(out rem, remainder);
                     return;
@@ -464,7 +464,7 @@ namespace Backports.System
                     for (int i = quoLength - 1; i >= 0; i--)
                     {
                         ulong value = (carry << 32) | lhs._blocks[i];
-                        ulong digit = Math.DivRem(value, rhsValue, out carry);
+                        ulong digit = MathP.DivRem(value, rhsValue, out carry);
 
                         if ((digit == 0) && (i == (quoLength - 1)))
                         {
@@ -767,7 +767,8 @@ namespace Backports.System
 
                 // Zero out result internal blocks.
                 result._length = maxResultLength;
-                Buffer.ZeroMemory((byte*)result.GetBlocksPointer(), (uint)maxResultLength * sizeof(uint));
+                //Buffer.ZeroMemory((byte*)result.GetBlocksPointer(), (uint)maxResultLength * sizeof(uint));
+                Buffer.ZeroMemory(ref result.GetBlocksRef(), (uint)maxResultLength * sizeof(uint));
 
                 int smallIndex = 0;
                 int resultStartIndex = 0;
@@ -813,7 +814,8 @@ namespace Backports.System
                 Debug.Assert(unchecked((uint)result._length) <= MaxBlockCount);
                 if (blocksToShift > 0)
                 {
-                    Buffer.ZeroMemory((byte*)result.GetBlocksPointer(), blocksToShift * sizeof(uint));
+                    //Buffer.ZeroMemory((byte*)result.GetBlocksPointer(), blocksToShift * sizeof(uint));
+                    Buffer.ZeroMemory(ref result.GetBlocksRef(), blocksToShift * sizeof(uint));
                 }
                 result._blocks[blocksToShift] = 1U << (int)(remainingBitsToShift);
             }
@@ -848,7 +850,7 @@ namespace Backports.System
 
                 // Validate that `s_Pow10BigNumTable` has exactly enough trailing elements to fill a BigInteger (which contains MaxBlockCount + 1 elements)
                 // We validate here, since this is the only current consumer of the array
-                Debug.Assert((s_Pow10BigNumTableIndices[^1] + MaxBlockCount + 2) == s_Pow10BigNumTable.Length);
+                //Debug.Assert((s_Pow10BigNumTableIndices[^1] + MaxBlockCount + 2) == s_Pow10BigNumTable.Length);
 
                 SetUInt32(out BigInteger temp1, s_Pow10UInt32Table[exponent & 0x7]);
                 ref BigInteger lhs = ref temp1;
@@ -1113,7 +1115,7 @@ namespace Backports.System
             {
                 int rhsLength = value._length;
                 result._length = rhsLength;
-                Buffer.Memcpy((byte*)result.GetBlocksPointer(), (byte*)value.GetBlocksPointer(), rhsLength * sizeof(uint));
+                Buffer.Memcpy(ref result.GetBlocksRef(), ref value.GetBlocksRef(), rhsLength * sizeof(uint));
             }
 
             public static void SetZero(out BigInteger result)
@@ -1152,7 +1154,9 @@ namespace Backports.System
                     _length += (int)(blocksToShift);
 
                     // Zero the remaining low blocks
-                    Buffer.ZeroMemory((byte*)GetBlocksPointer(), blocksToShift * sizeof(uint));
+                    //Buffer.ZeroMemory((byte*)GetBlocksPointer(), blocksToShift * sizeof(uint));
+                    Buffer.ZeroMemory(ref GetBlocksRef(), blocksToShift * sizeof(uint));
+
                 }
                 else
                 {
@@ -1185,8 +1189,9 @@ namespace Backports.System
                     _blocks[writeIndex - 1] = block << (int)(remainingBitsToShift);
 
                     // Zero the remaining low blocks
-                    Buffer.ZeroMemory((byte*)GetBlocksPointer(), blocksToShift * sizeof(uint));
-
+                    // Using different memory zeroing method
+                    //Buffer.ZeroMemory((byte*)GetBlocksPointer(), blocksToShift * sizeof(uint));
+                    Buffer.ZeroMemory(ref GetBlocksRef(), blocksToShift * sizeof(uint));
                     // Check if the terminating block has no set bits
                     if (_blocks[_length - 1] == 0)
                     {
@@ -1226,6 +1231,7 @@ namespace Backports.System
                 return (uint*)(Unsafe.AsPointer(ref _blocks[0]));
             }
 
+            private ref byte GetBlocksRef() => ref Unsafe.As<uint, byte>(ref _blocks[0]);
             private static uint DivRem32(uint value, out uint remainder)
             {
                 remainder = value & 31;
