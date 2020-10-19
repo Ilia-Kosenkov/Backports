@@ -1568,7 +1568,7 @@ namespace Backports.System
             {
                 // To avoid risking an app-compat issue with pre 4.5 (where some app was illegally using Reflection to examine the internal scale bits), we'll only force
                 // the scale to 0 if the scale was previously positive (previously, such cases were unparsable to a bug.)
-                value = new decimal(0, 0, 0, sign, (byte)global::Backports.Math.Clamp(-e, 0, 28));
+                value = new decimal(0, 0, 0, sign, (byte)MathP.Clamp(-e, 0, 28));
                 return true;
             }
 
