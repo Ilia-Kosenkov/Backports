@@ -1,4 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿#if NETSTANDARD2_0
+
+using System.Runtime.InteropServices;
 
 namespace Backports.System
 {
@@ -97,3 +99,5 @@ namespace Backports.System
         }
     }
 }
+
+#endif

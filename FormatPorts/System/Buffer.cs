@@ -1,4 +1,6 @@
-﻿using System.Runtime.CompilerServices;
+﻿#if NETSTANDARD2_0
+
+using System.Runtime.CompilerServices;
 
 namespace Backports.System
 {
@@ -8,3 +10,5 @@ namespace Backports.System
         public static void Memcpy(ref byte dest, ref byte src, int len) => Unsafe.CopyBlock(ref dest, ref src, len < 0 ? 0 : (uint) len);
     }
 }
+
+#endif

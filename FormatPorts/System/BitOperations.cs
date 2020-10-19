@@ -1,4 +1,6 @@
-﻿using System;
+﻿#if NETSTANDARD2_0
+
+using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -114,3 +116,5 @@ namespace Backports.System
         }
     }
 }
+
+#endif

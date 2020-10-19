@@ -10,11 +10,7 @@ namespace Backports
 
 
         public static bool HasInvariantNumberSigns(this NumberFormatInfo info) =>
-            (bool) (_getHasInvariantNumberSigns ??=
-                    typeof(NumberFormatInfo).GetProperty(nameof(HasInvariantNumberSigns),
-                        BindingFlags.NonPublic | BindingFlags.Instance) ??
-                    throw new InvalidOperationException("Failed to reflect property"))
-            .GetValue(info);
+            info.PositiveSign == "+" && info.NegativeSign == "-";
     }
 
     internal static class MathP

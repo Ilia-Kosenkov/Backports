@@ -1,6 +1,8 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+#if NETSTANDARD2_0
+
 using System;
 using System.Diagnostics;
 using System.Globalization;
@@ -1930,7 +1932,7 @@ namespace Backports.System
             fixed (char* stringPointer = &MemoryMarshal.GetReference(value))
             {
                 var p = stringPointer;
-                if (!TryParseNumber(ref p, p + value.Length, styles, ref number, info)
+                if (!TryParseNumber(ref p, p + value.Length, styles, ref number, info!)
                     || ((int)(p - stringPointer) < value.Length && !TrailingZeros(value, (int)(p - stringPointer))))
                 {
                     number.CheckConsistency();
@@ -2076,3 +2078,5 @@ namespace Backports.System
         }
     }
 }
+
+#endif
