@@ -23,6 +23,63 @@ namespace Backports
 #if NETSTANDARD2_0
         private static bool TryParseIntoBackported<T>(this ReadOnlySpan<char> input, out T value) where T : unmanaged
         {
+            if (typeof(T) == typeof(sbyte))
+            {
+                // For hex number styles AllowHexSpecifier >> 2 == 0x80 and cancels out MinValue so the check is effectively: (uint)i > byte.MaxValue
+                // For integer styles it's zero and the effective check is (uint)(i - MinValue) > byte.MaxValue
+                if (Number.TryParseInt32(input, NumberStyles.Integer, NumberFormatInfo.CurrentInfo, out var i) != Number.ParsingStatus.OK
+                    || (uint)(i - sbyte.MinValue) > byte.MaxValue)
+                {
+                    value = default;
+                    return false;
+                }
+                var sbyteVal = (sbyte)i;
+                value = Unsafe.As<sbyte, T>(ref sbyteVal);
+                return true;
+            }
+
+            if (typeof(T) == typeof(byte))
+            {
+                if (Number.TryParseUInt32(input, NumberStyles.Integer, NumberFormatInfo.CurrentInfo, out var i) != Number.ParsingStatus.OK
+                    || i > byte.MaxValue)
+                {
+                    value = default;
+                    return false;
+                }
+
+                var byteVal = (byte) i;
+                value = Unsafe.As<byte, T>(ref byteVal);
+                return true;
+            }
+            if (typeof(T) == typeof(short))
+            {
+                // For hex number styles AllowHexSpecifier << 6 == 0x8000 and cancels out MinValue so the check is effectively: (uint)i > ushort.MaxValue
+                // For integer styles it's zero and the effective check is (uint)(i - MinValue) > ushort.MaxValue
+                if (Number.TryParseInt32(input, NumberStyles.Integer, NumberFormatInfo.CurrentInfo, out var i) != Number.ParsingStatus.OK
+                    || (uint)(i - short.MinValue) > ushort.MaxValue)
+                {
+                    value = default;
+                    return false;
+                }
+
+                var shortVal = (short) i;
+                value = Unsafe.As<short, T>(ref shortVal);
+                return true;
+
+            }
+            if (typeof(T) == typeof(ushort))
+            {
+                if (Number.TryParseUInt32(input, NumberStyles.Integer, NumberFormatInfo.CurrentInfo, out var i) != Number.ParsingStatus.OK
+                    || i > ushort.MaxValue)
+                {
+                    value = default;
+                    return false;
+                }
+
+                var ushortVal = (ushort) i;
+                value = Unsafe.As<ushort, T>(ref ushortVal);
+                return true;
+            }
             if (typeof(T) == typeof(int))
             {
                 var wasSuccessful = Number.TryParseInt32IntegerStyle(input, NumberStyles.Integer,
@@ -70,16 +127,54 @@ namespace Backports
 #else
         private static bool TryParseIntoRuntime<T>(this ReadOnlySpan<char> input, out T value) where T : unmanaged
         {
+
+            if (typeof(T) == typeof(sbyte))
+            {
+                var wasSuccessful = sbyte.TryParse(input, out var result);
+                value = Unsafe.As<sbyte, T>(ref result);
+                return wasSuccessful;
+            }
+            if (typeof(T) == typeof(byte))
+            {
+                var wasSuccessful = byte.TryParse(input, out var result);
+                value = Unsafe.As<byte, T>(ref result);
+                return wasSuccessful;
+            }
+
+            if (typeof(T) == typeof(short))
+            {
+                var wasSuccessful = short.TryParse(input, out var result);
+                value = Unsafe.As<short, T>(ref result);
+                return wasSuccessful;
+            }
+            if (typeof(T) == typeof(ushort))
+            {
+                var wasSuccessful = ushort.TryParse(input, out var result);
+                value = Unsafe.As<ushort, T>(ref result);
+                return wasSuccessful;
+            }
             if (typeof(T) == typeof(int))
             {
                 var wasSuccessful = int.TryParse(input, out var result);
                 value = Unsafe.As<int, T>(ref result);
                 return wasSuccessful;
             }
-            if(typeof(T) == typeof(long)) 
+            if (typeof(T) == typeof(uint))
+            {
+                var wasSuccessful = uint.TryParse(input, out var result);
+                value = Unsafe.As<uint, T>(ref result);
+                return wasSuccessful;
+            }
+            if (typeof(T) == typeof(long)) 
             {
                 var wasSuccessful = long.TryParse(input, out var result);
                 value = Unsafe.As<long, T>(ref result);
+                return wasSuccessful;
+            }
+            if (typeof(T) == typeof(ulong))
+            {
+                var wasSuccessful = ulong.TryParse(input, out var result);
+                value = Unsafe.As<ulong, T>(ref result);
                 return wasSuccessful;
             }
             if (typeof(T) == typeof(float)) 
