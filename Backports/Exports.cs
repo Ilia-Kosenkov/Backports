@@ -21,7 +21,7 @@ namespace Backports
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool TryParseInto<T>(this ReadOnlySpan<char> input, NumberStyles style, IFormatProvider format, out T value) where T : unmanaged
+        public static bool TryParseInto<T>(this ReadOnlySpan<char> input, NumberStyles style, IFormatProvider? format, out T value) where T : unmanaged
         {
 #if NETSTANDARD2_0
             return TryParseIntoBackported(input, style, format, out value);
@@ -79,7 +79,7 @@ namespace Backports
             throw ThrowTypeNotSupported<T>();
         }
 
-        private static bool TryParseIntoBackported<T>(this ReadOnlySpan<char> input, NumberStyles style, IFormatProvider format,
+        private static bool TryParseIntoBackported<T>(this ReadOnlySpan<char> input, NumberStyles style, IFormatProvider? format,
             out T value) where T : unmanaged
         {
             if (typeof(T) == typeof(sbyte))
@@ -277,7 +277,7 @@ namespace Backports
             throw ThrowTypeNotSupported<T>();
         }
 
-        private static bool TryParseIntoRuntime<T>(this ReadOnlySpan<char> input, NumberStyles style, IFormatProvider format,
+        private static bool TryParseIntoRuntime<T>(this ReadOnlySpan<char> input, NumberStyles style, IFormatProvider? format,
             out T value) where T : unmanaged
         {
             if (typeof(T) == typeof(sbyte))
