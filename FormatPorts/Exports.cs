@@ -28,6 +28,13 @@ namespace Backports
                 value = (T)(object)result;
                 return wasSuccessful;
             }
+            if(typeof(T) == typeof(double))
+            {
+                var wasSuccessful = Number.TryParseDouble(input, NumberStyles.Float | NumberStyles.AllowThousands,
+                    NumberFormatInfo.CurrentInfo, out var result);
+                value = (T) (object) result;
+                return wasSuccessful;
+            }
             throw new NotSupportedException($"{typeof(T)} has no compatible TryParse method");
         }
 #else
@@ -37,6 +44,12 @@ namespace Backports
             {
                 var wasSuccessful = int.TryParse(input, out var result);
                 value = (T)(object)result;
+                return wasSuccessful;
+            }
+            if (typeof(T) == typeof(double)) 
+            {
+                var wasSuccessful = double.TryParse(input, out var result);
+                value = (T) (object) result;
                 return wasSuccessful;
             }
             throw new NotSupportedException($"{typeof(T)} has no compatible TryParse method");
