@@ -1,14 +1,12 @@
-﻿using System;
+﻿#if NETSTANDARD2_0
+
 using System.Globalization;
-using System.Reflection;
 
 namespace Backports
 {
     internal static class Extensions
     {
-        private static PropertyInfo? _getHasInvariantNumberSigns;
-
-
+        
         public static bool HasInvariantNumberSigns(this NumberFormatInfo info) =>
             info.PositiveSign == "+" && info.NegativeSign == "-";
     }
@@ -58,3 +56,5 @@ namespace Backports
 
     }
 }
+
+#endif

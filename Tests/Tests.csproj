@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FormatPorts\FormatPorts.csproj" />
+    <ProjectReference Include="..\Backports\Backports.csproj" />
   </ItemGroup>
 
 </Project>

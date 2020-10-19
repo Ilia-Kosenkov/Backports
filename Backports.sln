@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FormatPorts", "FormatPorts\FormatPorts.csproj", "{96427EDA-3D6A-4F1E-A6DF-7F69ACB1E627}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Backports", "Backports\Backports.csproj", "{96427EDA-3D6A-4F1E-A6DF-7F69ACB1E627}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{E2BA216B-9EE5-44BD-B5DB-B50F7776301A}"
 EndProject
