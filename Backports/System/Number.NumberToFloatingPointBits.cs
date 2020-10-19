@@ -74,8 +74,8 @@ namespace Backports.System
             }
         }
 
-        private static readonly float[] s_Pow10SingleTable = new float[]
-        {
+        // ReSharper disable once InconsistentNaming
+        private static readonly float[] s_Pow10SingleTable = {
             1e0f,   // 10^0
             1e1f,   // 10^1
             1e2f,   // 10^2
@@ -89,8 +89,8 @@ namespace Backports.System
             1e10f,  // 10^10
         };
 
-        private static readonly double[] s_Pow10DoubleTable = new double[]
-        {
+        // ReSharper disable once InconsistentNaming
+        private static readonly double[] s_Pow10DoubleTable = {
             1e0,    // 10^0
             1e1,    // 10^1
             1e2,    // 10^2
@@ -120,13 +120,13 @@ namespace Backports.System
         {
             BigInteger.SetZero(out result);
 
-            byte* src = number.GetDigitsPointer() + firstIndex;
-            uint remaining = lastIndex - firstIndex;
+            var src = number.GetDigitsPointer() + firstIndex;
+            var remaining = lastIndex - firstIndex;
 
             while (remaining != 0)
             {
-                uint count = global::System.Math.Min(remaining, 9);
-                uint value = DigitsToUInt32(src, (int)(count));
+                var count = Math.Min(remaining, 9);
+                var value = DigitsToUInt32(src, (int)(count));
 
                 result.MultiplyPow10(count);
                 result.Add(value);
@@ -141,12 +141,12 @@ namespace Backports.System
             // number of bits by which we must adjust the mantissa to shift it into the
             // correct position, and compute the resulting base two exponent for the
             // normalized mantissa:
-            uint initialMantissaBits = BigInteger.CountSignificantBits(initialMantissa);
-            int normalMantissaShift = info.NormalMantissaBits - (int)(initialMantissaBits);
-            int normalExponent = initialExponent - normalMantissaShift;
+            var initialMantissaBits = BigInteger.CountSignificantBits(initialMantissa);
+            var normalMantissaShift = info.NormalMantissaBits - (int)(initialMantissaBits);
+            var normalExponent = initialExponent - normalMantissaShift;
 
-            ulong mantissa = initialMantissa;
-            int exponent = normalExponent;
+            var mantissa = initialMantissa;
+            var exponent = normalExponent;
 
             if (normalExponent > info.MaxBinaryExponent)
             {
@@ -162,7 +162,7 @@ namespace Backports.System
                 // mantissa in order to form a denormal number.  (The subtraction of
                 // an extra 1 is to account for the hidden bit of the mantissa that
                 // is not available for use when representing a denormal.)
-                int denormalMantissaShift = normalMantissaShift + normalExponent + info.ExponentBias - 1;
+                var denormalMantissaShift = normalMantissaShift + normalExponent + info.ExponentBias - 1;
 
                 // Denormal values have an exponent of zero, so the debiased exponent is
                 // the negation of the exponent bias:
@@ -246,7 +246,7 @@ namespace Backports.System
             mantissa &= info.DenormalMantissaMask;
 
             Debug.Assert((info.DenormalMantissaMask & (1UL << info.DenormalMantissaBits)) == 0);
-            ulong shiftedExponent = ((ulong)(exponent + info.ExponentBias)) << info.DenormalMantissaBits;
+            var shiftedExponent = ((ulong)(exponent + info.ExponentBias)) << info.DenormalMantissaBits;
             Debug.Assert((shiftedExponent & info.DenormalMantissaMask) == 0);
             Debug.Assert((mantissa & ~info.DenormalMantissaMask) == 0);
             Debug.Assert((shiftedExponent & ~(((1UL << info.ExponentBits) - 1) << info.DenormalMantissaBits)) == 0); // exponent fits in its place
@@ -264,13 +264,13 @@ namespace Backports.System
                 return AssembleFloatingPointBits(in info, value.ToUInt64(), baseExponent, !hasNonZeroFractionalPart);
             }
 
-            uint topBlockIndex = MathP.DivRem(integerBitsOfPrecision, 32, out uint topBlockBits);
-            uint middleBlockIndex = topBlockIndex - 1;
-            uint bottomBlockIndex = middleBlockIndex - 1;
+            var topBlockIndex = MathP.DivRem(integerBitsOfPrecision, 32, out var topBlockBits);
+            var middleBlockIndex = topBlockIndex - 1;
+            var bottomBlockIndex = middleBlockIndex - 1;
 
             ulong mantissa;
-            int exponent = baseExponent + ((int)(bottomBlockIndex) * 32);
-            bool hasZeroTail = !hasNonZeroFractionalPart;
+            var exponent = baseExponent + ((int)(bottomBlockIndex) * 32);
+            var hasZeroTail = !hasNonZeroFractionalPart;
 
             // When the top 64-bits perfectly span two blocks, we can get those blocks directly
             if (topBlockBits == 0)
@@ -281,21 +281,21 @@ namespace Backports.System
             {
                 // Otherwise, we need to read three blocks and combine them into a 64-bit mantissa
 
-                int bottomBlockShift = (int)(topBlockBits);
-                int topBlockShift = 64 - bottomBlockShift;
-                int middleBlockShift = topBlockShift - 32;
+                var bottomBlockShift = (int)(topBlockBits);
+                var topBlockShift = 64 - bottomBlockShift;
+                var middleBlockShift = topBlockShift - 32;
 
                 exponent += (int)(topBlockBits);
 
-                uint bottomBlock = value.GetBlock(bottomBlockIndex);
-                uint bottomBits = bottomBlock >> bottomBlockShift;
+                var bottomBlock = value.GetBlock(bottomBlockIndex);
+                var bottomBits = bottomBlock >> bottomBlockShift;
 
-                ulong middleBits = (ulong)(value.GetBlock(middleBlockIndex)) << middleBlockShift;
-                ulong topBits = (ulong)(value.GetBlock(topBlockIndex)) << topBlockShift;
+                var middleBits = (ulong)(value.GetBlock(middleBlockIndex)) << middleBlockShift;
+                var topBits = (ulong)(value.GetBlock(topBlockIndex)) << topBlockShift;
 
                 mantissa = topBits + middleBits + bottomBits;
 
-                uint unusedBottomBlockBitsMask = (1u << (int)(topBlockBits)) - 1;
+                var unusedBottomBlockBitsMask = (1u << (int)(topBlockBits)) - 1;
                 hasZeroTail &= (bottomBlock & unusedBottomBlockBitsMask) == 0;
             }
 
@@ -312,8 +312,8 @@ namespace Backports.System
         {
             Debug.Assert((1 <= count) && (count <= 9));
 
-            byte* end = (p + count);
-            uint res = (uint)(p[0] - '0');
+            var end = (p + count);
+            var res = (uint)(p[0] - '0');
 
             for (p++; p < end; p++)
             {
@@ -328,8 +328,8 @@ namespace Backports.System
         {
             Debug.Assert((1 <= count) && (count <= 19));
 
-            byte* end = (p + count);
-            ulong res = (ulong)(p[0] - '0');
+            var end = (p + count);
+            var res = (ulong)(p[0] - '0');
 
             for (p++; p < end; p++)
             {
@@ -356,13 +356,13 @@ namespace Backports.System
             // If the exponent is zero or negative, then the integer part is empty.  In
             // either case, the remaining digits form the fractional part of the mantissa.
 
-            uint totalDigits = (uint)(number.DigitsCount);
-            uint positiveExponent = (uint)(Math.Max(0, number.Scale));
+            var totalDigits = (uint)(number.DigitsCount);
+            var positiveExponent = (uint)(Math.Max(0, number.Scale));
 
-            uint integerDigitsPresent = Math.Min(positiveExponent, totalDigits);
-            uint fractionalDigitsPresent = totalDigits - integerDigitsPresent;
+            var integerDigitsPresent = Math.Min(positiveExponent, totalDigits);
+            var fractionalDigitsPresent = totalDigits - integerDigitsPresent;
 
-            uint fastExponent = (uint)(Math.Abs(number.Scale - integerDigitsPresent - fractionalDigitsPresent));
+            var fastExponent = (uint)(Math.Abs(number.Scale - integerDigitsPresent - fractionalDigitsPresent));
 
             // When the number of significant digits is less than or equal to 15 and the
             // scale is less than or equal to 22, we can take some shortcuts and just rely
@@ -373,7 +373,7 @@ namespace Backports.System
             // computed to the infinitely precise result and then rounded, which means that
             // we can rely on it to produce the correct result when both inputs are exact.
 
-            byte* src = number.GetDigitsPointer();
+            var src = number.GetDigitsPointer();
 
             if ((info.DenormalMantissaBits <= 23) && (totalDigits <= 7) && (fastExponent <= 10))
             {
@@ -382,7 +382,7 @@ namespace Backports.System
                 // wrong value when upcasting to double.
 
                 float result = DigitsToUInt32(src, (int)(totalDigits));
-                float scale = s_Pow10SingleTable[fastExponent];
+                var scale = s_Pow10SingleTable[fastExponent];
 
                 if (fractionalDigitsPresent != 0)
                 {
@@ -403,7 +403,7 @@ namespace Backports.System
             if ((totalDigits <= 15) && (fastExponent <= 22))
             {
                 double result = DigitsToUInt64(src, (int)(totalDigits));
-                double scale = s_Pow10DoubleTable[fastExponent];
+                var scale = s_Pow10DoubleTable[fastExponent];
 
                 if (fractionalDigitsPresent != 0)
                 {
@@ -438,19 +438,19 @@ namespace Backports.System
             // extra bit is used to correctly round the mantissa (if there are fewer bits
             // than this available, then that's totally okay; in that case we use what we
             // have and we don't need to round).
-            uint requiredBitsOfPrecision = (uint)(info.NormalMantissaBits + 1);
+            var requiredBitsOfPrecision = (uint)(info.NormalMantissaBits + 1);
 
-            uint totalDigits = (uint)(number.DigitsCount);
-            uint integerDigitsMissing = positiveExponent - integerDigitsPresent;
+            var totalDigits = (uint)(number.DigitsCount);
+            var integerDigitsMissing = positiveExponent - integerDigitsPresent;
 
-            const uint IntegerFirstIndex = 0;
-            uint integerLastIndex = integerDigitsPresent;
+            const uint integerFirstIndex = 0;
+            var integerLastIndex = integerDigitsPresent;
 
-            uint fractionalFirstIndex = integerLastIndex;
-            uint fractionalLastIndex = totalDigits;
+            var fractionalFirstIndex = integerLastIndex;
+            var fractionalLastIndex = totalDigits;
 
             // First, we accumulate the integer part of the mantissa into a big_integer:
-            AccumulateDecimalDigitsIntoBigInteger(ref number, IntegerFirstIndex, integerLastIndex, out BigInteger integerValue);
+            AccumulateDecimalDigitsIntoBigInteger(ref number, integerFirstIndex, integerLastIndex, out var integerValue);
 
             if (integerDigitsMissing > 0)
             {
@@ -466,7 +466,7 @@ namespace Backports.System
             // of the mantissa.  If either [1] this number has more than the required
             // number of bits of precision or [2] the mantissa has no fractional part,
             // then we can assemble the result immediately:
-            uint integerBitsOfPrecision = BigInteger.CountSignificantBits(ref integerValue);
+            var integerBitsOfPrecision = BigInteger.CountSignificantBits(ref integerValue);
 
             if ((integerBitsOfPrecision >= requiredBitsOfPrecision) || (fractionalDigitsPresent == 0))
             {
@@ -486,7 +486,7 @@ namespace Backports.System
             // computed as the power of 10 such that N/M is equal to the value of the
             // fractional part of the mantissa.
 
-            uint fractionalDenominatorExponent = fractionalDigitsPresent;
+            var fractionalDenominatorExponent = fractionalDigitsPresent;
 
             if (number.Scale < 0)
             {
@@ -501,7 +501,7 @@ namespace Backports.System
                 return info.ZeroBits;
             }
 
-            AccumulateDecimalDigitsIntoBigInteger(ref number, fractionalFirstIndex, fractionalLastIndex, out BigInteger fractionalNumerator);
+            AccumulateDecimalDigitsIntoBigInteger(ref number, fractionalFirstIndex, fractionalLastIndex, out var fractionalNumerator);
 
             if (fractionalNumerator.IsZero())
             {
@@ -513,7 +513,7 @@ namespace Backports.System
                 );
             }
 
-            BigInteger.Pow10(fractionalDenominatorExponent, out BigInteger fractionalDenominator);
+            BigInteger.Pow10(fractionalDenominatorExponent, out var fractionalDenominator);
 
             // Because we are using only the fractional part of the mantissa here, the
             // numerator is guaranteed to be smaller than the denominator.  We normalize
@@ -521,8 +521,8 @@ namespace Backports.System
             // the same position as the most significant bit in the denominator.  This
             // ensures that when we later shift the numerator N bits to the left, we
             // will produce N bits of precision.
-            uint fractionalNumeratorBits = BigInteger.CountSignificantBits(ref fractionalNumerator);
-            uint fractionalDenominatorBits = BigInteger.CountSignificantBits(ref fractionalDenominator);
+            var fractionalNumeratorBits = BigInteger.CountSignificantBits(ref fractionalNumerator);
+            var fractionalDenominatorBits = BigInteger.CountSignificantBits(ref fractionalDenominator);
 
             uint fractionalShift = 0;
 
@@ -536,8 +536,8 @@ namespace Backports.System
                 fractionalNumerator.ShiftLeft(fractionalShift);
             }
 
-            uint requiredFractionalBitsOfPrecision = requiredBitsOfPrecision - integerBitsOfPrecision;
-            uint remainingBitsOfPrecisionRequired = requiredFractionalBitsOfPrecision;
+            var requiredFractionalBitsOfPrecision = requiredBitsOfPrecision - integerBitsOfPrecision;
+            var remainingBitsOfPrecisionRequired = requiredFractionalBitsOfPrecision;
 
             if (integerBitsOfPrecision > 0)
             {
@@ -571,7 +571,7 @@ namespace Backports.System
             // of two by which we must multiply the fractional part to move it into the
             // range [1.0, 2.0).  This will either be the same as the shift we computed
             // earlier, or one greater than that shift:
-            uint fractionalExponent = fractionalShift;
+            var fractionalExponent = fractionalShift;
 
             if (BigInteger.Compare(ref fractionalNumerator, ref fractionalDenominator) < 0)
             {
@@ -580,24 +580,24 @@ namespace Backports.System
 
             fractionalNumerator.ShiftLeft(remainingBitsOfPrecisionRequired);
 
-            BigInteger.DivRem(ref fractionalNumerator, ref fractionalDenominator, out BigInteger bigFractionalMantissa, out BigInteger fractionalRemainder);
-            ulong fractionalMantissa = bigFractionalMantissa.ToUInt64();
-            bool hasZeroTail = !number.HasNonZeroTail && fractionalRemainder.IsZero();
+            BigInteger.DivRem(ref fractionalNumerator, ref fractionalDenominator, out var bigFractionalMantissa, out var fractionalRemainder);
+            var fractionalMantissa = bigFractionalMantissa.ToUInt64();
+            var hasZeroTail = !number.HasNonZeroTail && fractionalRemainder.IsZero();
 
             // We may have produced more bits of precision than were required.  Check,
             // and remove any "extra" bits:
-            uint fractionalMantissaBits = BigInteger.CountSignificantBits(fractionalMantissa);
+            var fractionalMantissaBits = BigInteger.CountSignificantBits(fractionalMantissa);
 
             if (fractionalMantissaBits > requiredFractionalBitsOfPrecision)
             {
-                int shift = (int)(fractionalMantissaBits - requiredFractionalBitsOfPrecision);
+                var shift = (int)(fractionalMantissaBits - requiredFractionalBitsOfPrecision);
                 hasZeroTail = hasZeroTail && (fractionalMantissa & ((1UL << shift) - 1)) == 0;
                 fractionalMantissa >>= shift;
             }
 
             // Compose the mantissa from the integer and fractional parts:
-            ulong integerMantissa = integerValue.ToUInt64();
-            ulong completeMantissa = (integerMantissa << (int)(requiredFractionalBitsOfPrecision)) + fractionalMantissa;
+            var integerMantissa = integerValue.ToUInt64();
+            var completeMantissa = (integerMantissa << (int)(requiredFractionalBitsOfPrecision)) + fractionalMantissa;
 
             // Compute the final exponent:
             // * If the mantissa had an integer part, then the exponent is one less than
@@ -609,7 +609,7 @@ namespace Backports.System
             // Then, in both cases, we subtract an additional one from the exponent, to
             // account for the fact that we've generated an extra bit of precision, for
             // use in rounding.
-            int finalExponent = (integerBitsOfPrecision > 0) ? (int)(integerBitsOfPrecision) - 2 : -(int)(fractionalExponent) - 1;
+            var finalExponent = (integerBitsOfPrecision > 0) ? (int)(integerBitsOfPrecision) - 2 : -(int)(fractionalExponent) - 1;
 
             return AssembleFloatingPointBits(in info, completeMantissa, finalExponent, hasZeroTail);
         }
@@ -623,13 +623,13 @@ namespace Backports.System
                 return 0;
             }
 
-            ulong extraBitsMask = (1UL << (shift - 1)) - 1;
-            ulong roundBitMask = (1UL << (shift - 1));
-            ulong lsbBitMask = 1UL << shift;
+            var extraBitsMask = (1UL << (shift - 1)) - 1;
+            var roundBitMask = (1UL << (shift - 1));
+            var lsbBitMask = 1UL << shift;
 
-            bool lsbBit = (value & lsbBitMask) != 0;
-            bool roundBit = (value & roundBitMask) != 0;
-            bool hasTailBits = !hasZeroTail || (value & extraBitsMask) != 0;
+            var lsbBit = (value & lsbBitMask) != 0;
+            var roundBit = (value & roundBitMask) != 0;
+            var hasTailBits = !hasZeroTail || (value & extraBitsMask) != 0;
 
             return (value >> shift) + (ShouldRoundUp(lsbBit, roundBit, hasTailBits) ? 1UL : 0);
         }

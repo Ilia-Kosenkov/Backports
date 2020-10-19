@@ -61,7 +61,7 @@ namespace Backports.System
                 int numDigits;
                 for (numDigits = 0; numDigits < Digits.Length; numDigits++)
                 {
-                    byte digit = Digits[numDigits];
+                    var digit = Digits[numDigits];
 
                     if (digit == 0)
                     {
@@ -79,7 +79,7 @@ namespace Backports.System
             public byte* GetDigitsPointer()
             {
                 // This is safe to do since we are a ref struct
-                return (byte*)(Unsafe.AsPointer(ref Digits[0]));
+                return (byte*)Unsafe.AsPointer(ref Digits[0]);
             }
 
             //
@@ -92,14 +92,12 @@ namespace Backports.System
                 sb.Append('[');
                 sb.Append('"');
 
-                for (int i = 0; i < Digits.Length; i++)
+                for (var i = 0; i < Digits.Length; i++)
                 {
-                    byte digit = Digits[i];
+                    var digit = Digits[i];
 
                     if (digit == 0)
-                    {
                         break;
-                    }
 
                     sb.Append((char)(digit));
                 }

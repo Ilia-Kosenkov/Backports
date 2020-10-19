@@ -115,7 +115,7 @@ namespace Backports.System
             }
 
             var pos = 0;
-            foreach (byte b in bytes)
+            foreach (var b in bytes)
             {
                 ToCharsBuffer(b, result, pos, casing);
                 pos += 2;
@@ -171,10 +171,10 @@ namespace Backports.System
             Debug.Assert(chars.Length % 2 == 0, "Un-even number of characters provided");
             Debug.Assert(chars.Length / 2 == bytes.Length, "Target buffer not right-sized for provided characters");
 
-            int i = 0;
-            int j = 0;
-            int byteLo = 0;
-            int byteHi = 0;
+            var i = 0;
+            var j = 0;
+            var byteLo = 0;
+            var byteHi = 0;
             while (j < bytes.Length)
             {
                 byteLo = FromChar(chars[i + 1]);
@@ -197,16 +197,10 @@ namespace Backports.System
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int FromChar(int c)
-        {
-            return c >= CharToHexLookup.Length ? 0xFF : CharToHexLookup[c];
-        }
+        public static int FromChar(int c) => c >= CharToHexLookup.Length ? 0xFF : CharToHexLookup[c];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int FromUpperChar(int c)
-        {
-            return c > 71 ? 0xFF : CharToHexLookup[c];
-        }
+        public static int FromUpperChar(int c) => c > 71 ? 0xFF : CharToHexLookup[c];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int FromLowerChar(int c)
@@ -221,22 +215,13 @@ namespace Backports.System
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsHexChar(int c)
-        {
-            return FromChar(c) != 0xFF;
-        }
+        public static bool IsHexChar(int c) => FromChar(c) != 0xFF;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsHexUpperChar(int c)
-        {
-            return (uint)(c - '0') <= 9 || (uint)(c - 'A') <= ('F' - 'A');
-        }
+        public static bool IsHexUpperChar(int c) => (uint)(c - '0') <= 9 || (uint)(c - 'A') <= ('F' - 'A');
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsHexLowerChar(int c)
-        {
-            return (uint)(c - '0') <= 9 || (uint)(c - 'a') <= ('f' - 'a');
-        }
+        public static bool IsHexLowerChar(int c) => (uint)(c - '0') <= 9 || (uint)(c - 'a') <= ('f' - 'a');
 
         /// <summary>Map from an ASCII char to its hex value, e.g. arr['b'] == 11. 0xFF means it's not a hex digit.</summary>
         public static ReadOnlySpan<byte> CharToHexLookup => new byte[]

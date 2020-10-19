@@ -36,8 +36,7 @@ namespace Backports.System
             private const int BitsPerBlock = sizeof(int) * 8;
             private const int MaxBlockCount = (MaxBits + (BitsPerBlock - 1)) / BitsPerBlock;
 
-            private static readonly uint[] s_Pow10UInt32Table = new uint[]
-            {
+            private static readonly uint[] s_Pow10UInt32Table = {
                 1,          // 10^0
                 10,         // 10^1
                 100,        // 10^2
@@ -51,8 +50,7 @@ namespace Backports.System
                 1000000000  // 10^9
             };
 
-            private static readonly int[] s_Pow10BigNumTableIndices = new int[]
-            {
+            private static readonly int[] s_Pow10BigNumTableIndices = {
                 0,          // 10^8
                 2,          // 10^16
                 5,          // 10^32
@@ -63,8 +61,7 @@ namespace Backports.System
                 116,        // 10^1024
             };
 
-            private static readonly uint[] s_Pow10BigNumTable = new uint[]
-            {
+            private static readonly uint[] s_Pow10BigNumTable = {
                 // 10^8
                 1,          // _length
                 100000000,  // _blocks
@@ -323,11 +320,11 @@ namespace Backports.System
             public static void Add(ref BigInteger lhs, ref BigInteger rhs, out BigInteger result)
             {
                 // determine which operand has the smaller length
-                ref BigInteger large = ref (lhs._length < rhs._length) ? ref rhs : ref lhs;
-                ref BigInteger small = ref (lhs._length < rhs._length) ? ref lhs : ref rhs;
+                ref var large = ref lhs._length < rhs._length ? ref rhs : ref lhs;
+                ref var small = ref lhs._length < rhs._length ? ref lhs : ref rhs;
 
-                int largeLength = large._length;
-                int smallLength = small._length;
+                var largeLength = large._length;
+                var smallLength = small._length;
 
                 // The output will be at least as long as the largest input
                 result._length = largeLength;
@@ -335,15 +332,15 @@ namespace Backports.System
                 // Add each block and add carry the overflow to the next block
                 ulong carry = 0;
 
-                int largeIndex = 0;
-                int smallIndex = 0;
-                int resultIndex = 0;
+                var largeIndex = 0;
+                var smallIndex = 0;
+                var resultIndex = 0;
 
                 while (smallIndex < smallLength)
                 {
-                    ulong sum = carry + large._blocks[largeIndex] + small._blocks[smallIndex];
+                    var sum = carry + large._blocks[largeIndex] + small._blocks[smallIndex];
                     carry = sum >> 32;
-                    result._blocks[resultIndex] = (uint)(sum);
+                    result._blocks[resultIndex] = (uint)sum;
 
                     largeIndex++;
                     smallIndex++;
@@ -353,39 +350,36 @@ namespace Backports.System
                 // Add the carry to any blocks that only exist in the large operand
                 while (largeIndex < largeLength)
                 {
-                    ulong sum = carry + large._blocks[largeIndex];
+                    var sum = carry + large._blocks[largeIndex];
                     carry = sum >> 32;
-                    result._blocks[resultIndex] = (uint)(sum);
+                    result._blocks[resultIndex] = (uint)sum;
 
                     largeIndex++;
                     resultIndex++;
                 }
 
                 // If there's still a carry, append a new block
-                if (carry != 0)
-                {
-                    Debug.Assert(carry == 1);
-                    Debug.Assert((resultIndex == largeLength) && (largeLength < MaxBlockCount));
+                if (carry == 0) return;
 
-                    result._blocks[resultIndex] = 1;
-                    result._length++;
-                }
+                Debug.Assert(carry == 1);
+                Debug.Assert(resultIndex == largeLength && largeLength < MaxBlockCount);
+
+                result._blocks[resultIndex] = 1;
+                result._length++;
             }
 
             public static int Compare(ref BigInteger lhs, ref BigInteger rhs)
             {
-                Debug.Assert(unchecked((uint)(lhs._length)) <= MaxBlockCount);
-                Debug.Assert(unchecked((uint)(rhs._length)) <= MaxBlockCount);
+                Debug.Assert(unchecked((uint)lhs._length) <= MaxBlockCount);
+                Debug.Assert(unchecked((uint)rhs._length) <= MaxBlockCount);
 
-                int lhsLength = lhs._length;
-                int rhsLength = rhs._length;
+                var lhsLength = lhs._length;
+                var rhsLength = rhs._length;
 
-                int lengthDelta = (lhsLength - rhsLength);
+                var lengthDelta = lhsLength - rhsLength;
 
                 if (lengthDelta != 0)
-                {
                     return lengthDelta;
-                }
 
                 if (lhsLength == 0)
                 {
@@ -393,41 +387,31 @@ namespace Backports.System
                     return 0;
                 }
 
-                for (int index = (lhsLength - 1); index >= 0; index--)
+                for (var index = lhsLength - 1; index >= 0; index--)
                 {
-                    long delta = (long)(lhs._blocks[index]) - rhs._blocks[index];
+                    var delta = (long)lhs._blocks[index] - rhs._blocks[index];
 
                     if (delta != 0)
-                    {
                         return delta > 0 ? 1 : -1;
-                    }
                 }
 
                 return 0;
             }
 
-            public static uint CountSignificantBits(uint value)
-            {
-                return 32 - (uint)BitOperations.LeadingZeroCount(value);
-            }
+            public static uint CountSignificantBits(uint value) => 32 - (uint)BitOperations.LeadingZeroCount(value);
 
-            public static uint CountSignificantBits(ulong value)
-            {
-                return 64 - (uint)BitOperations.LeadingZeroCount(value);
-            }
+            public static uint CountSignificantBits(ulong value) => 64 - (uint)BitOperations.LeadingZeroCount(value);
 
             public static uint CountSignificantBits(ref BigInteger value)
             {
                 if (value.IsZero())
-                {
                     return 0;
-                }
 
                 // We don't track any unused blocks, so we only need to do a BSR on the
                 // last index and add that to the number of bits we skipped.
 
-                uint lastIndex = (uint)(value._length - 1);
-                return (lastIndex * BitsPerBlock) + CountSignificantBits(value._blocks[lastIndex]);
+                var lastIndex = (uint)(value._length - 1);
+                return lastIndex * BitsPerBlock + CountSignificantBits(value._blocks[lastIndex]);
             }
 
             public static void DivRem(ref BigInteger lhs, ref BigInteger rhs, out BigInteger quo, out BigInteger rem)
@@ -444,12 +428,12 @@ namespace Backports.System
                     return;
                 }
 
-                int lhsLength = lhs._length;
-                int rhsLength = rhs._length;
+                var lhsLength = lhs._length;
+                var rhsLength = rhs._length;
 
-                if ((lhsLength == 1) && (rhsLength == 1))
+                if (lhsLength == 1 && rhsLength == 1)
                 {
-                    uint quotient = MathP.DivRem(lhs._blocks[0], rhs._blocks[0], out uint remainder);
+                    var quotient = MathP.DivRem(lhs._blocks[0], rhs._blocks[0], out var remainder);
                     SetUInt32(out quo, quotient);
                     SetUInt32(out rem, remainder);
                     return;
@@ -459,55 +443,48 @@ namespace Backports.System
                 {
                     // We can make the computation much simpler if the rhs is only one block
 
-                    int quoLength = lhsLength;
+                    var quoLength = lhsLength;
 
                     ulong rhsValue = rhs._blocks[0];
                     ulong carry = 0;
 
-                    for (int i = quoLength - 1; i >= 0; i--)
+                    for (var i = quoLength - 1; i >= 0; i--)
                     {
-                        ulong value = (carry << 32) | lhs._blocks[i];
-                        ulong digit = MathP.DivRem(value, rhsValue, out carry);
+                        var value = (carry << 32) | lhs._blocks[i];
+                        var digit = MathP.DivRem(value, rhsValue, out carry);
 
-                        if ((digit == 0) && (i == (quoLength - 1)))
-                        {
+                        if (digit == 0 && i == quoLength - 1)
                             quoLength--;
-                        }
                         else
-                        {
-                            quo._blocks[i] = (uint)(digit);
-                        }
+                            quo._blocks[i] = (uint) digit;
                     }
 
                     quo._length = quoLength;
-                    SetUInt32(out rem, (uint)(carry));
-
-                    return;
+                    SetUInt32(out rem, (uint)carry);
                 }
                 else if (rhsLength > lhsLength)
                 {
                     // Handle the case where we have no quotient
                     SetZero(out quo);
                     SetValue(out rem, ref lhs);
-                    return;
                 }
                 else
                 {
-                    int quoLength = lhsLength - rhsLength + 1;
+                    var quoLength = lhsLength - rhsLength + 1;
                     SetValue(out rem, ref lhs);
-                    int remLength = lhsLength;
+                    var remLength = lhsLength;
 
                     // Executes the "grammar-school" algorithm for computing q = a / b.
                     // Before calculating q_i, we get more bits into the highest bit
                     // block of the divisor. Thus, guessing digits of the quotient
                     // will be more precise. Additionally we'll get r = a % b.
 
-                    uint divHi = rhs._blocks[rhsLength - 1];
-                    uint divLo = rhs._blocks[rhsLength - 2];
+                    var divHi = rhs._blocks[rhsLength - 1];
+                    var divLo = rhs._blocks[rhsLength - 2];
 
                     // We measure the leading zeros of the divisor
-                    int shiftLeft = BitOperations.LeadingZeroCount(divHi);
-                    int shiftRight = 32 - shiftLeft;
+                    var shiftLeft = BitOperations.LeadingZeroCount(divHi);
+                    var shiftRight = 32 - shiftLeft;
 
                     // And, we make sure the most significant bit is set
                     if (shiftLeft > 0)
@@ -517,19 +494,19 @@ namespace Backports.System
 
                         if (rhsLength > 2)
                         {
-                            divLo |= (rhs._blocks[rhsLength - 3] >> shiftRight);
+                            divLo |= rhs._blocks[rhsLength - 3] >> shiftRight;
                         }
                     }
 
                     // Then, we divide all of the bits as we would do it using
                     // pen and paper: guessing the next digit, subtracting, ...
-                    for (int i = lhsLength; i >= rhsLength; i--)
+                    for (var i = lhsLength; i >= rhsLength; i--)
                     {
-                        int n = i - rhsLength;
-                        uint t = i < lhsLength ? rem._blocks[i] : 0;
+                        var n = i - rhsLength;
+                        var t = i < lhsLength ? rem._blocks[i] : 0;
 
-                        ulong valHi = ((ulong)(t) << 32) | rem._blocks[i - 1];
-                        uint valLo = i > 1 ? rem._blocks[i - 2] : 0;
+                        var valHi = ((ulong)t << 32) | rem._blocks[i - 1];
+                        var valLo = i > 1 ? rem._blocks[i - 2] : 0;
 
                         // We shifted the divisor, we shift the dividend too
                         if (shiftLeft > 0)
@@ -539,13 +516,13 @@ namespace Backports.System
 
                             if (i > 2)
                             {
-                                valLo |= (rem._blocks[i - 3] >> shiftRight);
+                                valLo |= rem._blocks[i - 3] >> shiftRight;
                             }
                         }
 
                         // First guess for the current digit of the quotient,
                         // which naturally must have only 32 bits...
-                        ulong digit = valHi / divHi;
+                        var digit = valHi / divHi;
 
                         if (digit > uint.MaxValue)
                         {
@@ -561,7 +538,7 @@ namespace Backports.System
                         if (digit > 0)
                         {
                             // Now it's time to subtract our current quotient
-                            uint carry = SubtractDivisor(ref rem, n, ref rhs, digit);
+                            var carry = SubtractDivisor(ref rem, n, ref rhs, digit);
 
                             if (carry != t)
                             {
@@ -578,13 +555,13 @@ namespace Backports.System
                         // We have the digit!
                         if (quoLength != 0)
                         {
-                            if ((digit == 0) && (n == (quoLength - 1)))
+                            if (digit == 0 && n == quoLength - 1)
                             {
                                 quoLength--;
                             }
                             else
                             {
-                                quo._blocks[n] = (uint)(digit);
+                                quo._blocks[n] = (uint)digit;
                             }
                         }
 
@@ -598,7 +575,7 @@ namespace Backports.System
 
                     // We need to check for the case where remainder is zero
 
-                    for (int i = remLength - 1; i >= 0; i--)
+                    for (var i = remLength - 1; i >= 0; i--)
                     {
                         if (rem._blocks[i] == 0)
                         {
@@ -612,47 +589,42 @@ namespace Backports.System
 
             public static uint HeuristicDivide(ref BigInteger dividend, ref BigInteger divisor)
             {
-                int divisorLength = divisor._length;
+                var divisorLength = divisor._length;
 
                 if (dividend._length < divisorLength)
-                {
                     return 0;
-                }
 
                 // This is an estimated quotient. Its error should be less than 2.
                 // Reference inequality:
                 // a/b - floor(floor(a)/(floor(b) + 1)) < 2
-                int lastIndex = (divisorLength - 1);
-                uint quotient = dividend._blocks[lastIndex] / (divisor._blocks[lastIndex] + 1);
+                var lastIndex = divisorLength - 1;
+                var quotient = dividend._blocks[lastIndex] / (divisor._blocks[lastIndex] + 1);
 
                 if (quotient != 0)
                 {
                     // Now we use our estimated quotient to update each block of dividend.
                     // dividend = dividend - divisor * quotient
-                    int index = 0;
+                    var index = 0;
 
                     ulong borrow = 0;
                     ulong carry = 0;
 
                     do
                     {
-                        ulong product = ((ulong)(divisor._blocks[index]) * quotient) + carry;
+                        var product = (ulong)divisor._blocks[index] * quotient + carry;
                         carry = product >> 32;
 
-                        ulong difference = (ulong)(dividend._blocks[index]) - (uint)(product) - borrow;
+                        var difference = (ulong)dividend._blocks[index] - (uint)product - borrow;
                         borrow = (difference >> 32) & 1;
 
-                        dividend._blocks[index] = (uint)(difference);
+                        dividend._blocks[index] = (uint)difference;
 
                         index++;
                     }
                     while (index < divisorLength);
 
                     // Remove all leading zero blocks from dividend
-                    while ((divisorLength > 0) && (dividend._blocks[divisorLength - 1] == 0))
-                    {
-                        divisorLength--;
-                    }
+                    while (divisorLength > 0 && dividend._blocks[divisorLength - 1] == 0) divisorLength--;
 
                     dividend._length = divisorLength;
                 }
@@ -664,22 +636,22 @@ namespace Backports.System
                     quotient++;
 
                     // dividend = dividend - divisor
-                    int index = 0;
+                    var index = 0;
                     ulong borrow = 0;
 
                     do
                     {
-                        ulong difference = (ulong)(dividend._blocks[index]) - divisor._blocks[index] - borrow;
+                        var difference = (ulong)dividend._blocks[index] - divisor._blocks[index] - borrow;
                         borrow = (difference >> 32) & 1;
 
-                        dividend._blocks[index] = (uint)(difference);
+                        dividend._blocks[index] = (uint)difference;
 
                         index++;
                     }
                     while (index < divisorLength);
 
                     // Remove all leading zero blocks from dividend
-                    while ((divisorLength > 0) && (dividend._blocks[divisorLength - 1] == 0))
+                    while (divisorLength > 0 && dividend._blocks[divisorLength - 1] == 0)
                     {
                         divisorLength--;
                     }
@@ -701,24 +673,20 @@ namespace Backports.System
                 if (value <= 1)
                 {
                     if (value == 0)
-                    {
                         SetZero(out result);
-                    }
                     else
-                    {
                         SetValue(out result, ref lhs);
-                    }
                     return;
                 }
 
-                int lhsLength = lhs._length;
-                int index = 0;
+                var lhsLength = lhs._length;
+                var index = 0;
                 uint carry = 0;
 
                 while (index < lhsLength)
                 {
-                    ulong product = ((ulong)(lhs._blocks[index]) * value) + carry;
-                    result._blocks[index] = (uint)(product);
+                    var product = (ulong)lhs._blocks[index] * value + carry;
+                    result._blocks[index] = (uint)product;
                     carry = (uint)(product >> 32);
 
                     index++;
@@ -726,14 +694,12 @@ namespace Backports.System
 
                 if (carry != 0)
                 {
-                    Debug.Assert(unchecked((uint)(lhsLength)) + 1 <= MaxBlockCount);
+                    Debug.Assert(unchecked((uint)lhsLength) + 1 <= MaxBlockCount);
                     result._blocks[index] = carry;
-                    result._length = (lhsLength + 1);
+                    result._length = lhsLength + 1;
                 }
                 else
-                {
                     result._length = lhsLength;
-                }
             }
 
             public static void Multiply(ref BigInteger lhs, ref BigInteger rhs, out BigInteger result)
@@ -750,11 +716,11 @@ namespace Backports.System
                     return;
                 }
 
-                ref readonly BigInteger large = ref lhs;
-                int largeLength = lhs._length;
+                ref readonly var large = ref lhs;
+                var largeLength = lhs._length;
 
-                ref readonly BigInteger small = ref rhs;
-                int smallLength = rhs._length;
+                ref readonly var small = ref rhs;
+                var smallLength = rhs._length;
 
                 if (largeLength < smallLength)
                 {
@@ -765,46 +731,46 @@ namespace Backports.System
                     smallLength = lhs._length;
                 }
 
-                int maxResultLength = smallLength + largeLength;
-                Debug.Assert(unchecked((uint)(maxResultLength)) <= MaxBlockCount);
+                var maxResultLength = smallLength + largeLength;
+                Debug.Assert(unchecked((uint)maxResultLength) <= MaxBlockCount);
 
                 // Zero out result internal blocks.
                 result._length = maxResultLength;
                 //Buffer.ZeroMemory((byte*)result.GetBlocksPointer(), (uint)maxResultLength * sizeof(uint));
                 Buffer.ZeroMemory(ref result.GetBlocksRef(), (uint)maxResultLength * sizeof(uint));
 
-                int smallIndex = 0;
-                int resultStartIndex = 0;
+                var smallIndex = 0;
+                var resultStartIndex = 0;
 
                 while (smallIndex < smallLength)
                 {
                     // Multiply each block of large BigNum.
                     if (small._blocks[smallIndex] != 0)
                     {
-                        int largeIndex = 0;
-                        int resultIndex = resultStartIndex;
+                        var largeIndex = 0;
+                        var resultIndex = resultStartIndex;
 
                         ulong carry = 0;
 
                         do
                         {
-                            ulong product = result._blocks[resultIndex] + ((ulong)(small._blocks[smallIndex]) * large._blocks[largeIndex]) + carry;
+                            var product = result._blocks[resultIndex] + (ulong)small._blocks[smallIndex] * large._blocks[largeIndex] + carry;
                             carry = product >> 32;
-                            result._blocks[resultIndex] = (uint)(product);
+                            result._blocks[resultIndex] = (uint)product;
 
                             resultIndex++;
                             largeIndex++;
                         }
                         while (largeIndex < largeLength);
 
-                        result._blocks[resultIndex] = (uint)(carry);
+                        result._blocks[resultIndex] = (uint)carry;
                     }
 
                     smallIndex++;
                     resultStartIndex++;
                 }
 
-                if ((maxResultLength > 0) && (result._blocks[maxResultLength - 1] == 0))
+                if (maxResultLength > 0 && result._blocks[maxResultLength - 1] == 0)
                 {
                     result._length--;
                 }
@@ -812,15 +778,13 @@ namespace Backports.System
 
             public static void Pow2(uint exponent, out BigInteger result)
             {
-                uint blocksToShift = DivRem32(exponent, out uint remainingBitsToShift);
+                var blocksToShift = DivRem32(exponent, out var remainingBitsToShift);
                 result._length = (int)blocksToShift + 1;
                 Debug.Assert(unchecked((uint)result._length) <= MaxBlockCount);
                 if (blocksToShift > 0)
-                {
                     //Buffer.ZeroMemory((byte*)result.GetBlocksPointer(), blocksToShift * sizeof(uint));
                     Buffer.ZeroMemory(ref result.GetBlocksRef(), blocksToShift * sizeof(uint));
-                }
-                result._blocks[blocksToShift] = 1U << (int)(remainingBitsToShift);
+                result._blocks[blocksToShift] = 1U << (int)remainingBitsToShift;
             }
 
             public static void Pow10(uint exponent, out BigInteger result)
@@ -855,11 +819,11 @@ namespace Backports.System
                 // We validate here, since this is the only current consumer of the array
                 //Debug.Assert((s_Pow10BigNumTableIndices[^1] + MaxBlockCount + 2) == s_Pow10BigNumTable.Length);
 
-                SetUInt32(out BigInteger temp1, s_Pow10UInt32Table[exponent & 0x7]);
-                ref BigInteger lhs = ref temp1;
+                SetUInt32(out var temp1, s_Pow10UInt32Table[exponent & 0x7]);
+                ref var lhs = ref temp1;
 
-                SetZero(out BigInteger temp2);
-                ref BigInteger product = ref temp2;
+                SetZero(out var temp2);
+                ref var product = ref temp2;
 
                 exponent >>= 3;
                 uint index = 0;
@@ -872,12 +836,12 @@ namespace Backports.System
                         // Multiply into the next temporary
                         fixed (uint* pBigNumEntry = &s_Pow10BigNumTable[s_Pow10BigNumTableIndices[index]])
                         {
-                            ref BigInteger rhs = ref *(BigInteger*)(pBigNumEntry);
+                            ref var rhs = ref *(BigInteger*)pBigNumEntry;
                             Multiply(ref lhs, ref rhs, out product);
                         }
 
                         // Swap to the next temporary
-                        ref BigInteger temp = ref product;
+                        ref var temp = ref product;
                         product = ref lhs;
                         lhs = ref temp;
                     }
@@ -892,8 +856,8 @@ namespace Backports.System
 
             private static uint AddDivisor(ref BigInteger lhs, int lhsStartIndex, ref BigInteger rhs)
             {
-                int lhsLength = lhs._length;
-                int rhsLength = rhs._length;
+                var lhsLength = lhs._length;
+                var rhsLength = rhs._length;
 
                 Debug.Assert(lhsLength >= 0);
                 Debug.Assert(rhsLength >= 0);
@@ -901,18 +865,18 @@ namespace Backports.System
 
                 // Repairs the dividend, if the last subtract was too much
 
-                ulong carry = 0UL;
+                var carry = 0UL;
 
-                for (int i = 0; i < rhsLength; i++)
+                for (var i = 0; i < rhsLength; i++)
                 {
-                    ref uint lhsValue = ref lhs._blocks[lhsStartIndex + i];
+                    ref var lhsValue = ref lhs._blocks[lhsStartIndex + i];
 
-                    ulong digit = lhsValue + carry + rhs._blocks[i];
+                    var digit = lhsValue + carry + rhs._blocks[i];
                     lhsValue = unchecked((uint)digit);
                     carry = digit >> 32;
                 }
 
-                return (uint)(carry);
+                return (uint)carry;
             }
 
             private static bool DivideGuessTooBig(ulong q, ulong valHi, uint valLo, uint divHi, uint divLo)
@@ -924,10 +888,10 @@ namespace Backports.System
                 // than the three most significant limbs of the current dividend
                 // we return true, which means the current guess is still too big.
 
-                ulong chkHi = divHi * q;
-                ulong chkLo = divLo * q;
+                var chkHi = divHi * q;
+                var chkLo = divLo * q;
 
-                chkHi += (chkLo >> 32);
+                chkHi += chkLo >> 32;
                 chkLo &= uint.MaxValue;
 
                 if (chkHi < valHi)
@@ -947,8 +911,8 @@ namespace Backports.System
 
             private static uint SubtractDivisor(ref BigInteger lhs, int lhsStartIndex, ref BigInteger rhs, ulong q)
             {
-                int lhsLength = lhs._length - lhsStartIndex;
-                int rhsLength = rhs._length;
+                var lhsLength = lhs._length - lhsStartIndex;
+                var rhsLength = rhs._length;
 
                 Debug.Assert(lhsLength >= 0);
                 Debug.Assert(rhsLength >= 0);
@@ -960,28 +924,25 @@ namespace Backports.System
 
                 ulong carry = 0;
 
-                for (int i = 0; i < rhsLength; i++)
+                for (var i = 0; i < rhsLength; i++)
                 {
                     carry += rhs._blocks[i] * q;
-                    uint digit = unchecked((uint)carry);
+                    var digit = unchecked((uint)carry);
                     carry >>= 32;
 
-                    ref uint lhsValue = ref lhs._blocks[lhsStartIndex + i];
+                    ref var lhsValue = ref lhs._blocks[lhsStartIndex + i];
 
-                    if (lhsValue < digit)
-                    {
-                        carry++;
-                    }
+                    if (lhsValue < digit) carry++;
 
                     lhsValue = unchecked(lhsValue - digit);
                 }
 
-                return (uint)(carry);
+                return (uint)carry;
             }
 
             public void Add(uint value)
             {
-                int length = _length;
+                var length = _length;
                 if (length == 0)
                 {
                     SetUInt32(out this, value);
@@ -995,7 +956,7 @@ namespace Backports.System
                     return;
                 }
 
-                for (int index = 1; index < length; index++)
+                for (var index = 1; index < length; index++)
                 {
                     _blocks[index]++;
                     if (_blocks[index] > 0)
@@ -1005,7 +966,7 @@ namespace Backports.System
                     }
                 }
 
-                Debug.Assert(unchecked((uint)(length)) + 1 <= MaxBlockCount);
+                Debug.Assert(unchecked((uint)length) + 1 <= MaxBlockCount);
                 _blocks[length] = 1;
                 _length = length + 1;
             }
@@ -1016,20 +977,11 @@ namespace Backports.System
                 return _blocks[index];
             }
 
-            public int GetLength()
-            {
-                return _length;
-            }
+            public int GetLength() => _length;
 
-            public bool IsZero()
-            {
-                return _length == 0;
-            }
+            public bool IsZero() => _length == 0;
 
-            public void Multiply(uint value)
-            {
-                Multiply(ref this, value, out this);
-            }
+            public void Multiply(uint value) => Multiply(ref this, value, out this);
 
             public void Multiply(ref BigInteger value)
             {
@@ -1039,7 +991,7 @@ namespace Backports.System
                 }
                 else
                 {
-                    SetValue(out BigInteger temp, ref this);
+                    SetValue(out var temp, ref this);
                     Multiply(ref temp, ref value, out this);
                 }
             }
@@ -1047,41 +999,36 @@ namespace Backports.System
             public void Multiply10()
             {
                 if (IsZero())
-                {
                     return;
-                }
 
-                int index = 0;
-                int length = _length;
+                var index = 0;
+                var length = _length;
                 ulong carry = 0;
 
                 do
                 {
-                    ulong block = (ulong)(_blocks[index]);
-                    ulong product = (block << 3) + (block << 1) + carry;
+                    var block = (ulong)_blocks[index];
+                    var product = (block << 3) + (block << 1) + carry;
                     carry = product >> 32;
-                    _blocks[index] = (uint)(product);
+                    _blocks[index] = (uint)product;
 
                     index++;
                 } while (index < length);
 
-                if (carry != 0)
-                {
-                    Debug.Assert(unchecked((uint)(_length)) + 1 <= MaxBlockCount);
-                    _blocks[index] = (uint)carry;
-                    _length++;
-                }
+                if (carry == 0) return;
+
+                Debug.Assert(unchecked((uint)_length) + 1 <= MaxBlockCount);
+                _blocks[index] = (uint)carry;
+                _length++;
             }
 
             public void MultiplyPow10(uint exponent)
             {
                 if (exponent <= 9)
-                {
                     Multiply(s_Pow10UInt32Table[exponent]);
-                }
                 else if (!IsZero())
                 {
-                    Pow10(exponent, out BigInteger poweredValue);
+                    Pow10(exponent, out var poweredValue);
                     Multiply(ref poweredValue);
                 }
             }
@@ -1089,9 +1036,7 @@ namespace Backports.System
             public static void SetUInt32(out BigInteger result, uint value)
             {
                 if (value == 0)
-                {
                     SetZero(out result);
-                }
                 else
                 {
                     result._blocks[0] = value;
@@ -1102,12 +1047,10 @@ namespace Backports.System
             public static void SetUInt64(out BigInteger result, ulong value)
             {
                 if (value <= uint.MaxValue)
-                {
-                    SetUInt32(out result, (uint)(value));
-                }
+                    SetUInt32(out result, (uint) value);
                 else
                 {
-                    result._blocks[0] = (uint)(value);
+                    result._blocks[0] = (uint)value;
                     result._blocks[1] = (uint)(value >> 32);
 
                     result._length = 2;
@@ -1116,7 +1059,7 @@ namespace Backports.System
 
             public static void SetValue(out BigInteger result, ref BigInteger value)
             {
-                int rhsLength = value._length;
+                var rhsLength = value._length;
                 result._length = rhsLength;
                 Buffer.Memcpy(ref result.GetBlocksRef(), ref value.GetBlocksRef(), rhsLength * sizeof(uint));
             }
@@ -1129,18 +1072,16 @@ namespace Backports.System
             public void ShiftLeft(uint shift)
             {
                 // Process blocks high to low so that we can safely process in place
-                int length = _length;
+                var length = _length;
 
-                if ((length == 0) || (shift == 0))
-                {
+                if (length == 0 || shift == 0)
                     return;
-                }
 
-                uint blocksToShift = DivRem32(shift, out uint remainingBitsToShift);
+                var blocksToShift = DivRem32(shift, out var remainingBitsToShift);
 
                 // Copy blocks from high to low
-                int readIndex = (length - 1);
-                int writeIndex = readIndex + (int)(blocksToShift);
+                var readIndex = length - 1;
+                var writeIndex = readIndex + (int)blocksToShift;
 
                 // Check if the shift is block aligned
                 if (remainingBitsToShift == 0)
@@ -1154,7 +1095,7 @@ namespace Backports.System
                         writeIndex--;
                     }
 
-                    _length += (int)(blocksToShift);
+                    _length += (int)blocksToShift;
 
                     // Zero the remaining low blocks
                     //Buffer.ZeroMemory((byte*)GetBlocksPointer(), blocksToShift * sizeof(uint));
@@ -1171,14 +1112,14 @@ namespace Backports.System
                     _length = writeIndex + 1;
 
                     // Output the initial blocks
-                    uint lowBitsShift = (32 - remainingBitsToShift);
+                    var lowBitsShift = 32 - remainingBitsToShift;
                     uint highBits = 0;
-                    uint block = _blocks[readIndex];
-                    uint lowBits = block >> (int)(lowBitsShift);
+                    var block = _blocks[readIndex];
+                    var lowBits = block >> (int)lowBitsShift;
                     while (readIndex > 0)
                     {
                         _blocks[writeIndex] = highBits | lowBits;
-                        highBits = block << (int)(remainingBitsToShift);
+                        highBits = block << (int)remainingBitsToShift;
 
                         --readIndex;
                         --writeIndex;
@@ -1189,49 +1130,31 @@ namespace Backports.System
 
                     // Output the final blocks
                     _blocks[writeIndex] = highBits | lowBits;
-                    _blocks[writeIndex - 1] = block << (int)(remainingBitsToShift);
+                    _blocks[writeIndex - 1] = block << (int)remainingBitsToShift;
 
                     // Zero the remaining low blocks
                     // Using different memory zeroing method
                     //Buffer.ZeroMemory((byte*)GetBlocksPointer(), blocksToShift * sizeof(uint));
                     Buffer.ZeroMemory(ref GetBlocksRef(), blocksToShift * sizeof(uint));
                     // Check if the terminating block has no set bits
-                    if (_blocks[_length - 1] == 0)
-                    {
-                        _length--;
-                    }
+                    if (_blocks[_length - 1] == 0) _length--;
                 }
             }
 
-            public uint ToUInt32()
-            {
-                if (_length > 0)
-                {
-                    return _blocks[0];
-                }
-
-                return 0;
-            }
+            public uint ToUInt32() => _length > 0 ? _blocks[0] : 0;
 
             public ulong ToUInt64()
             {
                 if (_length > 1)
-                {
-                    return ((ulong)(_blocks[1]) << 32) + _blocks[0];
-                }
+                    return ((ulong) _blocks[1] << 32) + _blocks[0];
 
-                if (_length > 0)
-                {
-                    return _blocks[0];
-                }
-
-                return 0;
+                return _length > 0 ? _blocks[0] : (ulong) 0;
             }
 
             private uint* GetBlocksPointer()
             {
                 // This is safe to do since we are a ref struct
-                return (uint*)(Unsafe.AsPointer(ref _blocks[0]));
+                return (uint*)Unsafe.AsPointer(ref _blocks[0]);
             }
 
             private ref byte GetBlocksRef() => ref Unsafe.As<uint, byte>(ref _blocks[0]);
