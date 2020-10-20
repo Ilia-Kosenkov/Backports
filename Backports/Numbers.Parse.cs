@@ -10,6 +10,12 @@ namespace Backports
 {
     public static partial class Numbers
     {
+        public static T? ParseInto<T>(this ReadOnlySpan<char> input) where T : unmanaged
+            => TryParseInto(input, out T result) ? result : null;
+
+        public static T? ParseInto<T>(this ReadOnlySpan<char> input, NumberStyles style, IFormatProvider? format) where T : unmanaged
+            => TryParseInto(input, style, format, out T result) ? result : null;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryParseInto<T>(this ReadOnlySpan<char> input, out T value) where T : unmanaged
         {
@@ -211,7 +217,6 @@ namespace Backports
 #else
         private static bool TryParseIntoRuntime<T>(this ReadOnlySpan<char> input, out T value) where T : unmanaged
         {
-
             if (typeof(T) == typeof(sbyte))
             {
                 var wasSuccessful = sbyte.TryParse(input, out var result);
@@ -271,6 +276,12 @@ namespace Backports
             {
                 var wasSuccessful = double.TryParse(input, out var result);
                 value = Unsafe.As<double, T>(ref result);
+                return wasSuccessful;
+            }
+            if (typeof(T) == typeof(decimal))
+            {
+                var wasSuccessful = decimal.TryParse(input, out var result);
+                value = Unsafe.As<decimal, T>(ref result);
                 return wasSuccessful;
             }
             
@@ -339,6 +350,13 @@ namespace Backports
             {
                 var wasSuccessful = double.TryParse(input, style, format, out var result);
                 value = Unsafe.As<double, T>(ref result);
+                return wasSuccessful;
+            }
+
+            if (typeof(T) == typeof(decimal))
+            {
+                var wasSuccessful = decimal.TryParse(input, style, format, out var result);
+                value = Unsafe.As<decimal, T>(ref result);
                 return wasSuccessful;
             }
             throw ThrowTypeNotSupported<T>();
