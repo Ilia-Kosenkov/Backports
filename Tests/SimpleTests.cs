@@ -7,12 +7,7 @@ namespace Tests
 {
     public class SanityChecks
     {
-        [SetUp]
-        public void Setup()
-        {
-            
-        }
-
+      
 
         [Test]
         public void Test_TryParseInt8_Hex()
@@ -150,6 +145,15 @@ namespace Tests
             var numRaw = Math.PI;
             var num = numRaw.ToString("R");
             Assert.IsTrue(num.AsSpan().TryParseInto(out double value));
+            Assert.AreEqual(numRaw, value);
+        }
+
+        [Test]
+        public void Test_TryParseDecimal()
+        {
+            var numRaw = decimal.MaxValue;
+            var num = numRaw.ToString(CultureInfo.InvariantCulture);
+            Assert.IsTrue(num.AsSpan().TryParseInto(out decimal value));
             Assert.AreEqual(numRaw, value);
         }
     }
