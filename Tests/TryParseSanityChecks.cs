@@ -5,7 +5,7 @@ using NUnit.Framework;
 
 namespace Tests
 {
-    public class SanityChecks
+    public class TryParseSanityChecks
     {
       
 
