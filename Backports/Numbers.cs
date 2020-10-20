@@ -8,7 +8,7 @@ using Backports.System;
 namespace Backports
 
 {
-    public static class Numbers
+    public static partial class Numbers
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryParseInto<T>(this ReadOnlySpan<char> input, out T value) where T : unmanaged
