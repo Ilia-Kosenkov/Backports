@@ -82,6 +82,14 @@ namespace Backports
                 || typeof(T) == typeof(double))
                 return TryParseIntoBackported(input, NumberStyles.Float | NumberStyles.AllowThousands,
                     NumberFormatInfo.CurrentInfo, out value);
+
+            if (typeof(T) == typeof(decimal))
+            {
+                var parseStatus = Number.TryParseDecimal(input, NumberStyles.Number, NumberFormatInfo.CurrentInfo,
+                    out var result);
+                value = Unsafe.As<decimal, T>(ref result);
+                return parseStatus is Number.ParsingStatus.OK;
+            }
             throw ThrowTypeNotSupported<T>();
         }
 
@@ -212,6 +220,14 @@ namespace Backports
                 return wasSuccessful;
             }
 
+            if (typeof(T) == typeof(decimal))
+            {
+                style.ValidateParseStyleFloatingPoint();
+                var parseStatus =
+                    Number.TryParseDecimal(input, style, NumberFormatInfo.GetInstance(format), out var result);
+                value = Unsafe.As<decimal, T>(ref result);
+                return parseStatus is Number.ParsingStatus.OK;
+            }
             throw ThrowTypeNotSupported<T>();
         }
 #else
