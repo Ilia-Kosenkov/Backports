@@ -15,7 +15,7 @@ namespace Tests
             sbyte numRaw = 123;
             var num = numRaw.ToString("X");
 
-            Assert.IsTrue(num.AsSpan().TryParseInto(NumberStyles.HexNumber, NumberFormatInfo.InvariantInfo, out sbyte value));
+            Assert.IsTrue(num.AsSpan().TryParse(NumberStyles.HexNumber, NumberFormatInfo.InvariantInfo, out sbyte value));
             Assert.AreEqual(value, numRaw);
         }
 
@@ -25,7 +25,7 @@ namespace Tests
             byte numRaw = 123;
             var num = numRaw.ToString("X");
 
-            Assert.IsTrue(num.AsSpan().TryParseInto(NumberStyles.HexNumber, NumberFormatInfo.InvariantInfo, out byte value));
+            Assert.IsTrue(num.AsSpan().TryParse(NumberStyles.HexNumber, NumberFormatInfo.InvariantInfo, out byte value));
             Assert.AreEqual(value, numRaw);
         }
 
@@ -35,7 +35,7 @@ namespace Tests
             var numRaw = (float) Math.PI;
             var num = numRaw.ToString("E7");
 
-            Assert.IsTrue(num.AsSpan().TryParseInto(NumberStyles.Any, NumberFormatInfo.InvariantInfo, out float value));
+            Assert.IsTrue(num.AsSpan().TryParse(NumberStyles.Any, NumberFormatInfo.InvariantInfo, out float value));
             Assert.AreEqual(value, numRaw);
         }
 
@@ -45,7 +45,7 @@ namespace Tests
             var numRaw = Math.PI;
             var num = numRaw.ToString("E16");
 
-            Assert.IsTrue(num.AsSpan().TryParseInto(NumberStyles.Any, NumberFormatInfo.InvariantInfo, out double value));
+            Assert.IsTrue(num.AsSpan().TryParse(NumberStyles.Any, NumberFormatInfo.InvariantInfo, out double value));
             Assert.AreEqual(value, numRaw);
         }
 
@@ -55,7 +55,7 @@ namespace Tests
             sbyte numRaw = 123;
             var num = numRaw.ToString();
 
-            Assert.IsTrue(num.AsSpan().TryParseInto(out sbyte value));
+            Assert.IsTrue(num.AsSpan().TryParse(out sbyte value));
             Assert.AreEqual(value, numRaw);
         }
 
@@ -65,7 +65,7 @@ namespace Tests
             byte numRaw = 123;
             var num = numRaw.ToString();
 
-            Assert.IsTrue(num.AsSpan().TryParseInto(out byte value));
+            Assert.IsTrue(num.AsSpan().TryParse(out byte value));
             Assert.AreEqual(value, numRaw);
         }
 
@@ -75,7 +75,7 @@ namespace Tests
             short numRaw = 12345;
             var num = numRaw.ToString();
 
-            Assert.IsTrue(num.AsSpan().TryParseInto(out short value));
+            Assert.IsTrue(num.AsSpan().TryParse(out short value));
             Assert.AreEqual(value, numRaw);
         }
 
@@ -85,7 +85,7 @@ namespace Tests
             ushort numRaw = 12345;
             var num = numRaw.ToString();
 
-            Assert.IsTrue(num.AsSpan().TryParseInto(out ushort value));
+            Assert.IsTrue(num.AsSpan().TryParse(out ushort value));
             Assert.AreEqual(value, numRaw);
         }
 
@@ -95,7 +95,7 @@ namespace Tests
             var numRaw = 123456;
             var num = numRaw.ToString();
 
-            Assert.IsTrue(num.AsSpan().TryParseInto(out int value));
+            Assert.IsTrue(num.AsSpan().TryParse(out int value));
             Assert.AreEqual(value, numRaw);
         }
 
@@ -105,7 +105,7 @@ namespace Tests
             var numRaw = 123456U;
             var num = numRaw.ToString();
 
-            Assert.IsTrue(num.AsSpan().TryParseInto(out uint value));
+            Assert.IsTrue(num.AsSpan().TryParse(out uint value));
             Assert.AreEqual(value, numRaw);
         }
 
@@ -115,7 +115,7 @@ namespace Tests
             var numRaw = 123456L;
             var num = numRaw.ToString();
 
-            Assert.IsTrue(num.AsSpan().TryParseInto(out long value));
+            Assert.IsTrue(num.AsSpan().TryParse(out long value));
             Assert.AreEqual(value, numRaw);
         }
 
@@ -125,7 +125,7 @@ namespace Tests
             var numRaw = 123456UL;
             var num = numRaw.ToString();
 
-            Assert.IsTrue(num.AsSpan().TryParseInto(out ulong value));
+            Assert.IsTrue(num.AsSpan().TryParse(out ulong value));
             Assert.AreEqual(value, numRaw);
         }
 
@@ -135,7 +135,7 @@ namespace Tests
         {
             var numRaw = (float)Math.PI;
             var num = numRaw.ToString("R");
-            Assert.IsTrue(num.AsSpan().TryParseInto(out float value));
+            Assert.IsTrue(num.AsSpan().TryParse(out float value));
             Assert.AreEqual(numRaw, value);
         }
 
@@ -144,7 +144,7 @@ namespace Tests
         {
             var numRaw = Math.PI;
             var num = numRaw.ToString("R");
-            Assert.IsTrue(num.AsSpan().TryParseInto(out double value));
+            Assert.IsTrue(num.AsSpan().TryParse(out double value));
             Assert.AreEqual(numRaw, value);
         }
 
@@ -153,7 +153,7 @@ namespace Tests
         {
             var numRaw = decimal.MaxValue;
             var num = numRaw.ToString(CultureInfo.InvariantCulture);
-            Assert.IsTrue(num.AsSpan().TryParseInto(out decimal value));
+            Assert.IsTrue(num.AsSpan().TryParse(out decimal value));
             Assert.AreEqual(numRaw, value);
         }
     }

@@ -10,41 +10,41 @@ namespace Backports
 {
     public static partial class Numbers
     {
-        public static T? ParseInto<T>(this ReadOnlySpan<char> input) where T : unmanaged
-            => TryParseInto(input, out T result) ? result : null;
+        public static T? Parse<T>(this ReadOnlySpan<char> input) where T : unmanaged
+            => TryParse(input, out T result) ? result : null;
 
-        public static T? ParseInto<T>(this ReadOnlySpan<char> input, NumberStyles style, IFormatProvider? format) where T : unmanaged
-            => TryParseInto(input, style, format, out T result) ? result : null;
+        public static T? Parse<T>(this ReadOnlySpan<char> input, NumberStyles style, IFormatProvider? format) where T : unmanaged
+            => TryParse(input, style, format, out T result) ? result : null;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool TryParseInto<T>(this ReadOnlySpan<char> input, out T value) where T : unmanaged
+        public static bool TryParse<T>(this ReadOnlySpan<char> input, out T value) where T : unmanaged
         {
 #if NETSTANDARD2_0
-            return TryParseIntoBackported(input, out value);
+            return TryParseBackported(input, out value);
 #else
-            return TryParseIntoRuntime(input, out value);
+            return TryParseRuntime(input, out value);
 #endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool TryParseInto<T>(this ReadOnlySpan<char> input, NumberStyles style, IFormatProvider? format, out T value) where T : unmanaged
+        public static bool TryParse<T>(this ReadOnlySpan<char> input, NumberStyles style, IFormatProvider? format, out T value) where T : unmanaged
         {
 #if NETSTANDARD2_0
-            return TryParseIntoBackported(input, style, format, out value);
+            return TryParseBackported(input, style, format, out value);
 #else
-            return TryParseIntoRuntime(input, style, format, out value);
+            return TryParseRuntime(input, style, format, out value);
 #endif
         }
 
 #if NETSTANDARD2_0
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool TryParseIntoBackported<T>(this ReadOnlySpan<char> input, out T value) where T : unmanaged
+        private static bool TryParseBackported<T>(this ReadOnlySpan<char> input, out T value) where T : unmanaged
         {
             if(typeof(T) == typeof(sbyte)
             || typeof(T) == typeof(byte) 
             || typeof(T) == typeof(short)
             || typeof(T) == typeof(ushort))
-                return TryParseIntoBackported(input, NumberStyles.Integer, NumberFormatInfo.CurrentInfo, out value);
+                return TryParseBackported(input, NumberStyles.Integer, NumberFormatInfo.CurrentInfo, out value);
 
             if (typeof(T) == typeof(int))
             {
@@ -80,7 +80,7 @@ namespace Backports
 
             if (typeof(T) == typeof(float)
                 || typeof(T) == typeof(double))
-                return TryParseIntoBackported(input, NumberStyles.Float | NumberStyles.AllowThousands,
+                return TryParseBackported(input, NumberStyles.Float | NumberStyles.AllowThousands,
                     NumberFormatInfo.CurrentInfo, out value);
 
             if (typeof(T) == typeof(decimal))
@@ -90,10 +90,10 @@ namespace Backports
                 value = Unsafe.As<decimal, T>(ref result);
                 return parseStatus is Number.ParsingStatus.OK;
             }
-            throw ThrowTypeNotSupported<T>();
+            throw TypeDoesNotSupportTryParse<T>();
         }
 
-        private static bool TryParseIntoBackported<T>(this ReadOnlySpan<char> input, NumberStyles style, IFormatProvider? format,
+        private static bool TryParseBackported<T>(this ReadOnlySpan<char> input, NumberStyles style, IFormatProvider? format,
             out T value) where T : unmanaged
         {
             if (typeof(T) == typeof(sbyte))
@@ -228,10 +228,10 @@ namespace Backports
                 value = Unsafe.As<decimal, T>(ref result);
                 return parseStatus is Number.ParsingStatus.OK;
             }
-            throw ThrowTypeNotSupported<T>();
+            throw TypeDoesNotSupportTryParse<T>();
         }
 #else
-        private static bool TryParseIntoRuntime<T>(this ReadOnlySpan<char> input, out T value) where T : unmanaged
+        private static bool TryParseRuntime<T>(this ReadOnlySpan<char> input, out T value) where T : unmanaged
         {
             if (typeof(T) == typeof(sbyte))
             {
@@ -301,10 +301,10 @@ namespace Backports
                 return wasSuccessful;
             }
             
-            throw ThrowTypeNotSupported<T>();
+            throw TypeDoesNotSupportTryParse<T>();
         }
 
-        private static bool TryParseIntoRuntime<T>(this ReadOnlySpan<char> input, NumberStyles style, IFormatProvider? format,
+        private static bool TryParseRuntime<T>(this ReadOnlySpan<char> input, NumberStyles style, IFormatProvider? format,
             out T value) where T : unmanaged
         {
             if (typeof(T) == typeof(sbyte))
@@ -375,10 +375,10 @@ namespace Backports
                 value = Unsafe.As<decimal, T>(ref result);
                 return wasSuccessful;
             }
-            throw ThrowTypeNotSupported<T>();
+            throw TypeDoesNotSupportTryParse<T>();
         }
 #endif
 
-        private static Exception ThrowTypeNotSupported<T>() where T : unmanaged => new NotSupportedException($"{typeof(T)} has no compatible TryParse method");
+        private static Exception TypeDoesNotSupportTryParse<T>() where T : unmanaged => new NotSupportedException($"{typeof(T)} has no compatible TryParse method");
     }
 }
