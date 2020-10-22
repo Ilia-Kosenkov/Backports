@@ -922,52 +922,40 @@ namespace Backports.System
         //    }
         //}
 
-        //public static bool TryFormatUInt32(uint value, ReadOnlySpan<char> format, IFormatProvider? provider, Span<char> destination, out int charsWritten)
-        //{
-        //    // Fast path for default format
-        //    if (format.Length == 0)
-        //    {
-        //        return TryUInt32ToDecStr(value, digits: -1, destination, out charsWritten);
-        //    }
+        public static bool TryFormatUInt32(uint value, ReadOnlySpan<char> format, IFormatProvider? provider, Span<char> destination, out int charsWritten)
+        {
+            // Fast path for default format
+            return format.Length == 0 
+                ? TryUInt32ToDecStr(value, digits: -1, destination, out charsWritten) 
+                : TryFormatUInt32Slow(value, format, provider, destination, out charsWritten);
 
-        //    return TryFormatUInt32Slow(value, format, provider, destination, out charsWritten);
+            static bool TryFormatUInt32Slow(uint value, ReadOnlySpan<char> format, IFormatProvider? provider, Span<char> destination, out int charsWritten)
+            {
+                var fmt = ParseFormatSpecifier(format, out var digits);
+                var fmtUpper = (char)(fmt & 0xFFDF); // ensure fmt is upper-cased for purposes of comparison
+                if (fmtUpper == 'G' ? digits < 1 : fmtUpper == 'D')
+                    return TryUInt32ToDecStr(value, digits, destination, out charsWritten);
+                if (fmtUpper == 'X')
+                    return TryInt32ToHexStr((int) value, GetHexBase(fmt), digits, destination, out charsWritten);
 
-        //    static unsafe bool TryFormatUInt32Slow(uint value, ReadOnlySpan<char> format, IFormatProvider? provider, Span<char> destination, out int charsWritten)
-        //    {
-        //        char fmt = ParseFormatSpecifier(format, out int digits);
-        //        char fmtUpper = (char)(fmt & 0xFFDF); // ensure fmt is upper-cased for purposes of comparison
-        //        if (fmtUpper == 'G' ? digits < 1 : fmtUpper == 'D')
-        //        {
-        //            return TryUInt32ToDecStr(value, digits, destination, out charsWritten);
-        //        }
-        //        else if (fmtUpper == 'X')
-        //        {
-        //            return TryInt32ToHexStr((int)value, GetHexBase(fmt), digits, destination, out charsWritten);
-        //        }
-        //        else
-        //        {
-        //            NumberFormatInfo info = NumberFormatInfo.GetInstance(provider);
+                NumberFormatInfo info = NumberFormatInfo.GetInstance(provider);
 
-        //            byte* pDigits = stackalloc byte[UInt32NumberBufferLength];
-        //            NumberBuffer number = new NumberBuffer(NumberBufferKind.Integer, pDigits, UInt32NumberBufferLength);
+                Span<byte> digitsSpan = stackalloc byte[UInt32NumberBufferLength];
+                var number = new NumberBuffer(NumberBufferKind.Integer, digitsSpan);
 
-        //            UInt32ToNumber(value, ref number);
+                UInt32ToNumber(value, ref number);
 
-        //            char* stackPtr = stackalloc char[CharStackBufferSize];
-        //            ValueStringBuilder sb = new ValueStringBuilder(new Span<char>(stackPtr, CharStackBufferSize));
+                Span<char> stackSpan = stackalloc char[CharStackBufferSize];
+                var sb = new ValueStringBuilder(stackSpan);
 
-        //            if (fmt != 0)
-        //            {
-        //                NumberToString(ref sb, ref number, fmt, digits, info);
-        //            }
-        //            else
-        //            {
-        //                NumberToStringFormat(ref sb, ref number, format, info);
-        //            }
-        //            return sb.TryCopyTo(destination, out charsWritten);
-        //        }
-        //    }
-        //}
+                if (fmt != 0)
+                    NumberToString(ref sb, ref number, fmt, digits, info);
+                else
+                    NumberToStringFormat(ref sb, ref number, format, info);
+
+                return sb.TryCopyTo(destination, out charsWritten);
+            }
+        }
 
         //public static string FormatInt64(long value, string? format, IFormatProvider? provider)
         //{

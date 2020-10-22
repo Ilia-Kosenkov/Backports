@@ -24,6 +24,9 @@ namespace Backports
             if (typeof(T) == typeof(int))
                 return System.Number.TryFormatInt32(Unsafe.As<T, int>(ref @this), ~0, format, provider, destination,
                     out charsWritten);
+            if (typeof(T) == typeof(uint))
+                return System.Number.TryFormatUInt32(Unsafe.As<T, uint>(ref @this), format, provider, destination,
+                    out charsWritten);
             throw TypeDoesNotSupportTryFormat<T>();
         }
 #else
