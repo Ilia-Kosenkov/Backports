@@ -1,6 +1,6 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-
+#if NETSTANDARD2_0
 #nullable enable
 using System;
 using System.Buffers;
@@ -203,15 +203,18 @@ namespace Backports.System.Text
             _pos += count;
         }
 
-        public unsafe void Append(char* value, int length)
+        public void Append(ref char value, int length)
         {
             var pos = _pos;
             if (pos > _chars.Length - length) 
                 Grow(length);
 
             var dst = _chars.Slice(_pos, length);
-            for (var i = 0; i < dst.Length; i++) 
-                dst[i] = *value++;
+            for (var i = 0; i < dst.Length; i++)
+            {
+                dst[i] = value;
+                value = ref Ref.Increment(ref value);
+            }
             _pos += length;
         }
 
@@ -281,3 +284,4 @@ namespace Backports.System.Text
         }
     }
 }
+#endif

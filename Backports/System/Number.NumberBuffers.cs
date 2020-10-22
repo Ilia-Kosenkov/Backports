@@ -51,6 +51,25 @@ namespace Backports.System
                 CheckConsistency();
             }
 
+            public NumberBuffer(NumberBufferKind kind, Span<byte> digits)
+            {
+                Debug.Assert(!digits.IsEmpty);
+
+                DigitsCount = 0;
+                Scale = 0;
+                IsNegative = false;
+                HasNonZeroTail = false;
+                Kind = kind;
+                Digits = digits;
+
+#if DEBUG
+                Digits.Fill(0xCC);
+#endif
+
+                Digits[0] = (byte)('\0');
+                CheckConsistency();
+            }
+
             [Conditional("DEBUG")]
             public void CheckConsistency()
             {

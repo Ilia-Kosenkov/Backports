@@ -3,6 +3,7 @@
 using System;
 using System.Globalization;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Backports
 {
@@ -87,7 +88,15 @@ namespace Backports
             return div;
         }
 
+    }
 
+    internal static class Ref
+    {
+        public static ref T Increment<T>(ref T origin) where T : unmanaged => ref Unsafe.Add(ref origin, 1);
+        public static ref T Decrement<T>(ref T origin) where T : unmanaged => ref Unsafe.Subtract(ref origin, 1);
+
+        public static IntPtr Offset<T>(ref T origin, ref T target) where T : unmanaged =>
+            new IntPtr(Unsafe.ByteOffset(ref origin, ref target).ToInt64() / Unsafe.SizeOf<T>());
 
     }
 }
