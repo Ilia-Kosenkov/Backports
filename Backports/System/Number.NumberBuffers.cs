@@ -82,6 +82,8 @@ namespace Backports.System
                 return (byte*)Unsafe.AsPointer(ref Digits[0]);
             }
 
+            public ref byte GetDigitsReference() => ref Digits[0];
+
             //
             // Code coverage note: This only exists so that Number displays nicely in the VS watch window. So yes, I know it works.
             //

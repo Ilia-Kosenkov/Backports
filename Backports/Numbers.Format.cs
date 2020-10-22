@@ -21,6 +21,9 @@ namespace Backports
         private static bool TryFormatBackported<T>(this T @this, Span<char> destination, out int charsWritten,
             ReadOnlySpan<char> format = default, IFormatProvider? provider = null) where T : unmanaged
         {
+            if (typeof(T) == typeof(int))
+                return System.Number.TryFormatInt32(Unsafe.As<T, int>(ref @this), ~0, format, provider, destination,
+                    out charsWritten);
             throw TypeDoesNotSupportTryFormat<T>();
         }
 #else
@@ -41,6 +44,7 @@ namespace Backports
 #endif
         private static void Test()
         {
+            
             5.TryFormat(Span<char>.Empty, out _);
         }
 
