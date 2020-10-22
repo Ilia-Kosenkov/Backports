@@ -2320,7 +2320,7 @@ namespace Backports.System
                     var digitCount = 0;
                     var digLength = number.DigitsCount;
                     var digStart = digPos < digLength ? digPos : digLength;
-                    ref var spanPtr = ref MemoryMarshal.GetReference(sb.AppendSpan(bufferSize));
+                    ref var spanPtr = ref sb.AppendSpan(bufferSize)[0];
                     //fixed (char* spanPtr = &MemoryMarshal.GetReference(sb.AppendSpan(bufferSize)))
                     {
                         //var p = spanPtr + bufferSize - 1;
@@ -2348,8 +2348,8 @@ namespace Backports.System
                             }
                             digitCount = 0;
                         }
-
-                        Debug.Assert(p >= spanPtr - 1, "Underflow");
+                        
+                        Debug.Assert(Ref.Offset(ref p, ref spanPtr).ToInt64() >= 1, "Underflow");
                         dig = ref Unsafe.Add(ref dig, digStart);
                     }
                 }
