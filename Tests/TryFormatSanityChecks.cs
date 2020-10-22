@@ -10,7 +10,7 @@ namespace Tests
     {
         public static IEnumerable<int> IntValues { get; } = new[] {int.MaxValue, int.MinValue, 0, 4, -4, 42};
 
-        public static IEnumerable<string> Formats { get; } = new[] {string.Empty, "X", "G", "E", "E8", "G10", "D5", "D05", "###.0###"};
+        public static IEnumerable<string> Formats { get; } = new[] {string.Empty, "C", "X", "G", "E", "E8", "G10", "D5", "D05", "###.0###"};
 
         
 
