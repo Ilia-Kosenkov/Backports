@@ -1189,18 +1189,24 @@ namespace Backports.System
                 value = -value;
             }
 
-            var buffer = number.GetDigitsPointer();
-            var p = UInt32ToDecChars(buffer + Int32Precision, (uint)value, 0);
+            ref var buffer = ref number.GetDigitsReference();
+            ref var p = ref UInt32ToDecChars(ref Unsafe.Add(ref buffer, Int32Precision), (uint)value, 0);
 
-            var i = (int)(buffer + Int32Precision - p);
+            //var i = (int)(buffer + Int32Precision - p);
+            var i = (int)Unsafe.ByteOffset(ref p, ref Unsafe.Add(ref buffer, Int32Precision));
 
             number.DigitsCount = i;
             number.Scale = i;
 
-            var dst = number.GetDigitsPointer();
+            ref var dst = ref number.GetDigitsReference();
             while (--i >= 0)
-                *dst++ = *p++;
-            *dst = (byte)('\0');
+            {
+                dst = ref Unsafe.Add(ref dst, 1);
+                p = ref Unsafe.Add(ref p, 1);
+                dst = p;
+            }
+
+            dst = (byte)('\0');
 
             number.CheckConsistency();
         }
@@ -1235,7 +1241,7 @@ namespace Backports.System
         //    return result;
         //}
 
-        private static unsafe bool TryNegativeInt32ToDecStr(int value, int digits, string sNegative, Span<char> destination, out int charsWritten)
+        private static bool TryNegativeInt32ToDecStr(int value, int digits, string sNegative, Span<char> destination, out int charsWritten)
         {
             Debug.Assert(value < 0);
 
@@ -1250,14 +1256,21 @@ namespace Backports.System
             }
 
             charsWritten = bufferLength;
-            fixed (char* buffer = &MemoryMarshal.GetReference(destination))
+            //fixed (char* buffer = &MemoryMarshal.GetReference(destination))
+            ref var buffer = ref destination[0];
             {
-                var p = UInt32ToDecChars(buffer + bufferLength, (uint)(-value), digits);
-                Debug.Assert(p == buffer + sNegative.Length);
+                ref var p = ref UInt32ToDecChars(ref Unsafe.Add(ref buffer, bufferLength), (uint)(-value), digits);
+                //Debug.Assert(p == buffer + sNegative.Length);
+                Debug.Assert((int) Unsafe.ByteOffset(ref buffer, ref p) / sizeof(char) == sNegative.Length);
 
-                for (var i = sNegative.Length - 1; i >= 0; i--) 
-                    *(--p) = sNegative[i];
-                Debug.Assert(p == buffer);
+                for (var i = sNegative.Length - 1; i >= 0; i--)
+                {
+                    p = ref Unsafe.Subtract(ref p, 1);
+                    p = sNegative[i];
+                }
+
+                //Debug.Assert(p == buffer);
+                Debug.Assert(Unsafe.AreSame(ref p, ref buffer));
             }
             return true;
         }
@@ -1310,23 +1323,31 @@ namespace Backports.System
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // called from only one location
-        private static unsafe void UInt32ToNumber(uint value, ref NumberBuffer number)
+        private static void UInt32ToNumber(uint value, ref NumberBuffer number)
         {
             number.DigitsCount = UInt32Precision;
             number.IsNegative = false;
 
-            var buffer = number.GetDigitsPointer();
-            var p = UInt32ToDecChars(buffer + UInt32Precision, value, 0);
+            ref var buffer = ref number.GetDigitsReference();
+            ref var p = ref UInt32ToDecChars(ref Unsafe.Add(ref buffer, UInt32Precision), value, 0);
 
-            var i = (int)(buffer + UInt32Precision - p);
+            //var i = (int)(buffer + UInt32Precision - p);
+            var i = (int)Unsafe.ByteOffset(ref p, ref Unsafe.Add(ref buffer, UInt32Precision));
+            
 
             number.DigitsCount = i;
             number.Scale = i;
 
-            var dst = number.GetDigitsPointer();
+            ref var dst = ref number.GetDigitsReference();
             while (--i >= 0)
-                *dst++ = *p++;
-            *dst = (byte)('\0');
+            {
+                dst = ref Unsafe.Add(ref dst, 1);
+                p = ref Unsafe.Add(ref p, 1);
+
+                dst = p;
+            }
+
+            dst = (byte)('\0');
 
             number.CheckConsistency();
         }
@@ -2411,8 +2432,28 @@ namespace Backports.System
             }
 
             char* digits = stackalloc char[MaxUInt32DecDigits];
-            char* p = UInt32ToDecChars(digits + MaxUInt32DecDigits, (uint)value, minDigits);
+            char* p = (char*)Unsafe.AsPointer(ref UInt32ToDecChars(ref Unsafe.AsRef<char>((void*)(digits + MaxUInt32DecDigits)), (uint)value, minDigits));
             sb.Append(p, (int)(digits + MaxUInt32DecDigits - p));
+        }
+
+        private static unsafe void _FormatExponent(ref ValueStringBuilder sb, NumberFormatInfo info, int value, char expChar, int minDigits, bool positiveSign)
+        {
+            sb.Append(expChar);
+
+            if (value < 0)
+            {
+                sb.Append(info.NegativeSign);
+                value = -value;
+            }
+            else
+            {
+                if (positiveSign)
+                    sb.Append(info.PositiveSign);
+            }
+
+            Span<char> digits = stackalloc char[MaxUInt32DecDigits];
+            ref var p = ref UInt32ToDecChars(ref Unsafe.Add(ref digits[0],  MaxUInt32DecDigits), (uint)value, minDigits);
+            sb.Append(p, (int)Unsafe.ByteOffset(ref p, ref Unsafe.Add(ref digits[0], MaxUInt32DecDigits)) / sizeof(int));
         }
 
         private static unsafe void FormatGeneral(ref ValueStringBuilder sb, ref NumberBuffer number, int nMaxDigits, NumberFormatInfo info, char expChar, bool bSuppressScientific)
