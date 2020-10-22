@@ -1009,56 +1009,52 @@ namespace Backports.System
         //    }
         //}
 
-        //public static bool TryFormatInt64(long value, ReadOnlySpan<char> format, IFormatProvider? provider, Span<char> destination, out int charsWritten)
-        //{
-        //    // Fast path for default format
-        //    if (format.Length == 0)
-        //    {
-        //        return value >= 0 ?
-        //            TryUInt64ToDecStr((ulong)value, digits: -1, destination, out charsWritten) :
-        //            TryNegativeInt64ToDecStr(value, digits: -1, NumberFormatInfo.GetInstance(provider).NegativeSign, destination, out charsWritten);
-        //    }
+        public static bool TryFormatInt64(long value, ReadOnlySpan<char> format, IFormatProvider? provider, Span<char> destination, out int charsWritten)
+        {
+            // Fast path for default format
+            if (format.Length == 0)
+            {
+                return value >= 0 ?
+                    TryUInt64ToDecStr((ulong)value, digits: -1, destination, out charsWritten) :
+                    TryNegativeInt64ToDecStr(value, digits: -1, NumberFormatInfo.GetInstance(provider).NegativeSign, destination, out charsWritten);
+            }
 
-        //    return TryFormatInt64Slow(value, format, provider, destination, out charsWritten);
+            return TryFormatInt64Slow(value, format, provider, destination, out charsWritten);
 
-        //    static unsafe bool TryFormatInt64Slow(long value, ReadOnlySpan<char> format, IFormatProvider? provider, Span<char> destination, out int charsWritten)
-        //    {
-        //        char fmt = ParseFormatSpecifier(format, out int digits);
-        //        char fmtUpper = (char)(fmt & 0xFFDF); // ensure fmt is upper-cased for purposes of comparison
-        //        if (fmtUpper == 'G' ? digits < 1 : fmtUpper == 'D')
-        //        {
-        //            return value >= 0 ?
-        //                TryUInt64ToDecStr((ulong)value, digits, destination, out charsWritten) :
-        //                TryNegativeInt64ToDecStr(value, digits, NumberFormatInfo.GetInstance(provider).NegativeSign, destination, out charsWritten);
-        //        }
-        //        else if (fmtUpper == 'X')
-        //        {
-        //            return TryInt64ToHexStr(value, GetHexBase(fmt), digits, destination, out charsWritten);
-        //        }
-        //        else
-        //        {
-        //            NumberFormatInfo info = NumberFormatInfo.GetInstance(provider);
+            static unsafe bool TryFormatInt64Slow(long value, ReadOnlySpan<char> format, IFormatProvider? provider, Span<char> destination, out int charsWritten)
+            {
+                var fmt = ParseFormatSpecifier(format, out var digits);
+                var fmtUpper = (char)(fmt & 0xFFDF); // ensure fmt is upper-cased for purposes of comparison
+                if (fmtUpper == 'G' ? digits < 1 : fmtUpper == 'D')
+                    return value >= 0
+                        ? TryUInt64ToDecStr((ulong) value, digits, destination, out charsWritten)
+                        : TryNegativeInt64ToDecStr(value, digits, NumberFormatInfo.GetInstance(provider).NegativeSign,
+                            destination, out charsWritten);
+                if (fmtUpper == 'X')
+                    return TryInt64ToHexStr(value, GetHexBase(fmt), digits, destination, out charsWritten);
 
-        //            byte* pDigits = stackalloc byte[Int64NumberBufferLength];
-        //            NumberBuffer number = new NumberBuffer(NumberBufferKind.Integer, pDigits, Int64NumberBufferLength);
+                NumberFormatInfo info = NumberFormatInfo.GetInstance(provider);
 
-        //            Int64ToNumber(value, ref number);
+                Span<byte> pDigits = stackalloc byte[Int64NumberBufferLength];
+                var number = new NumberBuffer(NumberBufferKind.Integer, pDigits);
 
-        //            char* stackPtr = stackalloc char[CharStackBufferSize];
-        //            ValueStringBuilder sb = new ValueStringBuilder(new Span<char>(stackPtr, CharStackBufferSize));
+                Int64ToNumber(value, ref number);
 
-        //            if (fmt != 0)
-        //            {
-        //                NumberToString(ref sb, ref number, fmt, digits, info);
-        //            }
-        //            else
-        //            {
-        //                NumberToStringFormat(ref sb, ref number, format, info);
-        //            }
-        //            return sb.TryCopyTo(destination, out charsWritten);
-        //        }
-        //    }
-        //}
+                Span<char> stackSpan = stackalloc char[CharStackBufferSize];
+                var sb = new ValueStringBuilder(stackSpan);
+
+                if (fmt != 0)
+                {
+                    NumberToString(ref sb, ref number, fmt, digits, info);
+                }
+                else
+                {
+                    NumberToStringFormat(ref sb, ref number, format, info);
+                }
+
+                return sb.TryCopyTo(destination, out charsWritten);
+            }
+        }
 
         //public static string FormatUInt64(ulong value, string? format, IFormatProvider? provider)
         //{
@@ -1420,34 +1416,40 @@ namespace Backports.System
             return true;
         }
 
-        //private static unsafe void Int64ToNumber(long input, ref NumberBuffer number)
-        //{
-        //    ulong value = (ulong)input;
-        //    number.IsNegative = input < 0;
-        //    number.DigitsCount = Int64Precision;
-        //    if (number.IsNegative)
-        //    {
-        //        value = (ulong)(-input);
-        //    }
+        private static void Int64ToNumber(long input, ref NumberBuffer number)
+        {
+            var value = (ulong)input;
+            number.IsNegative = input < 0;
+            number.DigitsCount = Int64Precision;
+            if (number.IsNegative) 
+                value = (ulong) (-input);
 
-        //    byte* buffer = number.GetDigitsPointer();
-        //    byte* p = buffer + Int64Precision;
-        //    while (High32(value) != 0)
-        //        p = UInt32ToDecChars(p, Int64DivMod1E9(ref value), 9);
-        //    p = UInt32ToDecChars(p, Low32(value), 0);
+            ref var buffer = ref number.GetDigitsReference();
+            ref var p = ref Unsafe.Add(ref buffer, Int64Precision);
 
-        //    int i = (int)(buffer + Int64Precision - p);
+            while (High32(value) != 0)
+                p = ref UInt32ToDecChars(ref p, Int64DivMod1E9(ref value), 9);
+            p = ref UInt32ToDecChars(ref p, Low32(value), 0);
 
-        //    number.DigitsCount = i;
-        //    number.Scale = i;
+            //var i = (int)(buffer + Int64Precision - p);
+            var i = (int)Ref.Offset(ref p, ref Unsafe.Add(ref buffer, Int64Precision));
 
-        //    byte* dst = number.GetDigitsPointer();
-        //    while (--i >= 0)
-        //        *dst++ = *p++;
-        //    *dst = (byte)('\0');
+            number.DigitsCount = i;
+            number.Scale = i;
 
-        //    number.CheckConsistency();
-        //}
+            ref var dst = ref number.GetDigitsReference();
+            while (--i >= 0)
+            {
+                //*dst++ = *p++;
+                dst = p;
+                dst = ref Ref.Increment(ref dst);
+                p = ref Ref.Increment(ref p);
+            }
+
+            dst = (byte)('\0');
+
+            number.CheckConsistency();
+        }
 
         //public static string Int64ToDecStr(long value)
         //{
@@ -1489,44 +1491,43 @@ namespace Backports.System
         //    return result;
         //}
 
-        //private static unsafe bool TryNegativeInt64ToDecStr(long input, int digits, string sNegative, Span<char> destination, out int charsWritten)
-        //{
-        //    Debug.Assert(input < 0);
+        private static bool TryNegativeInt64ToDecStr(long input, int digits, string sNegative, Span<char> destination, out int charsWritten)
+        {
+            Debug.Assert(input < 0);
 
-        //    if (digits < 1)
-        //    {
-        //        digits = 1;
-        //    }
+            if (digits < 1) 
+                digits = 1;
 
-        //    ulong value = (ulong)(-input);
+            var value = (ulong)(-input);
 
-        //    int bufferLength = Math.Max(digits, FormattingHelpers.CountDigits((ulong)(-input))) + sNegative.Length;
-        //    if (bufferLength > destination.Length)
-        //    {
-        //        charsWritten = 0;
-        //        return false;
-        //    }
+            var bufferLength = Math.Max(digits, FormattingHelpers.CountDigits((ulong)(-input))) + sNegative.Length;
+            if (bufferLength > destination.Length)
+            {
+                charsWritten = 0;
+                return false;
+            }
 
-        //    charsWritten = bufferLength;
-        //    fixed (char* buffer = &MemoryMarshal.GetReference(destination))
-        //    {
-        //        char* p = buffer + bufferLength;
-        //        while (High32(value) != 0)
-        //        {
-        //            p = UInt32ToDecChars(p, Int64DivMod1E9(ref value), 9);
-        //            digits -= 9;
-        //        }
-        //        p = UInt32ToDecChars(p, Low32(value), digits);
-        //        Debug.Assert(p == buffer + sNegative.Length);
+            charsWritten = bufferLength;
+            //fixed (char* buffer = &MemoryMarshal.GetReference(destination))
+            ref var buffer = ref destination[0];
+            {
+                ref var p = ref Unsafe.Add(ref buffer, bufferLength);
+                while (High32(value) != 0)
+                {
+                    p = ref UInt32ToDecChars(ref p, Int64DivMod1E9(ref value), 9);
+                    digits -= 9;
+                }
+                p = ref UInt32ToDecChars(ref p, Low32(value), digits);
+                Debug.Assert((int) Ref.Offset(ref buffer, ref p) == sNegative.Length);
 
-        //        for (int i = sNegative.Length - 1; i >= 0; i--)
-        //        {
-        //            *(--p) = sNegative[i];
-        //        }
-        //        Debug.Assert(p == buffer);
-        //    }
-        //    return true;
-        //}
+                for (var i = sNegative.Length - 1; i >= 0; i--)
+                    // *(--p)
+                    (p = ref Ref.Decrement(ref p)) = sNegative[i];
+
+                Debug.Assert(Unsafe.AreSame(ref p, ref buffer));
+            }
+            return true;
+        }
 
         //private static unsafe string Int64ToHexStr(long value, char hexBase, int digits)
         //{
@@ -1549,32 +1550,32 @@ namespace Backports.System
         //    return result;
         //}
 
-        //private static unsafe bool TryInt64ToHexStr(long value, char hexBase, int digits, Span<char> destination, out int charsWritten)
-        //{
-        //    int bufferLength = Math.Max(digits, FormattingHelpers.CountHexDigits((ulong)value));
-        //    if (bufferLength > destination.Length)
-        //    {
-        //        charsWritten = 0;
-        //        return false;
-        //    }
+        private static bool TryInt64ToHexStr(long value, char hexBase, int digits, Span<char> destination, out int charsWritten)
+        {
+            var bufferLength = Math.Max(digits, FormattingHelpers.CountHexDigits((ulong)value));
+            if (bufferLength > destination.Length)
+            {
+                charsWritten = 0;
+                return false;
+            }
 
-        //    charsWritten = bufferLength;
-        //    fixed (char* buffer = &MemoryMarshal.GetReference(destination))
-        //    {
-        //        char* p = buffer + bufferLength;
-        //        if (High32((ulong)value) != 0)
-        //        {
-        //            p = Int32ToHexChars(p, Low32((ulong)value), hexBase, 8);
-        //            p = Int32ToHexChars(p, High32((ulong)value), hexBase, digits - 8);
-        //        }
-        //        else
-        //        {
-        //            p = Int32ToHexChars(p, Low32((ulong)value), hexBase, Math.Max(digits, 1));
-        //        }
-        //        Debug.Assert(p == buffer);
-        //    }
-        //    return true;
-        //}
+            charsWritten = bufferLength;
+            //fixed (char* buffer = &MemoryMarshal.GetReference(destination))
+            ref var buffer = ref destination[0];
+            {
+                ref var p = ref Unsafe.Add(ref buffer, bufferLength);
+                if (High32((ulong)value) != 0)
+                {
+                    p = ref Int32ToHexChars(ref p, Low32((ulong)value), hexBase, 8);
+                    p = ref Int32ToHexChars(ref p, High32((ulong)value), hexBase, digits - 8);
+                }
+                else
+                    p = ref Int32ToHexChars(ref p, Low32((ulong) value), hexBase, Math.Max(digits, 1));
+
+                Debug.Assert(Unsafe.AreSame(ref p, ref buffer));
+            }
+            return true;
+        }
 
         //private static unsafe void UInt64ToNumber(ulong value, ref NumberBuffer number)
         //{
@@ -1629,32 +1630,33 @@ namespace Backports.System
         //    return result;
         //}
 
-        //private static unsafe bool TryUInt64ToDecStr(ulong value, int digits, Span<char> destination, out int charsWritten)
-        //{
-        //    if (digits < 1)
-        //        digits = 1;
+        private static bool TryUInt64ToDecStr(ulong value, int digits, Span<char> destination, out int charsWritten)
+        {
+            if (digits < 1)
+                digits = 1;
 
-        //    int bufferLength = Math.Max(digits, FormattingHelpers.CountDigits(value));
-        //    if (bufferLength > destination.Length)
-        //    {
-        //        charsWritten = 0;
-        //        return false;
-        //    }
+            var bufferLength = Math.Max(digits, FormattingHelpers.CountDigits(value));
+            if (bufferLength > destination.Length)
+            {
+                charsWritten = 0;
+                return false;
+            }
 
-        //    charsWritten = bufferLength;
-        //    fixed (char* buffer = &MemoryMarshal.GetReference(destination))
-        //    {
-        //        char* p = buffer + bufferLength;
-        //        while (High32(value) != 0)
-        //        {
-        //            p = UInt32ToDecChars(p, Int64DivMod1E9(ref value), 9);
-        //            digits -= 9;
-        //        }
-        //        p = UInt32ToDecChars(p, Low32(value), digits);
-        //        Debug.Assert(p == buffer);
-        //    }
-        //    return true;
-        //}
+            charsWritten = bufferLength;
+            //fixed (char* buffer = &MemoryMarshal.GetReference(destination))
+            ref var buffer = ref destination[0];
+            {
+                ref var p = ref Unsafe.Add(ref buffer, bufferLength);
+                while (High32(value) != 0)
+                {
+                    p = ref UInt32ToDecChars(ref p, Int64DivMod1E9(ref value), 9);
+                    digits -= 9;
+                }
+                p = ref UInt32ToDecChars(ref p, Low32(value), digits);
+                Debug.Assert(Unsafe.AreSame(ref p, ref buffer));
+            }
+            return true;
+        }
 
         internal static char ParseFormatSpecifier(ReadOnlySpan<char> format, out int digits)
         {
@@ -2643,16 +2645,16 @@ namespace Backports.System
             }
         }
 
-        //private static uint Low32(ulong value) => (uint)value;
+        private static uint Low32(ulong value) => (uint)value;
 
-        //private static uint High32(ulong value) => (uint)((value & 0xFFFFFFFF00000000) >> 32);
+        private static uint High32(ulong value) => (uint)((value & 0xFFFFFFFF00000000) >> 32);
 
-        //private static uint Int64DivMod1E9(ref ulong value)
-        //{
-        //    uint rem = (uint)(value % 1000000000);
-        //    value /= 1000000000;
-        //    return rem;
-        //}
+        private static uint Int64DivMod1E9(ref ulong value)
+        {
+            var rem = (uint)(value % 1000000000);
+            value /= 1000000000;
+            return rem;
+        }
 
         //private static ulong ExtractFractionAndBiasedExponent(double value, out int exponent)
         //{
