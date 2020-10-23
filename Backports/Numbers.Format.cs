@@ -29,6 +29,8 @@ namespace Backports
                     out charsWritten);
             if(typeof(T) == typeof(long))
                 return System.Number.TryFormatInt64(Unsafe.As<T, long>(ref @this), format, provider, destination, out charsWritten);
+            if (typeof(T) == typeof(ulong))
+                return System.Number.TryFormatUInt64(Unsafe.As<T, ulong>(ref @this), format, provider, destination, out charsWritten);
             throw TypeDoesNotSupportTryFormat<T>();
         }
 #else

@@ -1104,52 +1104,45 @@ namespace Backports.System
         //    }
         //}
 
-        //public static bool TryFormatUInt64(ulong value, ReadOnlySpan<char> format, IFormatProvider? provider, Span<char> destination, out int charsWritten)
-        //{
-        //    // Fast path for default format
-        //    if (format.Length == 0)
-        //    {
-        //        return TryUInt64ToDecStr(value, digits: -1, destination, out charsWritten);
-        //    }
+        public static bool TryFormatUInt64(ulong value, ReadOnlySpan<char> format, IFormatProvider? provider, Span<char> destination, out int charsWritten)
+        {
+            // Fast path for default format
+            return format.Length == 0 
+                ? TryUInt64ToDecStr(value, digits: -1, destination, out charsWritten) 
+                : TryFormatUInt64Slow(value, format, provider, destination, out charsWritten);
 
-        //    return TryFormatUInt64Slow(value, format, provider, destination, out charsWritten);
+            static bool TryFormatUInt64Slow(ulong value, ReadOnlySpan<char> format, IFormatProvider? provider, Span<char> destination, out int charsWritten)
+            {
+                var fmt = ParseFormatSpecifier(format, out var digits);
+                var fmtUpper = (char)(fmt & 0xFFDF); // ensure fmt is upper-cased for purposes of comparison
+                if (fmtUpper == 'G' ? digits < 1 : fmtUpper == 'D')
+                {
+                    return TryUInt64ToDecStr(value, digits, destination, out charsWritten);
+                }
+                else if (fmtUpper == 'X')
+                {
+                    return TryInt64ToHexStr((long)value, GetHexBase(fmt), digits, destination, out charsWritten);
+                }
+                else
+                {
+                    NumberFormatInfo info = NumberFormatInfo.GetInstance(provider);
+                    
+                    Span<byte> pDigits = stackalloc byte[UInt64NumberBufferLength];
+                    var number = new NumberBuffer(NumberBufferKind.Integer, pDigits);
 
-        //    static unsafe bool TryFormatUInt64Slow(ulong value, ReadOnlySpan<char> format, IFormatProvider? provider, Span<char> destination, out int charsWritten)
-        //    {
-        //        char fmt = ParseFormatSpecifier(format, out int digits);
-        //        char fmtUpper = (char)(fmt & 0xFFDF); // ensure fmt is upper-cased for purposes of comparison
-        //        if (fmtUpper == 'G' ? digits < 1 : fmtUpper == 'D')
-        //        {
-        //            return TryUInt64ToDecStr(value, digits, destination, out charsWritten);
-        //        }
-        //        else if (fmtUpper == 'X')
-        //        {
-        //            return TryInt64ToHexStr((long)value, GetHexBase(fmt), digits, destination, out charsWritten);
-        //        }
-        //        else
-        //        {
-        //            NumberFormatInfo info = NumberFormatInfo.GetInstance(provider);
+                    UInt64ToNumber(value, ref number);
 
-        //            byte* pDigits = stackalloc byte[UInt64NumberBufferLength];
-        //            NumberBuffer number = new NumberBuffer(NumberBufferKind.Integer, pDigits, UInt64NumberBufferLength);
+                    Span<char> stackPtr = stackalloc char[CharStackBufferSize];
+                    var sb = new ValueStringBuilder(stackPtr);
 
-        //            UInt64ToNumber(value, ref number);
-
-        //            char* stackPtr = stackalloc char[CharStackBufferSize];
-        //            ValueStringBuilder sb = new ValueStringBuilder(new Span<char>(stackPtr, CharStackBufferSize));
-
-        //            if (fmt != 0)
-        //            {
-        //                NumberToString(ref sb, ref number, fmt, digits, info);
-        //            }
-        //            else
-        //            {
-        //                NumberToStringFormat(ref sb, ref number, format, info);
-        //            }
-        //            return sb.TryCopyTo(destination, out charsWritten);
-        //        }
-        //    }
-        //}
+                    if (fmt != 0)
+                        NumberToString(ref sb, ref number, fmt, digits, info);
+                    else
+                        NumberToStringFormat(ref sb, ref number, format, info);
+                    return sb.TryCopyTo(destination, out charsWritten);
+                }
+            }
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // called from only one location
         private static void Int32ToNumber(int value, ref NumberBuffer number)
@@ -1577,30 +1570,37 @@ namespace Backports.System
             return true;
         }
 
-        //private static unsafe void UInt64ToNumber(ulong value, ref NumberBuffer number)
-        //{
-        //    number.DigitsCount = UInt64Precision;
-        //    number.IsNegative = false;
+        private static void UInt64ToNumber(ulong value, ref NumberBuffer number)
+        {
+            number.DigitsCount = UInt64Precision;
+            number.IsNegative = false;
 
-        //    byte* buffer = number.GetDigitsPointer();
-        //    byte* p = buffer + UInt64Precision;
+            ref var buffer = ref number.GetDigitsReference();
+            ref var p = ref Unsafe.Add(ref buffer, UInt64Precision);
 
-        //    while (High32(value) != 0)
-        //        p = UInt32ToDecChars(p, Int64DivMod1E9(ref value), 9);
-        //    p = UInt32ToDecChars(p, Low32(value), 0);
+            while (High32(value) != 0)
+                p = ref UInt32ToDecChars(ref p, Int64DivMod1E9(ref value), 9);
+            p = ref UInt32ToDecChars(ref p, Low32(value), 0);
 
-        //    int i = (int)(buffer + UInt64Precision - p);
+            //var i = (int)(buffer + UInt64Precision - p);
+            var i = (int) Ref.Offset(ref p, ref Unsafe.Add(ref buffer, UInt64Precision));
 
-        //    number.DigitsCount = i;
-        //    number.Scale = i;
+            number.DigitsCount = i;
+            number.Scale = i;
 
-        //    byte* dst = number.GetDigitsPointer();
-        //    while (--i >= 0)
-        //        *dst++ = *p++;
-        //    *dst = (byte)('\0');
+            ref var dst = ref number.GetDigitsReference();
+            while (--i >= 0)
+            {
+                dst = p;
+                dst = ref Ref.Increment(ref dst);
+                p = ref Ref.Increment(ref p);
+                //*dst++ = *p++;
+            }
 
-        //    number.CheckConsistency();
-        //}
+            dst = (byte)('\0');
+
+            number.CheckConsistency();
+        }
 
         //internal static unsafe string UInt64ToDecStr(ulong value, int digits)
         //{
