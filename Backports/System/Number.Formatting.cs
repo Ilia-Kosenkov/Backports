@@ -10,8 +10,9 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
-using Backports.System.Buffers.Text;
+using Backports;
 using Backports.System.Text;
+using Backports.System.Buffers.Text;
 
 namespace Backports.System
 {
@@ -397,125 +398,113 @@ namespace Backports.System
         //        sb.TryCopyTo(destination, out charsWritten);
         //}
 
-        //private static int GetFloatingPointMaxDigitsAndPrecision(char fmt, ref int precision, NumberFormatInfo info, out bool isSignificantDigits)
-        //{
-        //    if (fmt == 0)
-        //    {
-        //        isSignificantDigits = true;
-        //        return precision;
-        //    }
+        private static int GetFloatingPointMaxDigitsAndPrecision(char fmt, ref int precision, NumberFormatInfo info, out bool isSignificantDigits)
+        {
+            if (fmt == 0)
+            {
+                isSignificantDigits = true;
+                return precision;
+            }
 
-        //    int maxDigits = precision;
+            var maxDigits = precision;
 
-        //    switch (fmt)
-        //    {
-        //        case 'C':
-        //        case 'c':
-        //            {
-        //                // The currency format uses the precision specifier to indicate the number of
-        //                // decimal digits to format. This defaults to NumberFormatInfo.CurrencyDecimalDigits.
+            switch (fmt)
+            {
+                case 'C':
+                case 'c':
+                    {
+                        // The currency format uses the precision specifier to indicate the number of
+                        // decimal digits to format. This defaults to NumberFormatInfo.CurrencyDecimalDigits.
 
-        //                if (precision == -1)
-        //                {
-        //                    precision = info.CurrencyDecimalDigits;
-        //                }
-        //                isSignificantDigits = false;
+                        if (precision == -1)
+                            precision = info.CurrencyDecimalDigits;
+                        isSignificantDigits = false;
 
-        //                break;
-        //            }
+                        break;
+                    }
 
-        //        case 'E':
-        //        case 'e':
-        //            {
-        //                // The exponential format uses the precision specifier to indicate the number of
-        //                // decimal digits to format. This defaults to 6. However, the exponential format
-        //                // also always formats a single integral digit, so we need to increase the precision
-        //                // specifier and treat it as the number of significant digits to account for this.
+                case 'E':
+                case 'e':
+                    {
+                        // The exponential format uses the precision specifier to indicate the number of
+                        // decimal digits to format. This defaults to 6. However, the exponential format
+                        // also always formats a single integral digit, so we need to increase the precision
+                        // specifier and treat it as the number of significant digits to account for this.
 
-        //                if (precision == -1)
-        //                {
-        //                    precision = DefaultPrecisionExponentialFormat;
-        //                }
+                        if (precision == -1) 
+                            precision = DefaultPrecisionExponentialFormat;
 
-        //                precision++;
-        //                isSignificantDigits = true;
+                        precision++;
+                        isSignificantDigits = true;
 
-        //                break;
-        //            }
+                        break;
+                    }
 
-        //        case 'F':
-        //        case 'f':
-        //        case 'N':
-        //        case 'n':
-        //            {
-        //                // The fixed-point and number formats use the precision specifier to indicate the number
-        //                // of decimal digits to format. This defaults to NumberFormatInfo.NumberDecimalDigits.
+                case 'F':
+                case 'f':
+                case 'N':
+                case 'n':
+                    {
+                        // The fixed-point and number formats use the precision specifier to indicate the number
+                        // of decimal digits to format. This defaults to NumberFormatInfo.NumberDecimalDigits.
 
-        //                if (precision == -1)
-        //                {
-        //                    precision = info.NumberDecimalDigits;
-        //                }
-        //                isSignificantDigits = false;
+                        if (precision == -1) 
+                            precision = info.NumberDecimalDigits;
+                        isSignificantDigits = false;
 
-        //                break;
-        //            }
+                        break;
+                    }
 
-        //        case 'G':
-        //        case 'g':
-        //            {
-        //                // The general format uses the precision specifier to indicate the number of significant
-        //                // digits to format. This defaults to the shortest roundtrippable string. Additionally,
-        //                // given that we can't return zero significant digits, we treat 0 as returning the shortest
-        //                // roundtrippable string as well.
+                case 'G':
+                case 'g':
+                    {
+                        // The general format uses the precision specifier to indicate the number of significant
+                        // digits to format. This defaults to the shortest roundtrippable string. Additionally,
+                        // given that we can't return zero significant digits, we treat 0 as returning the shortest
+                        // roundtrippable string as well.
 
-        //                if (precision == 0)
-        //                {
-        //                    precision = -1;
-        //                }
-        //                isSignificantDigits = true;
+                        if (precision == 0) 
+                            precision = -1;
+                        isSignificantDigits = true;
 
-        //                break;
-        //            }
+                        break;
+                    }
 
-        //        case 'P':
-        //        case 'p':
-        //            {
-        //                // The percent format uses the precision specifier to indicate the number of
-        //                // decimal digits to format. This defaults to NumberFormatInfo.PercentDecimalDigits.
-        //                // However, the percent format also always multiplies the number by 100, so we need
-        //                // to increase the precision specifier to ensure we get the appropriate number of digits.
+                case 'P':
+                case 'p':
+                    {
+                        // The percent format uses the precision specifier to indicate the number of
+                        // decimal digits to format. This defaults to NumberFormatInfo.PercentDecimalDigits.
+                        // However, the percent format also always multiplies the number by 100, so we need
+                        // to increase the precision specifier to ensure we get the appropriate number of digits.
 
-        //                if (precision == -1)
-        //                {
-        //                    precision = info.PercentDecimalDigits;
-        //                }
+                        if (precision == -1) 
+                            precision = info.PercentDecimalDigits;
 
-        //                precision += 2;
-        //                isSignificantDigits = false;
+                        precision += 2;
+                        isSignificantDigits = false;
 
-        //                break;
-        //            }
+                        break;
+                    }
 
-        //        case 'R':
-        //        case 'r':
-        //            {
-        //                // The roundtrip format ignores the precision specifier and always returns the shortest
-        //                // roundtrippable string.
+                case 'R':
+                case 'r':
+                    {
+                        // The roundtrip format ignores the precision specifier and always returns the shortest
+                        // roundtrippable string.
 
-        //                precision = -1;
-        //                isSignificantDigits = true;
+                        precision = -1;
+                        isSignificantDigits = true;
 
-        //                break;
-        //            }
+                        break;
+                    }
 
-        //        default:
-        //            {
-        //                throw new FormatException(SR.Argument_BadFormatSpecifier);
-        //            }
-        //    }
+                default:
+                    throw new FormatException("Bad format specifier");
+            }
 
-        //    return maxDigits;
-        //}
+            return maxDigits;
+        }
 
         ///// <summary>Formats the specified value according to the specified format and info.</summary>
         ///// <returns>
@@ -594,85 +583,85 @@ namespace Backports.System
         //    return FormatSingle(ref sb, value, format, info) ?? sb.ToString();
         //}
 
-        //public static bool TryFormatSingle(float value, ReadOnlySpan<char> format, NumberFormatInfo info, Span<char> destination, out int charsWritten)
-        //{
-        //    var sb = new ValueStringBuilder(stackalloc char[CharStackBufferSize]);
-        //    string? s = FormatSingle(ref sb, value, format, info);
-        //    return s != null ?
-        //        TryCopyTo(s, destination, out charsWritten) :
-        //        sb.TryCopyTo(destination, out charsWritten);
-        //}
+        public static bool TryFormatSingle(float value, ReadOnlySpan<char> format, NumberFormatInfo info, Span<char> destination, out int charsWritten)
+        {
+            var sb = new ValueStringBuilder(stackalloc char[CharStackBufferSize]);
+            if (!value.IsFinite())
+            {
+                if (float.IsNaN(value))
+                    sb.Append(info.NaNSymbol);
+                else
+                    sb.Append(value.IsNegative() ? info.NegativeInfinitySymbol : info.PositiveInfinitySymbol);
+            }
+            else
+            {
+                var number = new NumberBuffer(NumberBufferKind.FloatingPoint, stackalloc byte[SingleNumberBufferLength])
+                {
+                    IsNegative = value.IsNegative()
+                };
 
-        ///// <summary>Formats the specified value according to the specified format and info.</summary>
-        ///// <returns>
-        ///// Non-null if an existing string can be returned, in which case the builder will be unmodified.
-        ///// Null if no existing string was returned, in which case the formatted output is in the builder.
-        ///// </returns>
-        //private static unsafe string? FormatSingle(ref ValueStringBuilder sb, float value, ReadOnlySpan<char> format, NumberFormatInfo info)
-        //{
-        //    if (!float.IsFinite(value))
-        //    {
-        //        if (float.IsNaN(value))
-        //        {
-        //            return info.NaNSymbol;
-        //        }
+                FormatSingle(ref sb, ref number, value, format, info);
+            }
+            return sb.TryCopyTo(destination, out charsWritten);
+        }
 
-        //        return float.IsNegative(value) ? info.NegativeInfinitySymbol : info.PositiveInfinitySymbol;
-        //    }
+        /// <summary>Formats the specified value according to the specified format and info.</summary>
+        /// <returns>
+        /// Non-null if an existing string can be returned, in which case the builder will be unmodified.
+        /// Null if no existing string was returned, in which case the formatted output is in the builder.
+        /// </returns>
+        private static void FormatSingle(ref ValueStringBuilder sb, ref NumberBuffer number, float value, ReadOnlySpan<char> format, NumberFormatInfo info)
+        {
+            
+            var fmt = ParseFormatSpecifier(format, out var precision);
+            if (fmt == '\0')
+                // For back-compat we currently specially treat the precision for custom
+                // format specifiers. The constant has more details as to why.
+                precision = SinglePrecisionCustomFormat;
 
-        //    char fmt = ParseFormatSpecifier(format, out int precision);
-        //    byte* pDigits = stackalloc byte[SingleNumberBufferLength];
 
-        //    if (fmt == '\0')
-        //    {
-        //        // For back-compat we currently specially treat the precision for custom
-        //        // format specifiers. The constant has more details as to why.
-        //        precision = SinglePrecisionCustomFormat;
-        //    }
+            // We need to track the original precision requested since some formats
+           // accept values like 0 and others may require additional fixups.
+           var nMaxDigits =
+               GetFloatingPointMaxDigitsAndPrecision(fmt, ref precision, info, out var isSignificantDigits);
 
-        //    NumberBuffer number = new NumberBuffer(NumberBufferKind.FloatingPoint, pDigits, SingleNumberBufferLength);
-        //    number.IsNegative = float.IsNegative(value);
+            // ReSharper disable once CompareOfFloatsByEqualityOperator
+            if (value != default && (!isSignificantDigits || !Grisu3.TryRunSingle(value, precision, ref number)))
+                Dragon4Single(value, precision, isSignificantDigits, ref number);
 
-        //    // We need to track the original precision requested since some formats
-        //    // accept values like 0 and others may require additional fixups.
-        //    int nMaxDigits = GetFloatingPointMaxDigitsAndPrecision(fmt, ref precision, info, out bool isSignificantDigits);
+            number.CheckConsistency();
 
-        //    if ((value != default) && (!isSignificantDigits || !Grisu3.TryRunSingle(value, precision, ref number)))
-        //    {
-        //        Dragon4Single(value, precision, isSignificantDigits, ref number);
-        //    }
+            // When the number is known to be roundtrippable (either because we requested it be, or
+            // because we know we have enough digits to satisfy roundtrippability), we should validate
+            // that the number actually roundtrips back to the original result.
 
-        //    number.CheckConsistency();
+            Debug.Assert(((precision != -1) && (precision < SinglePrecision)) ||
+                         (BitConverter.SingleToInt32Bits(value) ==
+                          BitConverter.SingleToInt32Bits(NumberToSingle(ref number))));
 
-        //    // When the number is known to be roundtrippable (either because we requested it be, or
-        //    // because we know we have enough digits to satisfy roundtrippability), we should validate
-        //    // that the number actually roundtrips back to the original result.
+            if (fmt != 0)
+            {
+                if (precision == -1)
+                {
+                    Debug.Assert((fmt == 'G') || (fmt == 'g') || (fmt == 'R') || (fmt == 'r'));
 
-        //    Debug.Assert(((precision != -1) && (precision < SinglePrecision)) || (BitConverter.SingleToInt32Bits(value) == BitConverter.SingleToInt32Bits(NumberToSingle(ref number))));
+                    // For the roundtrip and general format specifiers, when returning the shortest roundtrippable
+                    // string, we need to update the maximum number of digits to be the greater of number.DigitsCount
+                    // or SinglePrecision. This ensures that we continue returning "pretty" strings for values with
+                    // less digits. One example this fixes is "-60", which would otherwise be formatted as "-6E+01"
+                    // since DigitsCount would be 1 and the formatter would almost immediately switch to scientific notation.
 
-        //    if (fmt != 0)
-        //    {
-        //        if (precision == -1)
-        //        {
-        //            Debug.Assert((fmt == 'G') || (fmt == 'g') || (fmt == 'R') || (fmt == 'r'));
+                    nMaxDigits = Math.Max(number.DigitsCount, SinglePrecision);
+                }
 
-        //            // For the roundtrip and general format specifiers, when returning the shortest roundtrippable
-        //            // string, we need to update the maximum number of digits to be the greater of number.DigitsCount
-        //            // or SinglePrecision. This ensures that we continue returning "pretty" strings for values with
-        //            // less digits. One example this fixes is "-60", which would otherwise be formatted as "-6E+01"
-        //            // since DigitsCount would be 1 and the formatter would almost immediately switch to scientific notation.
-
-        //            nMaxDigits = Math.Max(number.DigitsCount, SinglePrecision);
-        //        }
-        //        NumberToString(ref sb, ref number, fmt, nMaxDigits, info);
-        //    }
-        //    else
-        //    {
-        //        Debug.Assert(precision == SinglePrecisionCustomFormat);
-        //        NumberToStringFormat(ref sb, ref number, format, info);
-        //    }
-        //    return null;
-        //}
+                NumberToString(ref sb, ref number, fmt, nMaxDigits, info);
+            }
+            else
+            {
+                Debug.Assert(precision == SinglePrecisionCustomFormat);
+                NumberToStringFormat(ref sb, ref number, format, info);
+            }
+        }
 
         ////public static string FormatHalf(Half value, string? format, NumberFormatInfo info)
         ////{
@@ -759,19 +748,19 @@ namespace Backports.System
         ////}
 
 
-        //private static bool TryCopyTo(string source, Span<char> destination, out int charsWritten)
-        //{
-        //    Debug.Assert(source != null);
+        private static bool TryCopyTo(string source, Span<char> destination, out int charsWritten)
+        {
+            Debug.Assert(source != null);
 
-        //    if (source.AsSpan().TryCopyTo(destination))
-        //    {
-        //        charsWritten = source.Length;
-        //        return true;
-        //    }
+            if (source.AsSpan().TryCopyTo(destination))
+            {
+                charsWritten = source.Length;
+                return true;
+            }
 
-        //    charsWritten = 0;
-        //    return false;
-        //}
+            charsWritten = 0;
+            return false;
+        }
 
         private static char GetHexBase(char fmt)
         {
@@ -2483,8 +2472,13 @@ namespace Backports.System
             {
                 do
                 {
-                    sb.Append(dig != 0 ? (char) dig : '0');
-                    dig = ref Ref.Increment(ref dig);
+                    if (dig != 0)
+                    {
+                        sb.Append((char) dig);
+                        dig = ref Ref.Increment(ref dig);
+                    }
+                    else
+                        sb.Append('0');
                 }
                 while (--digPos > 0);
             }
@@ -2656,37 +2650,37 @@ namespace Backports.System
             return rem;
         }
 
-        //private static ulong ExtractFractionAndBiasedExponent(double value, out int exponent)
-        //{
-        //    ulong bits = (ulong)(BitConverter.DoubleToInt64Bits(value));
-        //    ulong fraction = (bits & 0xFFFFFFFFFFFFF);
-        //    exponent = ((int)(bits >> 52) & 0x7FF);
+        private static ulong ExtractFractionAndBiasedExponent(double value, out int exponent)
+        {
+            var bits = (ulong)(BitConverter.DoubleToInt64Bits(value));
+            var fraction = (bits & 0xFFFFFFFFFFFFF);
+            exponent = ((int)(bits >> 52) & 0x7FF);
 
-        //    if (exponent != 0)
-        //    {
-        //        // For normalized value, according to https://en.wikipedia.org/wiki/Double-precision_floating-point_format
-        //        // value = 1.fraction * 2^(exp - 1023)
-        //        //       = (1 + mantissa / 2^52) * 2^(exp - 1023)
-        //        //       = (2^52 + mantissa) * 2^(exp - 1023 - 52)
-        //        //
-        //        // So f = (2^52 + mantissa), e = exp - 1075;
+            if (exponent != 0)
+            {
+                // For normalized value, according to https://en.wikipedia.org/wiki/Double-precision_floating-point_format
+                // value = 1.fraction * 2^(exp - 1023)
+                //       = (1 + mantissa / 2^52) * 2^(exp - 1023)
+                //       = (2^52 + mantissa) * 2^(exp - 1023 - 52)
+                //
+                // So f = (2^52 + mantissa), e = exp - 1075;
 
-        //        fraction |= (1UL << 52);
-        //        exponent -= 1075;
-        //    }
-        //    else
-        //    {
-        //        // For denormalized value, according to https://en.wikipedia.org/wiki/Double-precision_floating-point_format
-        //        // value = 0.fraction * 2^(1 - 1023)
-        //        //       = (mantissa / 2^52) * 2^(-1022)
-        //        //       = mantissa * 2^(-1022 - 52)
-        //        //       = mantissa * 2^(-1074)
-        //        // So f = mantissa, e = -1074
-        //        exponent = -1074;
-        //    }
+                fraction |= (1UL << 52);
+                exponent -= 1075;
+            }
+            else
+            {
+                // For denormalized value, according to https://en.wikipedia.org/wiki/Double-precision_floating-point_format
+                // value = 0.fraction * 2^(1 - 1023)
+                //       = (mantissa / 2^52) * 2^(-1022)
+                //       = mantissa * 2^(-1022 - 52)
+                //       = mantissa * 2^(-1074)
+                // So f = mantissa, e = -1074
+                exponent = -1074;
+            }
 
-        //    return fraction;
-        //}
+            return fraction;
+        }
 
         ////private static ushort ExtractFractionAndBiasedExponent(Half value, out int exponent)
         ////{
@@ -2720,37 +2714,37 @@ namespace Backports.System
         ////    return fraction;
         ////}
 
-        //private static uint ExtractFractionAndBiasedExponent(float value, out int exponent)
-        //{
-        //    uint bits = (uint)(BitConverter.SingleToInt32Bits(value));
-        //    uint fraction = (bits & 0x7FFFFF);
-        //    exponent = ((int)(bits >> 23) & 0xFF);
+        private static uint ExtractFractionAndBiasedExponent(float value, out int exponent)
+        {
+            var bits = (uint)BitConverter.SingleToInt32Bits(value);
+            var fraction = bits & 0x7FFFFF;
+            exponent = (int)(bits >> 23) & 0xFF;
 
-        //    if (exponent != 0)
-        //    {
-        //        // For normalized value, according to https://en.wikipedia.org/wiki/Single-precision_floating-point_format
-        //        // value = 1.fraction * 2^(exp - 127)
-        //        //       = (1 + mantissa / 2^23) * 2^(exp - 127)
-        //        //       = (2^23 + mantissa) * 2^(exp - 127 - 23)
-        //        //
-        //        // So f = (2^23 + mantissa), e = exp - 150;
+            if (exponent != 0)
+            {
+                // For normalized value, according to https://en.wikipedia.org/wiki/Single-precision_floating-point_format
+                // value = 1.fraction * 2^(exp - 127)
+                //       = (1 + mantissa / 2^23) * 2^(exp - 127)
+                //       = (2^23 + mantissa) * 2^(exp - 127 - 23)
+                //
+                // So f = (2^23 + mantissa), e = exp - 150;
 
-        //        fraction |= (1U << 23);
-        //        exponent -= 150;
-        //    }
-        //    else
-        //    {
-        //        // For denormalized value, according to https://en.wikipedia.org/wiki/Single-precision_floating-point_format
-        //        // value = 0.fraction * 2^(1 - 127)
-        //        //       = (mantissa / 2^23) * 2^(-126)
-        //        //       = mantissa * 2^(-126 - 23)
-        //        //       = mantissa * 2^(-149)
-        //        // So f = mantissa, e = -149
-        //        exponent = -149;
-        //    }
+                fraction |= 1U << 23;
+                exponent -= 150;
+            }
+            else
+            {
+                // For denormalized value, according to https://en.wikipedia.org/wiki/Single-precision_floating-point_format
+                // value = 0.fraction * 2^(1 - 127)
+                //       = (mantissa / 2^23) * 2^(-126)
+                //       = mantissa * 2^(-126 - 23)
+                //       = mantissa * 2^(-149)
+                // So f = mantissa, e = -149
+                exponent = -149;
+            }
 
-        //    return fraction;
-        //}
+            return fraction;
+        }
     }
 }
 

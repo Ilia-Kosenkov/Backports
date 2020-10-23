@@ -45,6 +45,25 @@ namespace Backports
                 : new ArgumentException("Hex stye not supported");
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsFinite(this float f)
+        {
+            var bits = System.BitConverter.SingleToInt32Bits(f);
+            return (bits & 0x7FFFFFFF) < 0x7F800000;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsNegative(this float f) => System.BitConverter.SingleToInt32Bits(f) < 0;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static  bool IsFinite(this double d)
+        {
+            var bits = BitConverter.DoubleToInt64Bits(d);
+            return (bits & 0x7FFFFFFFFFFFFFFF) < 0x7FF0000000000000;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsNegative(this double d) => BitConverter.DoubleToInt64Bits(d) < 0;
     }
 
     internal static class MathP

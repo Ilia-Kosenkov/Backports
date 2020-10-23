@@ -114,6 +114,37 @@ namespace Backports.System
 
             return 31 ^ Log2SoftwareFallback(value);
         }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int Log2(uint value)
+        {
+            // The 0->0 contract is fulfilled by setting the LSB to 1.
+            // Log(1) is 0, and setting the LSB for values > 1 does not change the log2 result.
+            value |= 1;
+
+            // value    lzcnt   actual  expected
+            // ..0001   31      31-31    0
+            // ..0010   30      31-30    1
+            // 0010..    2      31-2    29
+            // 0100..    1      31-1    30
+            // 1000..    0      31-0    31
+
+            // Fallback contract is 0->0
+            return Log2SoftwareFallback(value);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int Log2(ulong value)
+        {
+            value |= 1;
+
+            var hi = (uint)(value >> 32);
+
+            if (hi == 0)
+                return Log2((uint) value);
+
+            return 32 + Log2(hi);
+        }
     }
 }
 
