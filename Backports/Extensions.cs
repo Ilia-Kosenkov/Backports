@@ -64,6 +64,10 @@ namespace Backports
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsNegative(this double d) => BitConverter.DoubleToInt64Bits(d) < 0;
+
+        public static bool IsNotEmpty<T>(this ReadOnlySpan<T> @this) where T : unmanaged => !@this.IsEmpty;
+        public static bool IsNotEmpty<T>(this Span<T> @this) where T : unmanaged => !@this.IsEmpty;
+
     }
 
     internal static class MathP

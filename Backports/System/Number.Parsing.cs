@@ -46,18 +46,16 @@ namespace Backports.System
         private const int HalfMaxExponent = 5;
         private const int HalfMinExponent = -8;
 
-        private static unsafe bool TryNumberToInt32(ref NumberBuffer number, ref int value)
+        private static bool TryNumberToInt32(ref NumberBuffer number, ref int value)
         {
             number.CheckConsistency();
 
-            int i = number.Scale;
+            var i = number.Scale;
             if (i > Int32Precision || i < number.DigitsCount)
-            {
                 return false;
-            }
-            byte* p = number.GetDigitsPointer();
-            Debug.Assert(p != null);
-            int n = 0;
+            //var p = number.GetDigitsPointer();
+            ref var p = ref number.GetDigitsReference();
+            var n = 0;
             while (--i >= 0)
             {
                 if ((uint)n > (0x7FFFFFFF / 10))
@@ -65,84 +63,70 @@ namespace Backports.System
                     return false;
                 }
                 n *= 10;
-                if (*p != '\0')
-                {
-                    n += (*p++ - '0');
-                }
+                if (p == '\0') 
+                    continue;
+                //n += (*p++ - '0');
+                n += p - '0';
+                p = ref Ref.Increment(ref p);
             }
             if (number.IsNegative)
             {
                 n = -n;
                 if (n > 0)
-                {
                     return false;
-                }
             }
             else
             {
                 if (n < 0)
-                {
                     return false;
-                }
             }
             value = n;
             return true;
         }
 
-        private static unsafe bool TryNumberToInt64(ref NumberBuffer number, ref long value)
+        private static bool TryNumberToInt64(ref NumberBuffer number, ref long value)
         {
             number.CheckConsistency();
 
-            int i = number.Scale;
+            var i = number.Scale;
             if (i > Int64Precision || i < number.DigitsCount)
-            {
                 return false;
-            }
-            byte* p = number.GetDigitsPointer();
-            Debug.Assert(p != null);
+            ref var p = ref number.GetDigitsReference();
             long n = 0;
             while (--i >= 0)
             {
                 if ((ulong)n > (0x7FFFFFFFFFFFFFFF / 10))
-                {
                     return false;
-                }
                 n *= 10;
-                if (*p != '\0')
-                {
-                    n += (*p++ - '0');
-                }
+                if (p == '\0') 
+                    continue;
+                //n += (*p++ - '0');
+                n += p - '0';
+                p = ref Ref.Increment(ref p);
             }
             if (number.IsNegative)
             {
                 n = -n;
                 if (n > 0)
-                {
                     return false;
-                }
             }
             else
             {
                 if (n < 0)
-                {
                     return false;
-                }
             }
             value = n;
             return true;
         }
 
-        private static unsafe bool TryNumberToUInt32(ref NumberBuffer number, ref uint value)
+        private static bool TryNumberToUInt32(ref NumberBuffer number, ref uint value)
         {
             number.CheckConsistency();
 
-            int i = number.Scale;
+            var i = number.Scale;
             if (i > UInt32Precision || i < number.DigitsCount || number.IsNegative)
-            {
                 return false;
-            }
-            byte* p = number.GetDigitsPointer();
-            Debug.Assert(p != null);
+            ref var p = ref number.GetDigitsReference();
             uint n = 0;
             while (--i >= 0)
             {
@@ -151,97 +135,46 @@ namespace Backports.System
                     return false;
                 }
                 n *= 10;
-                if (*p != '\0')
-                {
-                    uint newN = n + (uint)(*p++ - '0');
-                    // Detect an overflow here...
-                    if (newN < n)
-                    {
-                        return false;
-                    }
-                    n = newN;
-                }
+                if (p == '\0') 
+                    continue;
+                //var newN = n + (uint)(*p++ - '0');
+                var newN = n + (uint) (p - '0');
+                p = ref Ref.Increment(ref p);
+                // Detect an overflow here...
+                if (newN < n)
+                    return false;
+                n = newN;
             }
             value = n;
             return true;
         }
 
-        private static unsafe bool TryNumberToUInt64(ref NumberBuffer number, ref ulong value)
+        private static bool TryNumberToUInt64(ref NumberBuffer number, ref ulong value)
         {
             number.CheckConsistency();
 
-            int i = number.Scale;
+            var i = number.Scale;
             if (i > UInt64Precision || i < number.DigitsCount || number.IsNegative)
-            {
                 return false;
-            }
-            byte* p = number.GetDigitsPointer();
-            Debug.Assert(p != null);
+            ref var p = ref number.GetDigitsReference();
             ulong n = 0;
             while (--i >= 0)
             {
                 if (n > (0xFFFFFFFFFFFFFFFF / 10))
-                {
                     return false;
-                }
                 n *= 10;
-                if (*p != '\0')
-                {
-                    ulong newN = n + (ulong)(*p++ - '0');
-                    // Detect an overflow here...
-                    if (newN < n)
-                    {
-                        return false;
-                    }
-                    n = newN;
-                }
+                if (p == '\0') 
+                    continue;
+                //var newN = n + (ulong)(*p++ - '0');
+                var newN = n + (ulong) (p - '0');
+                p = ref Ref.Increment(ref p);
+                // Detect an overflow here...
+                if (newN < n)
+                    return false;
+                n = newN;
             }
             value = n;
             return true;
-        }
-
-        internal static int ParseInt32(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info)
-        {
-            ParsingStatus status = TryParseInt32(value, styles, info, out int result);
-            if (status != ParsingStatus.OK)
-            {
-                ThrowOverflowOrFormatException(status, TypeCode.Int32);
-            }
-
-            return result;
-        }
-
-        internal static long ParseInt64(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info)
-        {
-            ParsingStatus status = TryParseInt64(value, styles, info, out long result);
-            if (status != ParsingStatus.OK)
-            {
-                ThrowOverflowOrFormatException(status, TypeCode.Int64);
-            }
-
-            return result;
-        }
-
-        internal static uint ParseUInt32(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info)
-        {
-            ParsingStatus status = TryParseUInt32(value, styles, info, out uint result);
-            if (status != ParsingStatus.OK)
-            {
-                ThrowOverflowOrFormatException(status, TypeCode.UInt32);
-            }
-
-            return result;
-        }
-
-        internal static ulong ParseUInt64(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info)
-        {
-            ParsingStatus status = TryParseUInt64(value, styles, info, out ulong result);
-            if (status != ParsingStatus.OK)
-            {
-                ThrowOverflowOrFormatException(status, TypeCode.UInt64);
-            }
-
-            return result;
         }
 
         private static unsafe bool TryParseNumber(ref char* str, char* strEnd, NumberStyles styles, ref NumberBuffer number, NumberFormatInfo info)
@@ -269,7 +202,7 @@ namespace Backports.System
             string groupSep;                // group separator from NumberFormatInfo.
             string? currSymbol = null;       // currency symbol from NumberFormatInfo.
 
-            bool parsingCurrency = false;
+            var parsingCurrency = false;
             if ((styles & NumberStyles.AllowCurrencySymbol) != 0)
             {
                 currSymbol = info.CurrencySymbol;
@@ -286,23 +219,26 @@ namespace Backports.System
                 groupSep = info.NumberGroupSeparator;
             }
 
-            int state = 0;
-            char* p = str;
-            char ch = p < strEnd ? *p : '\0';
+            var state = 0;
+            var p = str;
+            var ch = p < strEnd ? *p : '\0';
             char* next;
 
             while (true)
             {
                 // Eat whitespace unless we've found a sign which isn't followed by a currency symbol.
                 // "-Kr 1231.47" is legal but "- 1231.47" is not.
-                if (!IsWhite(ch) || (styles & NumberStyles.AllowLeadingWhite) == 0 || ((state & StateSign) != 0 && ((state & StateCurrency) == 0 && info.NumberNegativePattern != 2)))
+                if (!IsWhite(ch) || (styles & NumberStyles.AllowLeadingWhite) == 0 || (state & StateSign) != 0 &&
+                    (state & StateCurrency) == 0 && info.NumberNegativePattern != 2)
                 {
-                    if ((((styles & NumberStyles.AllowLeadingSign) != 0) && (state & StateSign) == 0) && ((next = MatchChars(p, strEnd, info.PositiveSign)) != null || ((next = MatchChars(p, strEnd, info.NegativeSign)) != null && (number.IsNegative = true))))
+                    if ((styles & NumberStyles.AllowLeadingSign) != 0 && (state & StateSign) == 0 &&
+                        ((next = MatchChars(p, strEnd, info.PositiveSign)) != null ||
+                         (next = MatchChars(p, strEnd, info.NegativeSign)) != null && (number.IsNegative = true)))
                     {
                         state |= StateSign;
                         p = next - 1;
                     }
-                    else if (ch == '(' && ((styles & NumberStyles.AllowParentheses) != 0) && ((state & StateSign) == 0))
+                    else if (ch == '(' && (styles & NumberStyles.AllowParentheses) != 0 && (state & StateSign) == 0)
                     {
                         state |= StateSign | StateParens;
                         number.IsNegative = true;
@@ -323,9 +259,9 @@ namespace Backports.System
                 ch = ++p < strEnd ? *p : '\0';
             }
 
-            int digCount = 0;
-            int digEnd = 0;
-            int maxDigCount = number.Digits.Length - 1;
+            var digCount = 0;
+            var digEnd = 0;
+            var maxDigCount = number.Digits.Length - 1;
 
             while (true)
             {
@@ -337,8 +273,228 @@ namespace Backports.System
                     {
                         if (digCount < maxDigCount)
                         {
-                            number.Digits[digCount++] = (byte)(ch);
-                            if ((ch != '0') || (number.Kind != NumberBufferKind.Integer))
+                            number.Digits[digCount++] = (byte)ch;
+                            if (ch != '0' || number.Kind != NumberBufferKind.Integer)
+                            {
+                                digEnd = digCount;
+                            }
+                        }
+                        else if (ch != '0')
+                        {
+                            // For decimal and binary floating-point numbers, we only
+                            // need to store digits up to maxDigCount. However, we still
+                            // need to keep track of whether any additional digits past
+                            // maxDigCount were non-zero, as that can impact rounding
+                            // for an input that falls evenly between two representable
+                            // results.
+
+                            number.HasNonZeroTail = true;
+                        }
+
+                        if ((state & StateDecimal) == 0) 
+                            number.Scale++;
+                        state |= StateNonZero;
+                    }
+                    else if ((state & StateDecimal) != 0) 
+                        number.Scale--;
+                }
+                else if ((styles & NumberStyles.AllowDecimalPoint) != 0 && (state & StateDecimal) == 0 && ((next = MatchChars(p, strEnd, decSep)) != null || parsingCurrency && (state & StateCurrency) == 0 && (next = MatchChars(p, strEnd, info.NumberDecimalSeparator)) != null))
+                {
+                    state |= StateDecimal;
+                    p = next - 1;
+                }
+                else if ((styles & NumberStyles.AllowThousands) != 0 && (state & StateDigits) != 0 &&
+                         (state & StateDecimal) == 0 && ((next = MatchChars(p, strEnd, groupSep)) != null ||
+                                                         parsingCurrency && (state & StateCurrency) == 0 &&
+                                                         (next = MatchChars(p, strEnd, info.NumberGroupSeparator)) !=
+                                                         null))
+                    p = next - 1;
+                else
+                    break;
+
+                ch = ++p < strEnd ? *p : '\0';
+            }
+
+            var negExp = false;
+            number.DigitsCount = digEnd;
+            number.Digits[digEnd] = (byte)'\0';
+            if ((state & StateDigits) != 0)
+            {
+                if ((ch == 'E' || ch == 'e') && (styles & NumberStyles.AllowExponent) != 0)
+                {
+                    var temp = p;
+                    ch = ++p < strEnd ? *p : '\0';
+                    if ((next = MatchChars(p, strEnd, info.PositiveSign)) != null)
+                        ch = (p = next) < strEnd ? *p : '\0';
+                    else if ((next = MatchChars(p, strEnd, info.NegativeSign)) != null)
+                    {
+                        ch = (p = next) < strEnd ? *p : '\0';
+                        negExp = true;
+                    }
+                    if (IsDigit(ch))
+                    {
+                        var exp = 0;
+                        do
+                        {
+                            exp = exp * 10 + (ch - '0');
+                            ch = ++p < strEnd ? *p : '\0';
+                            if (exp > 1000)
+                            {
+                                exp = 9999;
+                                while (IsDigit(ch))
+                                {
+                                    ch = ++p < strEnd ? *p : '\0';
+                                }
+                            }
+                        } while (IsDigit(ch));
+                        if (negExp) 
+                            exp = -exp;
+                        number.Scale += exp;
+                    }
+                    else
+                    {
+                        p = temp;
+                        ch = p < strEnd ? *p : '\0';
+                    }
+                }
+                while (true)
+                {
+                    if (!IsWhite(ch) || (styles & NumberStyles.AllowTrailingWhite) == 0)
+                    {
+                        if ((styles & NumberStyles.AllowTrailingSign) != 0 && (state & StateSign) == 0 && ((next = MatchChars(p, strEnd, info.PositiveSign)) != null || (next = MatchChars(p, strEnd, info.NegativeSign)) != null && (number.IsNegative = true)))
+                        {
+                            state |= StateSign;
+                            p = next - 1;
+                        }
+                        else if (ch == ')' && (state & StateParens) != 0)
+                            state &= ~StateParens;
+                        else if (currSymbol != null && (next = MatchChars(p, strEnd, currSymbol)) != null)
+                        {
+                            currSymbol = null;
+                            p = next - 1;
+                        }
+                        else
+                            break;
+                    }
+                    ch = ++p < strEnd ? *p : '\0';
+                }
+                if ((state & StateParens) == 0)
+                {
+                    if ((state & StateNonZero) == 0)
+                    {
+                        if (number.Kind != NumberBufferKind.Decimal) 
+                            number.Scale = 0;
+                        if (number.Kind == NumberBufferKind.Integer && (state & StateDecimal) == 0)
+                            number.IsNegative = false;
+                    }
+                    str = p; // assignment
+                    return true;
+                }
+            }
+            str = p; // assignment
+            return false;
+        }
+
+        private static bool _TryParseNumber(ReadOnlySpan<char> str, NumberStyles styles, ref NumberBuffer number, NumberFormatInfo info, out int parsed)
+        {
+            Debug.Assert(!str.IsEmpty);
+            Debug.Assert((styles & NumberStyles.AllowHexSpecifier) == 0);
+
+            const int StateSign = 0x0001;
+            const int StateParens = 0x0002;
+            const int StateDigits = 0x0004;
+            const int StateNonZero = 0x0008;
+            const int StateDecimal = 0x0010;
+            const int StateCurrency = 0x0020;
+
+            Debug.Assert(number.DigitsCount == 0);
+            Debug.Assert(number.Scale == 0);
+            Debug.Assert(!number.IsNegative);
+            Debug.Assert(!number.HasNonZeroTail);
+
+            number.CheckConsistency();
+
+            string decSep;                  // decimal separator from NumberFormatInfo.
+            string groupSep;                // group separator from NumberFormatInfo.
+            string? currSymbol = null;       // currency symbol from NumberFormatInfo.
+
+            var parsingCurrency = false;
+            if ((styles & NumberStyles.AllowCurrencySymbol) != 0)
+            {
+                currSymbol = info.CurrencySymbol;
+
+                // The idea here is to match the currency separators and on failure match the number separators to keep the perf of VB's IsNumeric fast.
+                // The values of decSep are setup to use the correct relevant separator (currency in the if part and decimal in the else part).
+                decSep = info.CurrencyDecimalSeparator;
+                groupSep = info.CurrencyGroupSeparator;
+                parsingCurrency = true;
+            }
+            else
+            {
+                decSep = info.NumberDecimalSeparator;
+                groupSep = info.NumberGroupSeparator;
+            }
+
+            var state = 0;
+            var p = str;
+            //var ch = p < strEnd ? *p : '\0';
+            var ch = p.IsEmpty ? '\0' : p[0];
+            ReadOnlySpan<char> next;
+
+            while (true)
+            {
+                // Eat whitespace unless we've found a sign which isn't followed by a currency symbol.
+                // "-Kr 1231.47" is legal but "- 1231.47" is not.
+                if (!IsWhite(ch) || (styles & NumberStyles.AllowLeadingWhite) == 0 || (state & StateSign) != 0 &&
+                    (state & StateCurrency) == 0 && info.NumberNegativePattern != 2)
+                {
+                    if ((styles & NumberStyles.AllowLeadingSign) != 0 && (state & StateSign) == 0 &&
+                        (!(next = MatchChars(p, info.PositiveSign.AsSpan())).IsEmpty ||
+                         !(next = MatchChars(p, info.NegativeSign.AsSpan())).IsEmpty && (number.IsNegative = true)))
+                    {
+                        state |= StateSign;
+                        p = next;
+                    }
+                    else if (ch == '(' && (styles & NumberStyles.AllowParentheses) != 0 && (state & StateSign) == 0)
+                    {
+                        state |= StateSign | StateParens;
+                        number.IsNegative = true;
+                    }
+                    else if (currSymbol != null && !(next = MatchChars(p, currSymbol.AsSpan())).IsEmpty)
+                    {
+                        state |= StateCurrency;
+                        currSymbol = null;
+                        // We already found the currency symbol. There should not be more currency symbols. Set
+                        // currSymbol to NULL so that we won't search it again in the later code path.
+                        p = next;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                p = p.Length > 0 ? p.Slice(1) : p;
+                //ch = ++p < strEnd ? *p : '\0';
+                ch = p.IsEmpty ? '\0' : p[0];
+            }
+
+            var digCount = 0;
+            var digEnd = 0;
+            var maxDigCount = number.Digits.Length - 1;
+
+            while (true)
+            {
+                if (IsDigit(ch))
+                {
+                    state |= StateDigits;
+
+                    if (ch != '0' || (state & StateNonZero) != 0)
+                    {
+                        if (digCount < maxDigCount)
+                        {
+                            number.Digits[digCount++] = (byte)ch;
+                            if (ch != '0' || number.Kind != NumberBufferKind.Integer)
                             {
                                 digEnd = digCount;
                             }
@@ -356,121 +512,126 @@ namespace Backports.System
                         }
 
                         if ((state & StateDecimal) == 0)
-                        {
                             number.Scale++;
-                        }
                         state |= StateNonZero;
                     }
                     else if ((state & StateDecimal) != 0)
-                    {
                         number.Scale--;
-                    }
                 }
-                else if (((styles & NumberStyles.AllowDecimalPoint) != 0) && ((state & StateDecimal) == 0) && ((next = MatchChars(p, strEnd, decSep)) != null || (parsingCurrency && (state & StateCurrency) == 0) && (next = MatchChars(p, strEnd, info.NumberDecimalSeparator)) != null))
+                else if ((styles & NumberStyles.AllowDecimalPoint) != 0 && (state & StateDecimal) == 0 &&
+                         ((next = MatchChars(p, decSep.AsSpan())).IsNotEmpty() || parsingCurrency &&
+                             (state & StateCurrency) == 0 &&
+                            (next = MatchChars(p, info.NumberDecimalSeparator.AsSpan())).IsNotEmpty()))
                 {
                     state |= StateDecimal;
-                    p = next - 1;
+                    p = next;
                 }
-                else if (((styles & NumberStyles.AllowThousands) != 0) && ((state & StateDigits) != 0) && ((state & StateDecimal) == 0) && ((next = MatchChars(p, strEnd, groupSep)) != null || (parsingCurrency && (state & StateCurrency) == 0) && (next = MatchChars(p, strEnd, info.NumberGroupSeparator)) != null))
-                {
-                    p = next - 1;
-                }
+                else if ((styles & NumberStyles.AllowThousands) != 0 && (state & StateDigits) != 0 &&
+                         (state & StateDecimal) == 0 && ((next = MatchChars(p, groupSep.AsSpan())).IsNotEmpty() ||
+                                                         parsingCurrency && (state & StateCurrency) == 0 &&
+                                                         (next = MatchChars(p, info.NumberGroupSeparator.AsSpan())).IsNotEmpty()))
+                    p = next;
                 else
-                {
                     break;
-                }
-                ch = ++p < strEnd ? *p : '\0';
+
+                p = p.Length > 0 ? p.Slice(1) : p;
+                //ch = ++p < strEnd ? *p : '\0';
+                ch = p.IsEmpty ? '\0' : p[0];
             }
 
-            bool negExp = false;
+            var negExp = false;
             number.DigitsCount = digEnd;
-            number.Digits[digEnd] = (byte)('\0');
+            number.Digits[digEnd] = (byte)'\0';
             if ((state & StateDigits) != 0)
             {
-                if ((ch == 'E' || ch == 'e') && ((styles & NumberStyles.AllowExponent) != 0))
+                if ((ch == 'E' || ch == 'e') && (styles & NumberStyles.AllowExponent) != 0)
                 {
-                    char* temp = p;
-                    ch = ++p < strEnd ? *p : '\0';
-                    if ((next = MatchChars(p, strEnd, info.PositiveSign)) != null)
+                    var temp = p;
+                    p = p.Length > 0 ? p.Slice(1) : p;
+                    //ch = ++p < strEnd ? *p : '\0';
+                    ch = p.IsEmpty ? '\0' : p[0];
+
+                    if ((next = MatchChars(p, info.PositiveSign.AsSpan())).IsNotEmpty())
+                        ch = (p = next.Slice(1)).IsNotEmpty() ? p[0] : '\0';
+                    else if ((next = MatchChars(p, info.NegativeSign.AsSpan())).IsNotEmpty())
                     {
-                        ch = (p = next) < strEnd ? *p : '\0';
-                    }
-                    else if ((next = MatchChars(p, strEnd, info.NegativeSign)) != null)
-                    {
-                        ch = (p = next) < strEnd ? *p : '\0';
+                        ch = (p = next.Slice(1)).IsNotEmpty() ? p[0] : '\0';
                         negExp = true;
                     }
                     if (IsDigit(ch))
                     {
-                        int exp = 0;
+                        var exp = 0;
                         do
                         {
                             exp = exp * 10 + (ch - '0');
-                            ch = ++p < strEnd ? *p : '\0';
+                            p = p.Length > 0 ? p.Slice(1) : p;
+                            //ch = ++p < strEnd ? *p : '\0';
+                            ch = p.IsEmpty ? '\0' : p[0];
+
                             if (exp > 1000)
                             {
                                 exp = 9999;
                                 while (IsDigit(ch))
                                 {
-                                    ch = ++p < strEnd ? *p : '\0';
+                                    p = p.Length > 0 ? p.Slice(1) : p;
+                                    //ch = ++p < strEnd ? *p : '\0';
+                                    ch = p.IsEmpty ? '\0' : p[0];
                                 }
                             }
                         } while (IsDigit(ch));
                         if (negExp)
-                        {
                             exp = -exp;
-                        }
                         number.Scale += exp;
                     }
                     else
                     {
                         p = temp;
-                        ch = p < strEnd ? *p : '\0';
+                        p = p.Length > 0 ? p.Slice(1) : p;
+                        //ch = ++p < strEnd ? *p : '\0';
+                        ch = p.IsEmpty ? '\0' : p[0];
                     }
                 }
                 while (true)
                 {
                     if (!IsWhite(ch) || (styles & NumberStyles.AllowTrailingWhite) == 0)
                     {
-                        if ((styles & NumberStyles.AllowTrailingSign) != 0 && ((state & StateSign) == 0) && ((next = MatchChars(p, strEnd, info.PositiveSign)) != null || (((next = MatchChars(p, strEnd, info.NegativeSign)) != null) && (number.IsNegative = true))))
+                        if ((styles & NumberStyles.AllowTrailingSign) != 0 && (state & StateSign) == 0 &&
+                            ((next = MatchChars(p, info.PositiveSign.AsSpan())).IsNotEmpty() ||
+                             (next = MatchChars(p, info.NegativeSign.AsSpan())).IsNotEmpty() && (number.IsNegative = true)))
                         {
                             state |= StateSign;
-                            p = next - 1;
+                            p = next;
                         }
-                        else if (ch == ')' && ((state & StateParens) != 0))
-                        {
+                        else if (ch == ')' && (state & StateParens) != 0)
                             state &= ~StateParens;
-                        }
-                        else if (currSymbol != null && (next = MatchChars(p, strEnd, currSymbol)) != null)
+                        else if (currSymbol != null && (next = MatchChars(p, currSymbol.AsSpan())).IsNotEmpty())
                         {
                             currSymbol = null;
-                            p = next - 1;
+                            p = next;
                         }
                         else
-                        {
                             break;
-                        }
                     }
-                    ch = ++p < strEnd ? *p : '\0';
+                    p = p.Length > 0 ? p.Slice(1) : p;
+                    //ch = ++p < strEnd ? *p : '\0';
+                    ch = p.IsEmpty ? '\0' : p[0];
                 }
                 if ((state & StateParens) == 0)
                 {
                     if ((state & StateNonZero) == 0)
                     {
                         if (number.Kind != NumberBufferKind.Decimal)
-                        {
                             number.Scale = 0;
-                        }
-                        if ((number.Kind == NumberBufferKind.Integer) && (state & StateDecimal) == 0)
-                        {
+                        if (number.Kind == NumberBufferKind.Integer && (state & StateDecimal) == 0)
                             number.IsNegative = false;
-                        }
                     }
-                    str = p;
+                    //str = p; // assignment
+                    parsed = str.Length - p.Length;
                     return true;
                 }
             }
-            str = p;
+            //str = p; // assignment
+            parsed = str.Length - p.Length;
             return false;
         }
 
@@ -492,21 +653,16 @@ namespace Backports.System
             return TryParseInt32Number(value, styles, info, out result);
         }
 
-        private static unsafe ParsingStatus TryParseInt32Number(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info, out int result)
+        private static ParsingStatus TryParseInt32Number(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info, out int result)
         {
             result = 0;
-            byte* pDigits = stackalloc byte[Int32NumberBufferLength];
-            NumberBuffer number = new NumberBuffer(NumberBufferKind.Integer, pDigits, Int32NumberBufferLength);
+            var number = new NumberBuffer(NumberBufferKind.Integer, stackalloc byte[Int32NumberBufferLength]);
 
             if (!TryStringToNumber(value, styles, ref number, info))
-            {
                 return ParsingStatus.Failed;
-            }
 
             if (!TryNumberToInt32(ref number, ref result))
-            {
                 return ParsingStatus.Overflow;
-            }
 
             return ParsingStatus.OK;
         }
@@ -872,21 +1028,16 @@ namespace Backports.System
             return TryParseInt64Number(value, styles, info, out result);
         }
 
-        private static unsafe ParsingStatus TryParseInt64Number(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info, out long result)
+        private static ParsingStatus TryParseInt64Number(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info, out long result)
         {
             result = 0;
-            byte* pDigits = stackalloc byte[Int64NumberBufferLength];
-            NumberBuffer number = new NumberBuffer(NumberBufferKind.Integer, pDigits, Int64NumberBufferLength);
+            var number = new NumberBuffer(NumberBufferKind.Integer, stackalloc byte[Int64NumberBufferLength]);
 
             if (!TryStringToNumber(value, styles, ref number, info))
-            {
                 return ParsingStatus.Failed;
-            }
 
             if (!TryNumberToInt64(ref number, ref result))
-            {
                 return ParsingStatus.Overflow;
-            }
 
             return ParsingStatus.OK;
         }
@@ -908,21 +1059,16 @@ namespace Backports.System
             return TryParseUInt32Number(value, styles, info, out result);
         }
 
-        private static unsafe ParsingStatus TryParseUInt32Number(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info, out uint result)
+        private static ParsingStatus TryParseUInt32Number(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info, out uint result)
         {
             result = 0;
-            byte* pDigits = stackalloc byte[UInt32NumberBufferLength];
-            NumberBuffer number = new NumberBuffer(NumberBufferKind.Integer, pDigits, UInt32NumberBufferLength);
+            var number = new NumberBuffer(NumberBufferKind.Integer, stackalloc byte[UInt32NumberBufferLength]);
 
             if (!TryStringToNumber(value, styles, ref number, info))
-            {
                 return ParsingStatus.Failed;
-            }
 
             if (!TryNumberToUInt32(ref number, ref result))
-            {
                 return ParsingStatus.Overflow;
-            }
 
             return ParsingStatus.OK;
         }
@@ -1236,21 +1382,17 @@ namespace Backports.System
             return TryParseUInt64Number(value, styles, info, out result);
         }
 
-        private static unsafe ParsingStatus TryParseUInt64Number(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info, out ulong result)
+        private static ParsingStatus TryParseUInt64Number(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info, out ulong result)
         {
             result = 0;
-            byte* pDigits = stackalloc byte[UInt64NumberBufferLength];
-            NumberBuffer number = new NumberBuffer(NumberBufferKind.Integer, pDigits, UInt64NumberBufferLength);
+            
+            var number = new NumberBuffer(NumberBufferKind.Integer, stackalloc byte[UInt64NumberBufferLength]);
 
             if (!TryStringToNumber(value, styles, ref number, info))
-            {
                 return ParsingStatus.Failed;
-            }
 
             if (!TryNumberToUInt64(ref number, ref result))
-            {
                 return ParsingStatus.Overflow;
-            }
 
             return ParsingStatus.OK;
         }
@@ -1547,24 +1689,13 @@ namespace Backports.System
             goto DoneAtEndButPotentialOverflow;
         }
 
-        internal static decimal ParseDecimal(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info)
-        {
-            ParsingStatus status = TryParseDecimal(value, styles, info, out decimal result);
-            if (status != ParsingStatus.OK)
-            {
-                ThrowOverflowOrFormatException(status, TypeCode.Decimal);
-            }
-
-            return result;
-        }
-
         internal static unsafe bool TryNumberToDecimal(ref NumberBuffer number, ref decimal value)
         {
             number.CheckConsistency();
 
-            byte* p = number.GetDigitsPointer();
-            int e = number.Scale;
-            bool sign = number.IsNegative;
+            var p = number.GetDigitsPointer();
+            var e = number.Scale;
+            var sign = number.IsNegative;
             uint c = *p;
             if (c == 0)
             {
@@ -1604,8 +1735,8 @@ namespace Backports.System
               (high < uint.MaxValue / 10 || (high == uint.MaxValue / 10 && (low64 < 0x99999999_99999999 || (low64 == 0x99999999_99999999 && c <= '5')))))
             {
                 // multiply by 10
-                ulong tmpLow = (uint)low64 * 10UL;
-                ulong tmp64 = (uint)(low64 >> 32) * 10UL + (tmpLow >> 32);
+                var tmpLow = (uint)low64 * 10UL;
+                var tmp64 = (uint)(low64 >> 32) * 10UL + (tmpLow >> 32);
                 low64 = (uint)tmpLow + (tmp64 << 32);
                 high = (uint)(tmp64 >> 32) + high * 10;
 
@@ -1626,7 +1757,7 @@ namespace Backports.System
                 {
                     c = *++p;
 
-                    bool hasZeroTail = !number.HasNonZeroTail;
+                    var hasZeroTail = !number.HasNonZeroTail;
 
                     // We might still have some additional digits, in which case they need
                     // to be considered as part of hasZeroTail. Some examples of this are:
@@ -1678,60 +1809,24 @@ namespace Backports.System
             return true;
         }
 
-        internal static double ParseDouble(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info)
+        internal static ParsingStatus TryParseDecimal(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info, out decimal result)
         {
-            if (!TryParseDouble(value, styles, info, out double result))
-            {
-                ThrowOverflowOrFormatException(ParsingStatus.Failed);
-            }
-
-            return result;
-        }
-
-        internal static float ParseSingle(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info)
-        {
-            if (!TryParseSingle(value, styles, info, out float result))
-            {
-                ThrowOverflowOrFormatException(ParsingStatus.Failed);
-            }
-
-            return result;
-        }
-
-        //internal static Half ParseHalf(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info)
-        //{
-        //    if (!TryParseHalf(value, styles, info, out Half result))
-        //    {
-        //        ThrowOverflowOrFormatException(ParsingStatus.Failed);
-        //    }
-
-        //    return result;
-        //}
-
-        internal static unsafe ParsingStatus TryParseDecimal(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info, out decimal result)
-        {
-            byte* pDigits = stackalloc byte[DecimalNumberBufferLength];
-            NumberBuffer number = new NumberBuffer(NumberBufferKind.Decimal, pDigits, DecimalNumberBufferLength);
+            var number = new NumberBuffer(NumberBufferKind.Decimal, stackalloc byte[DecimalNumberBufferLength]);
 
             result = 0;
 
             if (!TryStringToNumber(value, styles, ref number, info))
-            {
                 return ParsingStatus.Failed;
-            }
 
             if (!TryNumberToDecimal(ref number, ref result))
-            {
                 return ParsingStatus.Overflow;
-            }
 
             return ParsingStatus.OK;
         }
 
-        internal static unsafe bool TryParseDouble(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info, out double result)
+        internal static bool TryParseDouble(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info, out double result)
         {
-            var pDigits = stackalloc byte[DoubleNumberBufferLength];
-            var number = new NumberBuffer(NumberBufferKind.FloatingPoint, pDigits, DoubleNumberBufferLength);
+            var number = new NumberBuffer(NumberBufferKind.FloatingPoint, stackalloc byte[DoubleNumberBufferLength]);
 
             if (!TryStringToNumber(value, styles, ref number, info))
             {
@@ -1740,31 +1835,21 @@ namespace Backports.System
                 // This code would be simpler if we only had the concept of `InfinitySymbol`, but
                 // we don't so we'll check the existing cases first and then handle `PositiveSign` +
                 // `PositiveInfinitySymbol` and `PositiveSign/NegativeSign` + `NaNSymbol` last.
-                
+
                 if (valueTrim.Equals(info.PositiveInfinitySymbol.AsSpan(), StringComparison.OrdinalIgnoreCase))
-                {
                     result = double.PositiveInfinity;
-                }
                 else if (valueTrim.Equals(info.NegativeInfinitySymbol.AsSpan(), StringComparison.OrdinalIgnoreCase))
-                {
                     result = double.NegativeInfinity;
-                }
                 else if (valueTrim.Equals(info.NaNSymbol.AsSpan(), StringComparison.OrdinalIgnoreCase))
-                {
                     result = double.NaN;
-                }
                 else if (valueTrim.StartsWith(info.PositiveSign.AsSpan(), StringComparison.OrdinalIgnoreCase))
                 {
                     valueTrim = valueTrim.Slice(info.PositiveSign.Length);
 
                     if (valueTrim.Equals(info.PositiveInfinitySymbol.AsSpan(), StringComparison.OrdinalIgnoreCase))
-                    {
                         result = double.PositiveInfinity;
-                    }
                     else if (valueTrim.Equals(info.NaNSymbol.AsSpan(), StringComparison.OrdinalIgnoreCase))
-                    {
                         result = double.NaN;
-                    }
                     else
                     {
                         result = 0;
@@ -1772,10 +1857,9 @@ namespace Backports.System
                     }
                 }
                 else if (valueTrim.StartsWith(info.NegativeSign.AsSpan(), StringComparison.OrdinalIgnoreCase) &&
-                        valueTrim.Slice(info.NegativeSign.Length).Equals(info.NaNSymbol.AsSpan(), StringComparison.OrdinalIgnoreCase))
-                {
+                         valueTrim.Slice(info.NegativeSign.Length).Equals(info.NaNSymbol.AsSpan(),
+                             StringComparison.OrdinalIgnoreCase))
                     result = double.NaN;
-                }
                 else
                 {
                     result = 0;
@@ -1783,9 +1867,7 @@ namespace Backports.System
                 }
             }
             else
-            {
                 result = NumberToDouble(ref number);
-            }
 
             return true;
         }
@@ -1857,14 +1939,13 @@ namespace Backports.System
         //    return true;
         //}
 
-        internal static unsafe bool TryParseSingle(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info, out float result)
+        internal static bool TryParseSingle(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info, out float result)
         {
-            byte* pDigits = stackalloc byte[SingleNumberBufferLength];
-            NumberBuffer number = new NumberBuffer(NumberBufferKind.FloatingPoint, pDigits, SingleNumberBufferLength);
+            var number = new NumberBuffer(NumberBufferKind.FloatingPoint, stackalloc byte[SingleNumberBufferLength]);
 
             if (!TryStringToNumber(value, styles, ref number, info))
             {
-                ReadOnlySpan<char> valueTrim = value.Trim();
+                var valueTrim = value.Trim();
 
                 // This code would be simpler if we only had the concept of `InfinitySymbol`, but
                 // we don't so we'll check the existing cases first and then handle `PositiveSign` +
@@ -1873,33 +1954,23 @@ namespace Backports.System
                 // Additionally, since some cultures ("wo") actually define `PositiveInfinitySymbol`
                 // to include `PositiveSign`, we need to check whether `PositiveInfinitySymbol` fits
                 // that case so that we don't start parsing things like `++infini`.
-                
+
                 if (valueTrim.Equals(info.PositiveInfinitySymbol.AsSpan(), StringComparison.OrdinalIgnoreCase))
-                {
                     result = float.PositiveInfinity;
-                }
                 else if (valueTrim.Equals(info.NegativeInfinitySymbol.AsSpan(), StringComparison.Ordinal))
-                {
                     result = float.NegativeInfinity;
-                }
                 else if (valueTrim.Equals(info.NaNSymbol.AsSpan(), StringComparison.OrdinalIgnoreCase))
-                {
                     result = float.NaN;
-                }
                 else if (valueTrim.StartsWith(info.PositiveSign.AsSpan(), StringComparison.OrdinalIgnoreCase))
                 {
                     valueTrim = valueTrim.Slice(info.PositiveSign.Length);
 
-                    if (!info.PositiveInfinitySymbol.StartsWith(info.PositiveSign, StringComparison.OrdinalIgnoreCase) 
+                    if (!info.PositiveInfinitySymbol.StartsWith(info.PositiveSign, StringComparison.OrdinalIgnoreCase)
                         && valueTrim.Equals(info.PositiveInfinitySymbol.AsSpan(), StringComparison.OrdinalIgnoreCase))
-                    {
                         result = float.PositiveInfinity;
-                    }
-                    else if (!info.NaNSymbol.StartsWith(info.PositiveSign, StringComparison.OrdinalIgnoreCase) 
+                    else if (!info.NaNSymbol.StartsWith(info.PositiveSign, StringComparison.OrdinalIgnoreCase)
                              && valueTrim.Equals(info.NaNSymbol.AsSpan(), StringComparison.OrdinalIgnoreCase))
-                    {
                         result = float.NaN;
-                    }
                     else
                     {
                         result = 0;
@@ -1908,10 +1979,9 @@ namespace Backports.System
                 }
                 else if (valueTrim.StartsWith(info.NegativeSign.AsSpan(), StringComparison.OrdinalIgnoreCase) &&
                          !info.NaNSymbol.StartsWith(info.NegativeSign, StringComparison.OrdinalIgnoreCase) &&
-                         valueTrim.Slice(info.NegativeSign.Length).Equals(info.NaNSymbol.AsSpan(), StringComparison.OrdinalIgnoreCase))
-                {
+                         valueTrim.Slice(info.NegativeSign.Length).Equals(info.NaNSymbol.AsSpan(),
+                             StringComparison.OrdinalIgnoreCase))
                     result = float.NaN;
-                }
                 else
                 {
                     result = 0;
@@ -1919,9 +1989,7 @@ namespace Backports.System
                 }
             }
             else
-            {
                 result = NumberToSingle(ref number);
-            }
 
             return true;
         }
@@ -1929,15 +1997,21 @@ namespace Backports.System
         internal static unsafe bool TryStringToNumber(ReadOnlySpan<char> value, NumberStyles styles, ref NumberBuffer number, NumberFormatInfo info)
         {
             Debug.Assert(info != null);
-            fixed (char* stringPointer = &MemoryMarshal.GetReference(value))
+            //fixed (char* stringPointer = &MemoryMarshal.GetReference(value))
+            //{
+            //    var p = stringPointer;
+            //    if (!TryParseNumber(ref p, p + value.Length, styles, ref number, info!)
+            //        || ((int)(p - stringPointer) < value.Length && !TrailingZeros(value, (int)(p - stringPointer))))
+            //    {
+            //        number.CheckConsistency();
+            //        return false;
+            //    }
+            //}
+            if (!_TryParseNumber(value, styles, ref number, info!, out var nParsed) ||
+                (nParsed < value.Length && !TrailingZeros(value, nParsed)))
             {
-                var p = stringPointer;
-                if (!TryParseNumber(ref p, p + value.Length, styles, ref number, info!)
-                    || ((int)(p - stringPointer) < value.Length && !TrailingZeros(value, (int)(p - stringPointer))))
-                {
-                    number.CheckConsistency();
-                    return false;
-                }
+                number.CheckConsistency();
+                return false;
             }
 
             number.CheckConsistency();
@@ -1985,6 +2059,32 @@ namespace Backports.System
             return null;
         }
 
+        private static ReadOnlySpan<char> MatchChars(ReadOnlySpan<char> p, ReadOnlySpan<char> str)
+        {
+                Debug.Assert(!str.IsEmpty);
+                if(str[0] == '\0') 
+                    return ReadOnlySpan<char>.Empty;
+                // We only hurt the failure case
+                // This fix is for French or Kazakh cultures. Since a user cannot type 0xA0 or 0x202F as a
+                // space character we use 0x20 space character instead to mean the same.
+
+                var pIndex = 0;
+                var sIndex = 0;
+                while (true)
+                {
+                    var cp = pIndex < p.Length ? p[pIndex] : '\0';
+                    if (cp != str[sIndex] && !(IsSpaceReplacingChar(str[sIndex]) && cp == '\u0020'))
+                        break;
+
+                    pIndex++;
+                    sIndex++;
+                    if (sIndex >= str.Length || str[sIndex] == '\0')
+                        return pIndex - 1 < p.Length ? p.Slice(pIndex - 1) : ReadOnlySpan<char>.Empty;
+                }
+
+                return ReadOnlySpan<char>.Empty;
+        }
+
         // Ternary op is a workaround for https://github.com/dotnet/runtime/issues/4207
         // ReSharper disable once RedundantTernaryExpression
         private static bool IsWhite(int ch) => ch == 0x20 || (uint)(ch - 0x09) <= (0x0D - 0x09) ? true : false;
@@ -1999,8 +2099,6 @@ namespace Backports.System
         }
 
         internal static void ThrowOverflowOrFormatException(ParsingStatus status, TypeCode type = TypeCode.Empty) => throw GetException(status, type);
-
-        internal static void ThrowOverflowException(TypeCode type) => throw GetException(ParsingStatus.Overflow, type);
 
         private static Exception GetException(ParsingStatus status, TypeCode type)
         {
