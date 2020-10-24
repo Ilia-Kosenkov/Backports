@@ -450,8 +450,8 @@ namespace Backports.System
                     (state & StateCurrency) == 0 && info.NumberNegativePattern != 2)
                 {
                     if ((styles & NumberStyles.AllowLeadingSign) != 0 && (state & StateSign) == 0 &&
-                        (!(next = MatchChars(p, info.PositiveSign.AsSpan())).IsEmpty ||
-                         !(next = MatchChars(p, info.NegativeSign.AsSpan())).IsEmpty && (number.IsNegative = true)))
+                        ((next = MatchChars(p, info.PositiveSign.AsSpan())).IsNotEmpty() ||
+                         (next = MatchChars(p, info.NegativeSign.AsSpan())).IsNotEmpty() && (number.IsNegative = true)))
                     {
                         state |= StateSign;
                         p = next;
@@ -461,7 +461,7 @@ namespace Backports.System
                         state |= StateSign | StateParens;
                         number.IsNegative = true;
                     }
-                    else if (currSymbol != null && !(next = MatchChars(p, currSymbol.AsSpan())).IsEmpty)
+                    else if (currSymbol != null && (next = MatchChars(p, currSymbol.AsSpan())).IsNotEmpty())
                     {
                         state |= StateCurrency;
                         currSymbol = null;
