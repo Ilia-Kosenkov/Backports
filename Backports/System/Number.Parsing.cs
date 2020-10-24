@@ -177,6 +177,7 @@ namespace Backports.System
             return true;
         }
 
+        [Obsolete]
         private static unsafe bool TryParseNumber(ref char* str, char* strEnd, NumberStyles styles, ref NumberBuffer number, NumberFormatInfo info)
         {
             Debug.Assert(str != null);
@@ -1689,14 +1690,14 @@ namespace Backports.System
             goto DoneAtEndButPotentialOverflow;
         }
 
-        internal static unsafe bool TryNumberToDecimal(ref NumberBuffer number, ref decimal value)
+        internal static bool TryNumberToDecimal(ref NumberBuffer number, ref decimal value)
         {
             number.CheckConsistency();
 
-            var p = number.GetDigitsPointer();
+            ref var p = ref number.GetDigitsReference();
             var e = number.Scale;
             var sign = number.IsNegative;
-            uint c = *p;
+            uint c = p;
             if (c == 0)
             {
                 // To avoid risking an app-compat issue with pre 4.5 (where some app was illegally using Reflection to examine the internal scale bits), we'll only force
@@ -1714,20 +1715,20 @@ namespace Backports.System
                 e--;
                 low64 *= 10;
                 low64 += c - '0';
-                c = *++p;
+                //c = *++p;
+                c = (p = ref Ref.Increment(ref p));
                 if (low64 >= ulong.MaxValue / 10)
                     break;
-                if (c == 0)
+                if (c != 0) 
+                    continue;
+                while (e > 0)
                 {
-                    while (e > 0)
-                    {
-                        e--;
-                        low64 *= 10;
-                        if (low64 >= ulong.MaxValue / 10)
-                            break;
-                    }
-                    break;
+                    e--;
+                    low64 *= 10;
+                    if (low64 >= ulong.MaxValue / 10)
+                        break;
                 }
+                break;
             }
 
             uint high = 0;
@@ -1746,7 +1747,8 @@ namespace Backports.System
                     low64 += c;
                     if (low64 < c)
                         high++;
-                    c = *++p;
+                    //c = *++p;
+                    c = (p = ref Ref.Increment(ref p));
                 }
                 e--;
             }
@@ -1755,7 +1757,8 @@ namespace Backports.System
             {
                 if ((c == '5') && ((low64 & 1) == 0))
                 {
-                    c = *++p;
+                    //c = *++p;
+                    c = (p = ref Ref.Increment(ref p));
 
                     var hasZeroTail = !number.HasNonZeroTail;
 
@@ -1770,7 +1773,8 @@ namespace Backports.System
                     while ((c != 0) && hasZeroTail)
                     {
                         hasZeroTail &= (c == '0');
-                        c = *++p;
+                        //c = *++p;
+                        c = (p = ref Ref.Increment(ref p));
                     }
 
                     // We should either be at the end of the stream or have a non-zero tail
@@ -2032,6 +2036,7 @@ namespace Backports.System
 
         private static bool IsSpaceReplacingChar(char c) => c == '\u00a0' || c == '\u202f';
 
+        [Obsolete]
         private static unsafe char* MatchChars(char* p, char* pEnd, string value)
         {
             Debug.Assert(p != null && pEnd != null && p <= pEnd && value != null);
@@ -2097,8 +2102,6 @@ namespace Backports.System
             Failed,
             Overflow
         }
-
-        internal static void ThrowOverflowOrFormatException(ParsingStatus status, TypeCode type = TypeCode.Empty) => throw GetException(status, type);
 
         private static Exception GetException(ParsingStatus status, TypeCode type)
         {
