@@ -8,7 +8,7 @@ using System.Diagnostics;
 
 namespace Backports.System
 {
-    internal unsafe partial class Number
+    internal partial class Number
     {
         public readonly struct FloatingPointInfo
         {
@@ -120,18 +120,21 @@ namespace Backports.System
         {
             BigInteger.SetZero(out result);
 
-            var src = number.GetDigitsPointer() + firstIndex;
+            //var src = number.GetDigitsPointer() + firstIndex;
+            var src = number.Digits.Slice((int)firstIndex);
             var remaining = lastIndex - firstIndex;
 
             while (remaining != 0)
             {
                 var count = Math.Min(remaining, 9);
-                var value = DigitsToUInt32(src, (int)(count));
+                //var value = DigitsToUInt32(src, (int)(count));
+                var value = DigitsToUInt32(src.Slice(0, (int)count));
 
                 result.MultiplyPow10(count);
                 result.Add(value);
 
-                src += count;
+                //src += count;
+                src = src.Slice((int) count);
                 remaining -= count;
             }
         }
@@ -149,12 +152,11 @@ namespace Backports.System
             var exponent = normalExponent;
 
             if (normalExponent > info.MaxBinaryExponent)
-            {
                 // The exponent is too large to be represented by the floating point
                 // type; report the overflow condition:
                 return info.InfinityBits;
-            }
-            else if (normalExponent < info.MinBinaryExponent)
+
+            if (normalExponent < info.MinBinaryExponent)
             {
                 // The exponent is too small to be represented by the floating point
                 // type as a normal value, but it may be representable as a denormal
@@ -177,9 +179,7 @@ namespace Backports.System
 
                     // If the mantissa is now zero, we have underflowed:
                     if (mantissa == 0)
-                    {
                         return info.ZeroBits;
-                    }
 
                     // When we round the mantissa, the result may be so large that the
                     // number becomes a normal value.  For example, consider the single
@@ -198,17 +198,13 @@ namespace Backports.System
                     // We detect this case here and re-adjust the mantissa and exponent
                     // appropriately, to form a normal number:
                     if (mantissa > info.DenormalMantissaMask)
-                    {
                         // We add one to the denormal_mantissa_shift to account for the
                         // hidden mantissa bit (we subtracted one to account for this bit
                         // when we computed the denormal_mantissa_shift above).
                         exponent = initialExponent - (denormalMantissaShift + 1) - normalMantissaShift;
-                    }
                 }
                 else
-                {
                     mantissa <<= denormalMantissaShift;
-                }
             }
             else
             {
@@ -230,15 +226,11 @@ namespace Backports.System
                         // The increment of the exponent may have generated a value too
                         // large to be represented.  In this case, report the overflow:
                         if (exponent > info.MaxBinaryExponent)
-                        {
                             return info.InfinityBits;
-                        }
                     }
                 }
-                else if (normalMantissaShift > 0)
-                {
+                else if (normalMantissaShift > 0) 
                     mantissa <<= normalMantissaShift;
-                }
             }
 
             // Unset the hidden bit in the mantissa and assemble the floating point value
@@ -260,9 +252,7 @@ namespace Backports.System
 
             // When we have 64-bits or less of precision, we can just get the mantissa directly
             if (integerBitsOfPrecision <= 64)
-            {
                 return AssembleFloatingPointBits(in info, value.ToUInt64(), baseExponent, !hasNonZeroFractionalPart);
-            }
 
             var topBlockIndex = MathP.DivRem(integerBitsOfPrecision, 32, out var topBlockBits);
             var middleBlockIndex = topBlockIndex - 1;
@@ -274,9 +264,7 @@ namespace Backports.System
 
             // When the top 64-bits perfectly span two blocks, we can get those blocks directly
             if (topBlockBits == 0)
-            {
-                mantissa = ((ulong)(value.GetBlock(middleBlockIndex)) << 32) + value.GetBlock(bottomBlockIndex);
-            }
+                mantissa = ((ulong) (value.GetBlock(middleBlockIndex)) << 32) + value.GetBlock(bottomBlockIndex);
             else
             {
                 // Otherwise, we need to read three blocks and combine them into a 64-bit mantissa
@@ -299,49 +287,69 @@ namespace Backports.System
                 hasZeroTail &= (bottomBlock & unusedBottomBlockBitsMask) == 0;
             }
 
-            for (uint i = 0; i != bottomBlockIndex; i++)
-            {
+            for (uint i = 0; i != bottomBlockIndex; i++) 
                 hasZeroTail &= (value.GetBlock(i) == 0);
-            }
 
             return AssembleFloatingPointBits(in info, mantissa, exponent, hasZeroTail);
         }
 
         // get 32-bit integer from at most 9 digits
-        private static uint DigitsToUInt32(byte* p, int count)
+        //private static uint DigitsToUInt32(byte* p, int count)
+        //{
+        //    Debug.Assert((1 <= count) && (count <= 9));
+
+        //    var end = (p + count);
+        //    var res = (uint)(p[0] - '0');
+
+        //    for (p++; p < end; p++)
+        //    {
+        //        res = (10 * res) + p[0] - '0';
+        //    }
+
+        //    return res;
+        //}
+
+        private static uint DigitsToUInt32(ReadOnlySpan<byte> p)
         {
-            Debug.Assert((1 <= count) && (count <= 9));
-
-            var end = (p + count);
-            var res = (uint)(p[0] - '0');
-
-            for (p++; p < end; p++)
-            {
-                res = (10 * res) + p[0] - '0';
-            }
+            Debug.Assert(1 <= p.Length && p.Length <= 9);
+            var res = (uint) (p[0] - '0');
+            for (var i = 1; i < p.Length; i++)
+                res = 10 * res + p[i] - '0';
 
             return res;
         }
 
+
+
         // get 64-bit integer from at most 19 digits
-        private static ulong DigitsToUInt64(byte* p, int count)
+        //private static ulong DigitsToUInt64(byte* p, int count)
+        //{
+        //    Debug.Assert((1 <= count) && (count <= 19));
+
+        //    var end = (p + count);
+        //    var res = (ulong)(p[0] - '0');
+
+        //    for (p++; p < end; p++)
+        //    {
+        //        res = (10 * res) + p[0] - '0';
+        //    }
+
+        //    return res;
+        //}
+
+        private static ulong DigitsToUInt64(ReadOnlySpan<byte> p)
         {
-            Debug.Assert((1 <= count) && (count <= 19));
-
-            var end = (p + count);
-            var res = (ulong)(p[0] - '0');
-
-            for (p++; p < end; p++)
-            {
-                res = (10 * res) + p[0] - '0';
-            }
+            Debug.Assert(1 <= p.Length && p.Length <= 19);
+            var res = (ulong) (p[0] - '0');
+            for (var i = 1; i < p.Length; i++) 
+                res = 10 * res + p[i] - '0';
 
             return res;
         }
 
         private static ulong NumberToFloatingPointBits(ref NumberBuffer number, in FloatingPointInfo info)
         {
-            Debug.Assert(number.GetDigitsPointer()[0] != '0');
+            Debug.Assert(number.Digits[0] != '0');
 
             Debug.Assert(number.Scale <= FloatingPointMaxExponent);
             Debug.Assert(number.Scale >= FloatingPointMinExponent);
@@ -356,13 +364,13 @@ namespace Backports.System
             // If the exponent is zero or negative, then the integer part is empty.  In
             // either case, the remaining digits form the fractional part of the mantissa.
 
-            var totalDigits = (uint)(number.DigitsCount);
-            var positiveExponent = (uint)(Math.Max(0, number.Scale));
+            var totalDigits = (uint)number.DigitsCount;
+            var positiveExponent = (uint)Math.Max(0, number.Scale);
 
             var integerDigitsPresent = Math.Min(positiveExponent, totalDigits);
             var fractionalDigitsPresent = totalDigits - integerDigitsPresent;
 
-            var fastExponent = (uint)(Math.Abs(number.Scale - integerDigitsPresent - fractionalDigitsPresent));
+            var fastExponent = (uint)Math.Abs(number.Scale - integerDigitsPresent - fractionalDigitsPresent);
 
             // When the number of significant digits is less than or equal to 15 and the
             // scale is less than or equal to 22, we can take some shortcuts and just rely
@@ -373,60 +381,48 @@ namespace Backports.System
             // computed to the infinitely precise result and then rounded, which means that
             // we can rely on it to produce the correct result when both inputs are exact.
 
-            var src = number.GetDigitsPointer();
+            //var src = number.GetDigitsPointer();
+            var src = number.Digits;
 
-            if ((info.DenormalMantissaBits <= 23) && (totalDigits <= 7) && (fastExponent <= 10))
+            if (info.DenormalMantissaBits <= 23 && totalDigits <= 7 && fastExponent <= 10)
             {
                 // It is only valid to do this optimization for single-precision floating-point
                 // values since we can lose some of the mantissa bits and would return the
                 // wrong value when upcasting to double.
 
-                float result = DigitsToUInt32(src, (int)(totalDigits));
+                //float result = DigitsToUInt32(src, (int)totalDigits);
+                float result = DigitsToUInt32(src.Slice(0, (int)totalDigits));
                 var scale = s_Pow10SingleTable[fastExponent];
 
                 if (fractionalDigitsPresent != 0)
-                {
                     result /= scale;
-                }
                 else
-                {
                     result *= scale;
-                }
 
                 if (info.DenormalMantissaBits == 10)
-                {
-                    return (ushort)(BitConverter.HalfToInt16Bits((Half)result));
-                }
-                return (uint)(BitConverter.SingleToInt32Bits(result));
+                    return (ushort) BitConverter.HalfToInt16Bits((Half) result);
+                return (uint)BitConverter.SingleToInt32Bits(result);
             }
 
-            if ((totalDigits <= 15) && (fastExponent <= 22))
+            if (totalDigits <= 15 && fastExponent <= 22)
             {
-                double result = DigitsToUInt64(src, (int)(totalDigits));
+                //double result = DigitsToUInt64(src, (int)totalDigits);
+                double result = DigitsToUInt64(src.Slice(0, (int)totalDigits));
                 var scale = s_Pow10DoubleTable[fastExponent];
 
                 if (fractionalDigitsPresent != 0)
-                {
                     result /= scale;
-                }
                 else
-                {
                     result *= scale;
-                }
 
                 if (info.DenormalMantissaBits == 52)
-                {
-                    return (ulong)(BitConverter.DoubleToInt64Bits(result));
-                }
-                else if (info.DenormalMantissaBits == 23)
-                {
-                    return (uint)(BitConverter.SingleToInt32Bits((float)(result)));
-                }
-                else
-                {
-                    Debug.Assert(info.DenormalMantissaBits == 10);
-                    return (uint)(BitConverter.HalfToInt16Bits((Half)(result)));
-                }
+                    return (ulong) BitConverter.DoubleToInt64Bits(result);
+
+                if (info.DenormalMantissaBits == 23)
+                    return (uint) BitConverter.SingleToInt32Bits((float) result);
+
+                Debug.Assert(info.DenormalMantissaBits == 10);
+                return (uint)BitConverter.HalfToInt16Bits((Half)result);
             }
 
             return NumberToFloatingPointBitsSlow(ref number, in info, positiveExponent, integerDigitsPresent, fractionalDigitsPresent);
