@@ -22,7 +22,7 @@ namespace Backports.System
         internal const int UInt32NumberBufferLength = 10 + 1;   // 10 for the longest input: 4,294,967,295
         internal const int UInt64NumberBufferLength = 20 + 1;   // 20 for the longest input: 18,446,744,073,709,551,615
 
-        internal unsafe ref struct NumberBuffer
+        internal ref struct NumberBuffer
         {
             public int DigitsCount;
             public int Scale;
@@ -31,25 +31,25 @@ namespace Backports.System
             public NumberBufferKind Kind;
             public Span<byte> Digits;
 
-            public NumberBuffer(NumberBufferKind kind, byte* digits, int digitsLength)
-            {
-                Debug.Assert(digits != null);
-                Debug.Assert(digitsLength > 0);
+//            public NumberBuffer(NumberBufferKind kind, byte* digits, int digitsLength)
+//            {
+//                Debug.Assert(digits != null);
+//                Debug.Assert(digitsLength > 0);
 
-                DigitsCount = 0;
-                Scale = 0;
-                IsNegative = false;
-                HasNonZeroTail = false;
-                Kind = kind;
-                Digits = new Span<byte>(digits, digitsLength);
+//                DigitsCount = 0;
+//                Scale = 0;
+//                IsNegative = false;
+//                HasNonZeroTail = false;
+//                Kind = kind;
+//                Digits = new Span<byte>(digits, digitsLength);
 
-#if DEBUG
-                Digits.Fill(0xCC);
-#endif
+//#if DEBUG
+//                Digits.Fill(0xCC);
+//#endif
 
-                Digits[0] = (byte)('\0');
-                CheckConsistency();
-            }
+//                Digits[0] = (byte)('\0');
+//                CheckConsistency();
+//            }
 
             public NumberBuffer(NumberBufferKind kind, Span<byte> digits)
             {
@@ -95,11 +95,11 @@ namespace Backports.System
 #endif // DEBUG
             }
 
-            public byte* GetDigitsPointer()
-            {
-                // This is safe to do since we are a ref struct
-                return (byte*)Unsafe.AsPointer(ref Digits[0]);
-            }
+            //public byte* GetDigitsPointer()
+            //{
+            //    // This is safe to do since we are a ref struct
+            //    return (byte*)Unsafe.AsPointer(ref Digits[0]);
+            //}
 
             public ref byte GetDigitsReference() => ref Digits[0];
 

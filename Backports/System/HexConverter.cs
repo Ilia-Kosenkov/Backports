@@ -99,7 +99,7 @@ namespace Backports.System
 #if ALLOW_PARTIALLY_TRUSTED_CALLERS
         [System.Security.SecuritySafeCriticalAttribute]
 #endif
-        public static unsafe string ToString(ReadOnlySpan<byte> bytes, Casing casing = Casing.Upper)
+        public static string ToString(ReadOnlySpan<byte> bytes, Casing casing = Casing.Upper)
         {
 #if NETFRAMEWORK || NETSTANDARD1_0 || NETSTANDARD1_3 || NETSTANDARD2_0
             // ReSharper disable once RedundantAssignment

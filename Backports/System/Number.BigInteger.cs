@@ -317,6 +317,8 @@ namespace Backports.System
             private int _length;
             private fixed uint _blocks[MaxBlockCount];
 
+            public Span<uint> Block => new Span<uint>(Unsafe.AsPointer(ref _blocks[0]), MaxBlockCount);
+
             public static void Add(ref BigInteger lhs, ref BigInteger rhs, out BigInteger result)
             {
                 // determine which operand has the smaller length
@@ -1151,12 +1153,11 @@ namespace Backports.System
                 return _length > 0 ? _blocks[0] : (ulong) 0;
             }
 
-            private uint* GetBlocksPointer()
-            {
-                // This is safe to do since we are a ref struct
-                return (uint*)Unsafe.AsPointer(ref _blocks[0]);
-            }
-
+            //private uint* GetBlocksPointer()
+            //{
+            //    // This is safe to do since we are a ref struct
+            //    return (uint*)Unsafe.AsPointer(ref _blocks[0]);
+            //}
             private ref byte GetBlocksRef() => ref Unsafe.As<uint, byte>(ref _blocks[0]);
             private static uint DivRem32(uint value, out uint remainder)
             {
