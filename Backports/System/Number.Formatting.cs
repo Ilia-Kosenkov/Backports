@@ -385,14 +385,27 @@ namespace Backports.System
         //    return FormatDouble(ref sb, value, format, info) ?? sb.ToString();
         //}
 
-        //public static bool TryFormatDouble(double value, ReadOnlySpan<char> format, NumberFormatInfo info, Span<char> destination, out int charsWritten)
-        //{
-        //    var sb = new ValueStringBuilder(stackalloc char[CharStackBufferSize]);
-        //    string? s = FormatDouble(ref sb, value, format, info);
-        //    return s != null ?
-        //        TryCopyTo(s, destination, out charsWritten) :
-        //        sb.TryCopyTo(destination, out charsWritten);
-        //}
+        public static bool TryFormatDouble(double value, ReadOnlySpan<char> format, NumberFormatInfo info, Span<char> destination, out int charsWritten)
+        {
+            var sb = new ValueStringBuilder(stackalloc char[CharStackBufferSize]);
+            if (!value.IsFinite())
+            {
+                if (double.IsNaN(value))
+                    sb.Append(info.NaNSymbol);
+                else
+                    sb.Append(value.IsNegative() ? info.NegativeInfinitySymbol : info.PositiveInfinitySymbol);
+            }
+            else
+            {
+                var number = new NumberBuffer(NumberBufferKind.FloatingPoint, stackalloc byte[SingleNumberBufferLength])
+                {
+                    IsNegative = value.IsNegative()
+                };
+
+                FormatDouble(ref sb, ref number, value, format, info);
+            }
+            return sb.TryCopyTo(destination, out charsWritten);
+        }
 
         private static int GetFloatingPointMaxDigitsAndPrecision(char fmt, ref int precision, NumberFormatInfo info, out bool isSignificantDigits)
         {
@@ -502,76 +515,67 @@ namespace Backports.System
             return maxDigits;
         }
 
-        ///// <summary>Formats the specified value according to the specified format and info.</summary>
-        ///// <returns>
-        ///// Non-null if an existing string can be returned, in which case the builder will be unmodified.
-        ///// Null if no existing string was returned, in which case the formatted output is in the builder.
-        ///// </returns>
-        //private static unsafe string? FormatDouble(ref ValueStringBuilder sb, double value, ReadOnlySpan<char> format, NumberFormatInfo info)
-        //{
-        //    if (!double.IsFinite(value))
-        //    {
-        //        if (double.IsNaN(value))
-        //        {
-        //            return info.NaNSymbol;
-        //        }
+        /// <summary>Formats the specified value according to the specified format and info.</summary>
+        /// <returns>
+        /// Non-null if an existing string can be returned, in which case the builder will be unmodified.
+        /// Null if no existing string was returned, in which case the formatted output is in the builder.
+        /// </returns>
+        private static void FormatDouble(ref ValueStringBuilder sb, ref NumberBuffer number, double value, ReadOnlySpan<char> format, NumberFormatInfo info)
+        {
+            //if (!value.IsFinite())
+            //{
+            //    if (double.IsNaN(value))
+            //        return info.NaNSymbol;
 
-        //        return double.IsNegative(value) ? info.NegativeInfinitySymbol : info.PositiveInfinitySymbol;
-        //    }
+            //    return value.IsNegative() ? info.NegativeInfinitySymbol : info.PositiveInfinitySymbol;
+            //}
 
-        //    char fmt = ParseFormatSpecifier(format, out int precision);
-        //    byte* pDigits = stackalloc byte[DoubleNumberBufferLength];
+            var fmt = ParseFormatSpecifier(format, out var precision);
 
-        //    if (fmt == '\0')
-        //    {
-        //        // For back-compat we currently specially treat the precision for custom
-        //        // format specifiers. The constant has more details as to why.
-        //        precision = DoublePrecisionCustomFormat;
-        //    }
+            if (fmt == '\0')
+            {
+                // For back-compat we currently specially treat the precision for custom
+                // format specifiers. The constant has more details as to why.
+                precision = DoublePrecisionCustomFormat;
+            }
 
-        //    NumberBuffer number = new NumberBuffer(NumberBufferKind.FloatingPoint, pDigits, DoubleNumberBufferLength);
-        //    number.IsNegative = double.IsNegative(value);
+            // We need to track the original precision requested since some formats
+            // accept values like 0 and others may require additional fixups.
+            var nMaxDigits = GetFloatingPointMaxDigitsAndPrecision(fmt, ref precision, info, out var isSignificantDigits);
 
-        //    // We need to track the original precision requested since some formats
-        //    // accept values like 0 and others may require additional fixups.
-        //    int nMaxDigits = GetFloatingPointMaxDigitsAndPrecision(fmt, ref precision, info, out bool isSignificantDigits);
+            if (value != 0.0 && (!isSignificantDigits || !Grisu3.TryRunDouble(value, precision, ref number)))
+                Dragon4Double(value, precision, isSignificantDigits, ref number);
 
-        //    if ((value != 0.0) && (!isSignificantDigits || !Grisu3.TryRunDouble(value, precision, ref number)))
-        //    {
-        //        Dragon4Double(value, precision, isSignificantDigits, ref number);
-        //    }
+            number.CheckConsistency();
 
-        //    number.CheckConsistency();
+            // When the number is known to be roundtrippable (either because we requested it be, or
+            // because we know we have enough digits to satisfy roundtrippability), we should validate
+            // that the number actually roundtrips back to the original result.
 
-        //    // When the number is known to be roundtrippable (either because we requested it be, or
-        //    // because we know we have enough digits to satisfy roundtrippability), we should validate
-        //    // that the number actually roundtrips back to the original result.
+            Debug.Assert(precision != -1 && precision < DoublePrecision || BitConverter.DoubleToInt64Bits(value) == BitConverter.DoubleToInt64Bits(NumberToDouble(ref number)));
 
-        //    Debug.Assert(((precision != -1) && (precision < DoublePrecision)) || (BitConverter.DoubleToInt64Bits(value) == BitConverter.DoubleToInt64Bits(NumberToDouble(ref number))));
+            if (fmt != 0)
+            {
+                if (precision == -1)
+                {
+                    Debug.Assert(fmt == 'G' || fmt == 'g' || fmt == 'R' || fmt == 'r');
 
-        //    if (fmt != 0)
-        //    {
-        //        if (precision == -1)
-        //        {
-        //            Debug.Assert((fmt == 'G') || (fmt == 'g') || (fmt == 'R') || (fmt == 'r'));
+                    // For the roundtrip and general format specifiers, when returning the shortest roundtrippable
+                    // string, we need to update the maximum number of digits to be the greater of number.DigitsCount
+                    // or DoublePrecision. This ensures that we continue returning "pretty" strings for values with
+                    // less digits. One example this fixes is "-60", which would otherwise be formatted as "-6E+01"
+                    // since DigitsCount would be 1 and the formatter would almost immediately switch to scientific notation.
 
-        //            // For the roundtrip and general format specifiers, when returning the shortest roundtrippable
-        //            // string, we need to update the maximum number of digits to be the greater of number.DigitsCount
-        //            // or DoublePrecision. This ensures that we continue returning "pretty" strings for values with
-        //            // less digits. One example this fixes is "-60", which would otherwise be formatted as "-6E+01"
-        //            // since DigitsCount would be 1 and the formatter would almost immediately switch to scientific notation.
-
-        //            nMaxDigits = Math.Max(number.DigitsCount, DoublePrecision);
-        //        }
-        //        NumberToString(ref sb, ref number, fmt, nMaxDigits, info);
-        //    }
-        //    else
-        //    {
-        //        Debug.Assert(precision == DoublePrecisionCustomFormat);
-        //        NumberToStringFormat(ref sb, ref number, format, info);
-        //    }
-        //    return null;
-        //}
+                    nMaxDigits = Math.Max(number.DigitsCount, DoublePrecision);
+                }
+                NumberToString(ref sb, ref number, fmt, nMaxDigits, info);
+            }
+            else
+            {
+                Debug.Assert(precision == DoublePrecisionCustomFormat);
+                NumberToStringFormat(ref sb, ref number, format, info);
+            }
+        }
 
         //public static string FormatSingle(float value, string? format, NumberFormatInfo info)
         //{
@@ -744,19 +748,6 @@ namespace Backports.System
         ////}
 
 
-        private static bool TryCopyTo(string source, Span<char> destination, out int charsWritten)
-        {
-            Debug.Assert(source != null);
-
-            if (source.AsSpan().TryCopyTo(destination))
-            {
-                charsWritten = source.Length;
-                return true;
-            }
-
-            charsWritten = 0;
-            return false;
-        }
 
         private static char GetHexBase(char fmt)
         {

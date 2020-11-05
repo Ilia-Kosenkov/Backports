@@ -49,6 +49,9 @@ namespace Backports
             if(typeof(T) == typeof(float))
                 return System.Number.TryFormatSingle(Unsafe.As<T, float>(ref @this), format, NumberFormatInfo.GetInstance(provider),
                     destination, out charsWritten);
+            if (typeof(T) == typeof(double))
+                return System.Number.TryFormatDouble(Unsafe.As<T, double>(ref @this), format, NumberFormatInfo.GetInstance(provider),
+                    destination, out charsWritten);
             throw TypeDoesNotSupportTryFormat<T>();
         }
 #else
@@ -81,12 +84,6 @@ namespace Backports
             throw TypeDoesNotSupportTryFormat<T>();
         }
 #endif
-        private static void Test()
-        {
-            
-            5.TryFormat(Span<char>.Empty, out _);
-        }
-
         private static Exception TypeDoesNotSupportTryFormat<T>() where T : unmanaged => new NotSupportedException($"{typeof(T)} has no compatible TryFormat method");
 
     }
