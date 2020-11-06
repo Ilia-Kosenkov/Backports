@@ -327,57 +327,69 @@ namespace Backports.System
         //    return sb.ToString();
         //}
 
-        //public static unsafe bool TryFormatDecimal(decimal value, ReadOnlySpan<char> format, NumberFormatInfo info, Span<char> destination, out int charsWritten)
-        //{
-        //    char fmt = ParseFormatSpecifier(format, out int digits);
+        public static unsafe bool TryFormatDecimal(decimal value, ReadOnlySpan<char> format, NumberFormatInfo info, Span<char> destination, out int charsWritten)
+        {
+            var fmt = ParseFormatSpecifier(format, out var digits);
+            
+            Span<byte> pDigits = stackalloc byte[DecimalNumberBufferLength];
+            var number = new NumberBuffer(NumberBufferKind.Decimal, pDigits);
 
-        //    byte* pDigits = stackalloc byte[DecimalNumberBufferLength];
-        //    NumberBuffer number = new NumberBuffer(NumberBufferKind.Decimal, pDigits, DecimalNumberBufferLength);
+            DecimalToNumber(ref value, ref number);
 
-        //    DecimalToNumber(ref value, ref number);
+            Span<char> stackPtr = stackalloc char[CharStackBufferSize];
+            var sb = new ValueStringBuilder(stackPtr);
 
-        //    char* stackPtr = stackalloc char[CharStackBufferSize];
-        //    ValueStringBuilder sb = new ValueStringBuilder(new Span<char>(stackPtr, CharStackBufferSize));
+            if (fmt != 0)
+                NumberToString(ref sb, ref number, fmt, digits, info);
+            else
+                NumberToStringFormat(ref sb, ref number, format, info);
 
-        //    if (fmt != 0)
-        //    {
-        //        NumberToString(ref sb, ref number, fmt, digits, info);
-        //    }
-        //    else
-        //    {
-        //        NumberToStringFormat(ref sb, ref number, format, info);
-        //    }
+            return sb.TryCopyTo(destination, out charsWritten);
+        }
 
-        //    return sb.TryCopyTo(destination, out charsWritten);
-        //}
+        internal static void DecimalToNumber(ref decimal d, ref NumberBuffer number)
+        {
+            ref var buffer = ref number.GetDigitsReference();
+            number.DigitsCount = DecimalPrecision;
+            //var rep = d.AsBitsRep();
+            // This is in-place ref cast, cannot be achieved using a method
+            ref var rep = ref Unsafe.As<decimal, DecimalRep>(ref d);
 
-        //internal static unsafe void DecimalToNumber(ref decimal d, ref NumberBuffer number)
-        //{
-        //    byte* buffer = number.GetDigitsPointer();
-        //    number.DigitsCount = DecimalPrecision;
-        //    number.IsNegative = d.IsNegative;
 
-        //    byte* p = buffer + DecimalPrecision;
-        //    while ((d.Mid | d.High) != 0)
-        //    {
-        //        p = UInt32ToDecChars(p, decimal.DecDivMod1E9(ref d), 9);
-        //    }
-        //    p = UInt32ToDecChars(p, d.Low, 0);
+            //number.IsNegative = d.IsNegative;
+            number.IsNegative = rep.IsNegative();
 
-        //    int i = (int)((buffer + DecimalPrecision) - p);
+            ref var p = ref Unsafe.Add(ref buffer, DecimalPrecision);
+            while ((rep.Mid | rep.Hi) != 0)
+            {
+                
+                //p = ref UInt32ToDecChars(ref p, decimal.DecDivMod1E9(ref d), 9);
+                p = ref UInt32ToDecChars(ref p, DecimalRep.DecDivMod1E9(ref rep), 9);
+                // WATCH : Check if d is used somewhere else; d is modified in place via reference
+            }
+            
+            p = ref UInt32ToDecChars(ref p, rep.ULo, 0);
 
-        //    number.DigitsCount = i;
-        //    number.Scale = i - d.Scale;
+            var i = (int)Ref.Offset(ref p, ref Unsafe.Add(ref buffer, DecimalPrecision));
+                
+            //(int)((buffer + DecimalPrecision) - p);
 
-        //    byte* dst = number.GetDigitsPointer();
-        //    while (--i >= 0)
-        //    {
-        //        *dst++ = *p++;
-        //    }
-        //    *dst = (byte)('\0');
+            number.DigitsCount = i;
+            number.Scale = i - rep.Scale;
 
-        //    number.CheckConsistency();
-        //}
+            ref var dst = ref number.GetDigitsReference();
+            while (--i >= 0)
+            {
+                //*dst++ = *p++;
+                dst = p;
+                dst = ref Ref.Increment(ref dst);
+                p = ref Ref.Increment(ref p);
+            }
+            //*dst = (byte)('\0');
+            dst = (byte) ('\0');
+
+            number.CheckConsistency();
+        }
 
         //public static string FormatDouble(double value, string? format, NumberFormatInfo info)
         //{

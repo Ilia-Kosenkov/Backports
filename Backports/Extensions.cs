@@ -64,9 +64,22 @@ namespace Backports
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsNegative(this double d) => BitConverter.DoubleToInt64Bits(d) < 0;
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsNegative(this DecimalRep @this) => @this.Flags < 0;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsNotEmpty<T>(this ReadOnlySpan<T> @this) where T : unmanaged => !@this.IsEmpty;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsNotEmpty<T>(this Span<T> @this) where T : unmanaged => !@this.IsEmpty;
+
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DecimalRep AsBitsRep(this decimal d) => Unsafe.As<decimal, DecimalRep>(ref d);
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static decimal BitsRepToDec(this DecimalRep rep) => Unsafe.As<DecimalRep, decimal>(ref rep);
 
     }
 

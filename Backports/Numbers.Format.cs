@@ -52,6 +52,10 @@ namespace Backports
             if (typeof(T) == typeof(double))
                 return System.Number.TryFormatDouble(Unsafe.As<T, double>(ref @this), format, NumberFormatInfo.GetInstance(provider),
                     destination, out charsWritten);
+            if (typeof(T) == typeof(decimal))
+                return System.Number.TryFormatDecimal(Unsafe.As<T, decimal>(ref @this), format, NumberFormatInfo.GetInstance(provider),
+                    destination, out charsWritten);
+
             throw TypeDoesNotSupportTryFormat<T>();
         }
 #else
