@@ -12,8 +12,8 @@ namespace Backports.System
         internal const uint FloatExponentMask = 0x7F80_0000;
         internal const int FloatExponentShift = 23;
         internal const uint FloatSignificandMask = 0x007F_FFFF;
-        
-        
+
+
         private const ushort ExponentMask = 0x7C00;
         private const ushort SignShift = 15;
         private const ushort ExponentShift = 10;
@@ -76,16 +76,16 @@ namespace Backports.System
         {
             const int singleMaxExponent = 0xFF;
 
-            var floatInt = (uint) BitConverter.SingleToInt32Bits(value);
+            var floatInt = (uint)BitConverter.SingleToInt32Bits(value);
             var sign = (floatInt & FloatSignMask) >> FloatSignShift != 0;
-            var exp = (int) (floatInt & FloatExponentMask) >> FloatExponentShift;
+            var exp = (int)(floatInt & FloatExponentMask) >> FloatExponentShift;
             var sig = floatInt & FloatSignificandMask;
 
             if (exp == singleMaxExponent)
             {
                 if (sig != 0) // NaN
                 {
-                    return CreateHalfNaN(sign, (ulong) sig << 41); // Shift the significand bits to the left end
+                    return CreateHalfNaN(sign, (ulong)sig << 41); // Shift the significand bits to the left end
                 }
 
                 return sign ? new Half(NegativeInfinityBits) : new Half(PositiveInfinityBits);
@@ -93,9 +93,9 @@ namespace Backports.System
 
             var sigHalf = sig >> 9 | ((sig & 0x1FFU) != 0 ? 1U : 0U); // RightShiftJam
 
-            return (exp | (int) sigHalf) == 0 
-                ? new Half(sign, 0, 0) 
-                : new Half(RoundPackToHalf(sign, (short) (exp - 0x71), (ushort) (sigHalf | 0x4000)));
+            return (exp | (int)sigHalf) == 0
+                ? new Half(sign, 0, 0)
+                : new Half(RoundPackToHalf(sign, (short)(exp - 0x71), (ushort)(sigHalf | 0x4000)));
         }
     }
 }

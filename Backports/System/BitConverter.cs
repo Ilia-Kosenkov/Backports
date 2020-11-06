@@ -11,7 +11,7 @@ namespace Backports.System
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int SingleToInt32Bits(float value) => Unsafe.As<float, int>(ref value);
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Half Int16BitsToHalf(short value) => Unsafe.As<short, Half>(ref value);
 

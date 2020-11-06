@@ -400,7 +400,7 @@ namespace Backports.System
                     result *= scale;
 
                 if (info.DenormalMantissaBits == 10)
-                    return (ushort) BitConverter.HalfToInt16Bits((Half) result);
+                    return (ushort)BitConverter.HalfToInt16Bits((Half)result);
                 return (uint)BitConverter.SingleToInt32Bits(result);
             }
 
