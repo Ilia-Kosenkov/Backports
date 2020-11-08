@@ -462,7 +462,7 @@ namespace Backports.System
             // of the mantissa.  If either [1] this number has more than the required
             // number of bits of precision or [2] the mantissa has no fractional part,
             // then we can assemble the result immediately:
-            var integerBitsOfPrecision = BigInteger.CountSignificantBits(ref integerValue);
+            var integerBitsOfPrecision = BigInteger.CountSignificantBits(in integerValue);
 
             if ((integerBitsOfPrecision >= requiredBitsOfPrecision) || (fractionalDigitsPresent == 0))
             {
@@ -517,8 +517,8 @@ namespace Backports.System
             // the same position as the most significant bit in the denominator.  This
             // ensures that when we later shift the numerator N bits to the left, we
             // will produce N bits of precision.
-            var fractionalNumeratorBits = BigInteger.CountSignificantBits(ref fractionalNumerator);
-            var fractionalDenominatorBits = BigInteger.CountSignificantBits(ref fractionalDenominator);
+            var fractionalNumeratorBits = BigInteger.CountSignificantBits(in fractionalNumerator);
+            var fractionalDenominatorBits = BigInteger.CountSignificantBits(in fractionalDenominator);
 
             uint fractionalShift = 0;
 
@@ -569,14 +569,14 @@ namespace Backports.System
             // earlier, or one greater than that shift:
             var fractionalExponent = fractionalShift;
 
-            if (BigInteger.Compare(ref fractionalNumerator, ref fractionalDenominator) < 0)
+            if (BigInteger.Compare(in fractionalNumerator, in fractionalDenominator) < 0)
             {
                 fractionalExponent++;
             }
 
             fractionalNumerator.ShiftLeft(remainingBitsOfPrecisionRequired);
 
-            BigInteger.DivRem(ref fractionalNumerator, ref fractionalDenominator, out var bigFractionalMantissa, out var fractionalRemainder);
+            BigInteger.DivRem(in fractionalNumerator, in fractionalDenominator, out var bigFractionalMantissa, out var fractionalRemainder);
             var fractionalMantissa = bigFractionalMantissa.ToUInt64();
             var hasZeroTail = !number.HasNonZeroTail && fractionalRemainder.IsZero();
 

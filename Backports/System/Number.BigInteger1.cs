@@ -8,7 +8,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-using static Backports.BigIntBuff128;
+//using static Backports.BigIntBuff128;
 
 namespace Backports.System
 {
@@ -324,11 +324,11 @@ namespace Backports.System
             // BUG: This will never work in legacy framework
             //public Span<uint> Block => new Span<uint>(Unsafe.AsPointer(ref _blocks[0]), MaxBlockCount);
 
-            public static void Add(ref BigInteger lhs, ref BigInteger rhs, out BigInteger result)
+            public static void Add(in BigInteger lhs, in BigInteger rhs, out BigInteger result)
             {
                 // determine which operand has the smaller length
-                ref var large = ref lhs._length < rhs._length ? ref rhs : ref lhs;
-                ref var small = ref lhs._length < rhs._length ? ref lhs : ref rhs;
+                ref readonly var large = ref lhs._length < rhs._length ? ref rhs : ref lhs;
+                ref readonly var small = ref lhs._length < rhs._length ? ref lhs : ref rhs;
 
                 var largeLength = large._length;
                 var smallLength = small._length;
@@ -346,10 +346,10 @@ namespace Backports.System
 
                 while (smallIndex < smallLength)
                 {
-                    var sum = carry + UnsafeAtU32(ref large._blocks, largeIndex) + UnsafeAtU32(ref small._blocks, smallIndex);
+                    var sum = carry + At(in large, largeIndex) + At(in small, smallIndex);
                     carry = sum >> 32;
                     //result._blocks[resultIndex] = (uint)sum;
-                    UnsafeAtU32(ref result._blocks, resultIndex) = (uint)sum;
+                    AtMut(ref result, resultIndex) = (uint)sum;
 
                     largeIndex++;
                     smallIndex++;
@@ -359,10 +359,10 @@ namespace Backports.System
                 // Add the carry to any blocks that only exist in the large operand
                 while (largeIndex < largeLength)
                 {
-                    var sum = carry + UnsafeAtU32(ref large._blocks, largeIndex);//large._blocks[largeIndex];
+                    var sum = carry + At(in large, largeIndex);//large._blocks[largeIndex];
                     carry = sum >> 32;
                     //result._blocks[resultIndex] = (uint)sum;
-                    UnsafeAtU32(ref result._blocks, resultIndex) = (uint)sum;
+                    AtMut(ref result, resultIndex) = (uint)sum;
 
                     largeIndex++;
                     resultIndex++;
@@ -375,11 +375,11 @@ namespace Backports.System
                 Debug.Assert(resultIndex == largeLength && largeLength < MaxBlockCount);
 
                 //result._blocks[resultIndex] = 1;
-                UnsafeAtU32(ref result._blocks, resultIndex) = 1;
+                AtMut(ref result, resultIndex) = 1;
                 result._length++;
             }
 
-            public static int Compare(ref BigInteger lhs, ref BigInteger rhs)
+            public static int Compare(in BigInteger lhs, in BigInteger rhs)
             {
                 Debug.Assert(unchecked((uint)lhs._length) <= MaxBlockCount);
                 Debug.Assert(unchecked((uint)rhs._length) <= MaxBlockCount);
@@ -401,7 +401,7 @@ namespace Backports.System
                 for (var index = lhsLength - 1; index >= 0; index--)
                 {
                     //var delta = (long)lhs._blocks[index] - rhs._blocks[index];
-                    var delta = (long)UnsafeAtU32(ref lhs._blocks, index) - UnsafeAtU32(ref rhs._blocks, index);
+                    var delta = (long)At(in lhs, index) - At(in rhs, index);
 
                     if (delta != 0)
                         return delta > 0 ? 1 : -1;
@@ -414,7 +414,7 @@ namespace Backports.System
 
             public static uint CountSignificantBits(ulong value) => 64 - (uint)BitOperations.LeadingZeroCount(value);
 
-            public static uint CountSignificantBits(ref BigInteger value)
+            public static uint CountSignificantBits(in BigInteger value)
             {
                 if (value.IsZero())
                     return 0;
@@ -424,11 +424,10 @@ namespace Backports.System
 
                 var lastIndex = (uint)(value._length - 1);
                 //return lastIndex * BitsPerBlock + CountSignificantBits(value._blocks[lastIndex]);
-                // WATCH: check overflow
                 return lastIndex * BitsPerBlock + CountSignificantBits(At(in value, lastIndex));
             }
 
-            public static void DivRem(ref BigInteger lhs, ref BigInteger rhs, out BigInteger quo, out BigInteger rem)
+            public static void DivRem(in BigInteger lhs, in BigInteger rhs, out BigInteger quo, out BigInteger rem)
             {
                 // This is modified from the libraries BigInteger1Calculator.DivRem.cs implementation:
                 // https://github.com/dotnet/runtime/blob/master/src/libraries/System.Runtime.Numerics/src/System/Numerics/BigInteger1Calculator.DivRem.cs
@@ -462,7 +461,7 @@ namespace Backports.System
                     var quoLength = lhsLength;
 
                     //ulong rhsValue = rhs._blocks[0];
-                    ulong rhsValue = GetU32Ref(ref rhs._blocks);
+                    ulong rhsValue = At(in rhs, 0);
                     ulong carry = 0;
 
                     for (var i = quoLength - 1; i >= 0; i--)
@@ -484,12 +483,12 @@ namespace Backports.System
                 {
                     // Handle the case where we have no quotient
                     SetZero(out quo);
-                    SetValue(out rem, ref lhs);
+                    SetValue(out rem, in lhs);
                 }
                 else
                 {
                     var quoLength = lhsLength - rhsLength + 1;
-                    SetValue(out rem, ref lhs);
+                    SetValue(out rem, in lhs);
                     var remLength = lhsLength;
 
                     // Executes the "grammar-school" algorithm for computing q = a / b.
@@ -545,28 +544,24 @@ namespace Backports.System
                         // which naturally must have only 32 bits...
                         var digit = valHi / divHi;
 
-                        if (digit > uint.MaxValue)
-                        {
+                        if (digit > uint.MaxValue) 
                             digit = uint.MaxValue;
-                        }
 
                         // Our first guess may be a little bit to big
-                        while (DivideGuessTooBig(digit, valHi, valLo, divHi, divLo))
-                        {
+                        while (DivideGuessTooBig(digit, valHi, valLo, divHi, divLo)) 
                             digit--;
-                        }
 
                         if (digit > 0)
                         {
                             // Now it's time to subtract our current quotient
-                            var carry = SubtractDivisor(ref rem, n, ref rhs, digit);
+                            var carry = SubtractDivisor(ref rem, n, in rhs, digit);
 
                             if (carry != t)
                             {
                                 Debug.Assert(carry == t + 1);
 
                                 // Our guess was still exactly one too high
-                                carry = AddDivisor(ref rem, n, ref rhs);
+                                carry = AddDivisor(ref rem, n, in rhs);
                                 digit--;
 
                                 Debug.Assert(carry == 1);
@@ -602,7 +597,7 @@ namespace Backports.System
                 }
             }
 
-            public static uint HeuristicDivide(ref BigInteger dividend, ref BigInteger divisor)
+            public static uint HeuristicDivide(ref BigInteger dividend, in BigInteger divisor)
             {
                 var divisorLength = divisor._length;
 
@@ -652,7 +647,7 @@ namespace Backports.System
 
                 // If the dividend is still larger than the divisor, we overshot our estimate quotient. To correct,
                 // we increment the quotient and subtract one more divisor from the dividend (Because we guaranteed the error range).
-                if (Compare(ref dividend, ref divisor) >= 0)
+                if (Compare(in dividend, in divisor) >= 0)
                 {
                     quotient++;
 
@@ -684,7 +679,7 @@ namespace Backports.System
                 return quotient;
             }
 
-            public static void Multiply(ref BigInteger lhs, uint value, out BigInteger result)
+            public static void Multiply(in BigInteger lhs, uint value, out BigInteger result)
             {
                 if (lhs._length <= 1)
                 {
@@ -697,7 +692,7 @@ namespace Backports.System
                     if (value == 0)
                         SetZero(out result);
                     else
-                        SetValue(out result, ref lhs);
+                        SetValue(out result, in lhs);
                     return;
                 }
 
@@ -728,17 +723,17 @@ namespace Backports.System
                     result._length = lhsLength;
             }
 
-            public static void Multiply(ref BigInteger lhs, ref BigInteger rhs, out BigInteger result)
+            public static void Multiply(in BigInteger lhs, in BigInteger rhs, out BigInteger result)
             {
                 if (lhs._length <= 1)
                 {
-                    Multiply(ref rhs, lhs.ToUInt32(), out result);
+                    Multiply(in rhs, lhs.ToUInt32(), out result);
                     return;
                 }
 
                 if (rhs._length <= 1)
                 {
-                    Multiply(ref lhs, rhs.ToUInt32(), out result);
+                    Multiply(in lhs, rhs.ToUInt32(), out result);
                     return;
                 }
 
@@ -764,7 +759,7 @@ namespace Backports.System
                 result = default;
                 result._length = maxResultLength;
                 //Buffer.ZeroMemory((byte*)result.GetBlocksPointer(), (uint)maxResultLength * sizeof(uint));
-                Buffer.ZeroMemory(ref GetBlocksRef(ref result), (uint)maxResultLength * sizeof(uint));
+                Buffer.ZeroMemory(ref GetBlockMut(ref result), (uint)maxResultLength * sizeof(uint));
 
                 var smallIndex = 0;
                 var resultStartIndex = 0;
@@ -773,7 +768,7 @@ namespace Backports.System
                 {
                     // Multiply each block of large BigNum.
                     //if (small._blocks[smallIndex] != 0)
-                    if (UnsafeAtU32RO(in small._blocks, smallIndex) != 0)
+                    if (At(in small, smallIndex) != 0)
                     {
                         var largeIndex = 0;
                         var resultIndex = resultStartIndex;
@@ -783,12 +778,11 @@ namespace Backports.System
                         do
                         {
                             //var product = result._blocks[resultIndex] + (ulong)small._blocks[smallIndex] * large._blocks[largeIndex] + carry;
-                            var product = UnsafeAtU32(ref result._blocks, resultIndex) +
-                                          (ulong)UnsafeAtU32RO(in small._blocks, smallIndex) *
-                                          UnsafeAtU32RO(in large._blocks, largeIndex) + carry;
+                            var product = At(in result, resultIndex) +
+                                          (ulong) At(in small, smallIndex) * At(in large, largeIndex) + carry;
                             carry = product >> 32;
                             //result._blocks[resultIndex] = (uint)product;
-                            UnsafeAtU32(ref result._blocks, resultIndex) = (uint)product;
+                            AtMut(ref result, resultIndex) = (uint)product;
 
                             resultIndex++;
                             largeIndex++;
@@ -796,7 +790,7 @@ namespace Backports.System
                         while (largeIndex < largeLength);
 
                         //result._blocks[resultIndex] = (uint)carry;
-                        UnsafeAtU32(ref result._blocks, resultIndex) = (uint)carry;
+                        AtMut(ref result, resultIndex) = (uint)carry;
                     }
 
                     smallIndex++;
@@ -804,7 +798,7 @@ namespace Backports.System
                 }
 
                 //if (maxResultLength > 0 && result._blocks[maxResultLength - 1] == 0)
-                if (maxResultLength > 0 && UnsafeAtU32(ref result._blocks, maxResultLength - 1) == 0)
+                if (maxResultLength > 0 && At(in result, maxResultLength - 1) == 0)
                     result._length--;
             }
 
@@ -816,9 +810,9 @@ namespace Backports.System
                 Debug.Assert(unchecked((uint)result._length) <= MaxBlockCount);
                 if (blocksToShift > 0)
                     //Buffer.ZeroMemory((byte*)result.GetBlocksPointer(), blocksToShift * sizeof(uint));
-                    Buffer.ZeroMemory(ref GetBlocksRef(ref result), blocksToShift * sizeof(uint));
+                    Buffer.ZeroMemory(ref GetBlockMut(ref result), blocksToShift * sizeof(uint));
                 //result._blocks[blocksToShift] = 1U << (int)remainingBitsToShift;
-                UnsafeAtU32(ref result._blocks, blocksToShift) = 1U << (int)remainingBitsToShift;
+                AtMut(ref result, blocksToShift) = 1U << (int)remainingBitsToShift;
             }
 
             public static void Pow10(uint exponent, out BigInteger result)
@@ -876,7 +870,7 @@ namespace Backports.System
 
                         ref var pBigNumEntry = ref s_Pow10BigNumTable[s_Pow10BigNumTableIndices[index]];
                         ref var rhs = ref Unsafe.As<uint, BigInteger>(ref pBigNumEntry);
-                        Multiply(ref lhs, ref rhs, out product);
+                        Multiply(in lhs, in rhs, out product);
 
                         // Swap to the next temporary
                         ref var temp = ref product;
@@ -889,10 +883,10 @@ namespace Backports.System
                     exponent >>= 1;
                 }
 
-                SetValue(out result, ref lhs);
+                SetValue(out result, in lhs);
             }
 
-            private static uint AddDivisor(ref BigInteger lhs, int lhsStartIndex, ref BigInteger rhs)
+            private static uint AddDivisor(ref BigInteger lhs, int lhsStartIndex, in BigInteger rhs)
             {
                 var lhsLength = lhs._length;
                 var rhsLength = rhs._length;
@@ -907,9 +901,9 @@ namespace Backports.System
 
                 for (var i = 0; i < rhsLength; i++)
                 {
-                    ref var lhsValue = ref UnsafeAtU32(ref lhs._blocks, lhsStartIndex + i);//ref lhs._blocks[lhsStartIndex + i];
+                    ref var lhsValue = ref AtMut(ref lhs, lhsStartIndex + i);//ref lhs._blocks[lhsStartIndex + i];
 
-                    var digit = lhsValue + carry + UnsafeAtU32(ref rhs._blocks, i);//rhs._blocks[i];
+                    var digit = lhsValue + carry + At(in rhs, i);//rhs._blocks[i];
                     lhsValue = unchecked((uint)digit);
                     carry = digit >> 32;
                 }
@@ -947,7 +941,7 @@ namespace Backports.System
                 return false;
             }
 
-            private static uint SubtractDivisor(ref BigInteger lhs, int lhsStartIndex, ref BigInteger rhs, ulong q)
+            private static uint SubtractDivisor(ref BigInteger lhs, int lhsStartIndex, in BigInteger rhs, ulong q)
             {
                 var lhsLength = lhs._length - lhsStartIndex;
                 var rhsLength = rhs._length;
@@ -965,13 +959,14 @@ namespace Backports.System
                 for (var i = 0; i < rhsLength; i++)
                 {
                     //carry += rhs._blocks[i] * q;
-                    carry += UnsafeAtU32(ref rhs._blocks, i) * q;
+                    carry += At(in rhs, i) * q;
                     var digit = unchecked((uint)carry);
                     carry >>= 32;
 
-                    ref var lhsValue = ref UnsafeAtU32(ref lhs._blocks, lhsStartIndex + i); // ref lhs._blocks[lhsStartIndex + i];
+                    ref var lhsValue = ref AtMut(ref lhs, lhsStartIndex + i); // ref lhs._blocks[lhsStartIndex + i];
 
-                    if (lhsValue < digit) carry++;
+                    if (lhsValue < digit)
+                        carry++;
 
                     lhsValue = unchecked(lhsValue - digit);
                 }
@@ -989,52 +984,53 @@ namespace Backports.System
                 }
 
                 //_blocks[0] += value;
-                GetU32Ref(ref _blocks) += value;
+                AtMut(ref this, 0) += value;
 
                 //if (_blocks[0] >= value)
-                if (GetU32Ref(ref _blocks) >= value)
+                if (At(in this, 0) >= value)
                     // No carry
                     return;
 
                 for (var index = 1; index < length; index++)
                 {
                     //_blocks[index]++;
-                    UnsafeAtU32(ref _blocks, index)++;
+                    AtMut(ref this, index)++;
                     //if (_blocks[index] > 0)
-                    if (UnsafeAtU32(ref _blocks, index) > 0)
+                    if (At(in this, index) > 0)
                         // No carry
                         return;
                 }
 
                 Debug.Assert(unchecked((uint)length) + 1 <= MaxBlockCount);
                 //_blocks[length] = 1;
-                UnsafeAtU32(ref _blocks, length) = 1;
+                AtMut(ref this, length) = 1;
                 _length = length + 1;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public uint GetBlock(uint index)
             {
                 Debug.Assert(index < _length);
                 //return _blocks[index];
-                return UnsafeAtU32(ref _blocks, index);
+                return At(in this, index);
             }
 
-            public int GetLength() => _length;
+            public readonly int GetLength() => _length;
 
-            public bool IsZero() => _length == 0;
+            public readonly bool IsZero() => _length == 0;
 
-            public void Multiply(uint value) => Multiply(ref this, value, out this);
+            public void Multiply(uint value) => Multiply(in this, value, out this);
 
             public void Multiply(ref BigInteger value)
             {
                 if (value._length <= 1)
                 {
-                    Multiply(ref this, value.ToUInt32(), out this);
+                    Multiply(in this, value.ToUInt32(), out this);
                 }
                 else
                 {
-                    SetValue(out var temp, ref this);
-                    Multiply(ref temp, ref value, out this);
+                    SetValue(out var temp, in this);
+                    Multiply(in temp, in value, out this);
                 }
             }
 
@@ -1050,11 +1046,11 @@ namespace Backports.System
                 do
                 {
                     //var block = (ulong)_blocks[index];
-                    var block = (ulong)UnsafeAtU32(ref _blocks, index);
+                    var block = (ulong)At(in this, index);
                     var product = (block << 3) + (block << 1) + carry;
                     carry = product >> 32;
                     //_blocks[index] = (uint)product;
-                    UnsafeAtU32(ref _blocks, index) = (uint)product;
+                    AtMut(ref this, index) = (uint)product;
 
                     index++;
                 } while (index < length);
@@ -1063,7 +1059,7 @@ namespace Backports.System
 
                 Debug.Assert(unchecked((uint)_length) + 1 <= MaxBlockCount);
                 //_blocks[index] = (uint)carry;
-                UnsafeAtU32(ref _blocks, index) = (uint)carry;
+                AtMut(ref this, index) = (uint)carry;
                 _length++;
             }
 
@@ -1086,7 +1082,7 @@ namespace Backports.System
                 {
                     result = default;
                     //result._blocks[0] = value;
-                    GetU32Ref(ref result._blocks) = value;
+                    AtMut(ref result, 0) = value;
                     result._length = 1;
                 }
             }
@@ -1099,20 +1095,20 @@ namespace Backports.System
                 {
                     result = default;
                     //result._blocks[0] = (uint)value;
-                    UnsafeAtU32(ref result._blocks, 0) = (uint)value;
+                    AtMut(ref result, 0) = (uint)value;
                     //result._blocks[1] = (uint)(value >> 32);
-                    UnsafeAtU32(ref result._blocks, 1) = (uint)(value >> 32);
+                    AtMut(ref result, 1) = (uint)(value >> 32);
 
                     result._length = 2;
                 }
             }
 
-            public static void SetValue(out BigInteger result, ref BigInteger value)
+            public static void SetValue(out BigInteger result, in BigInteger value)
             {
                 var rhsLength = value._length;
                 result = default;
                 result._length = rhsLength;
-                Buffer.Memcpy(ref GetBlocksRef(ref result), ref GetBlocksRef(ref value), rhsLength * sizeof(uint));
+                Buffer.Memcpy(ref AtMut(ref result, 0), in At(in value, 0), rhsLength);
             }
 
             public static void SetZero(out BigInteger result)
@@ -1143,7 +1139,7 @@ namespace Backports.System
                     while (readIndex >= 0)
                     {
                         //_blocks[writeIndex] = _blocks[readIndex];
-                        UnsafeAtU32(ref _blocks, writeIndex) = UnsafeAtU32(ref _blocks, readIndex);
+                        AtMut(ref this, writeIndex) = At(in this, readIndex);
                         readIndex--;
                         writeIndex--;
                     }
@@ -1152,7 +1148,7 @@ namespace Backports.System
 
                     // Zero the remaining low blocks
                     //Buffer.ZeroMemory((byte*)GetBlocksPointer(), blocksToShift * sizeof(uint));
-                    Buffer.ZeroMemory(ref GetBlocksRef(ref this), blocksToShift * sizeof(uint));
+                    Buffer.ZeroMemory(ref GetBlockMut(ref this), blocksToShift * sizeof(uint));
 
                 }
                 else
@@ -1168,50 +1164,51 @@ namespace Backports.System
                     var lowBitsShift = 32 - remainingBitsToShift;
                     uint highBits = 0;
                     //var block = _blocks[readIndex];
-                    var block = UnsafeAtU32(ref _blocks, readIndex);
+                    var block = At(in this, readIndex);
                     var lowBits = block >> (int)lowBitsShift;
                     while (readIndex > 0)
                     {
                         //_blocks[writeIndex] = highBits | lowBits;
-                        UnsafeAtU32(ref _blocks, writeIndex) = highBits | lowBits;
+                        AtMut(ref this, writeIndex) = highBits | lowBits;
                         highBits = block << (int)remainingBitsToShift;
 
                         --readIndex;
                         --writeIndex;
 
                         //block = _blocks[readIndex];
-                        block = UnsafeAtU32(ref _blocks, readIndex);
+                        block = At(in this, readIndex);
                         lowBits = block >> (int)lowBitsShift;
                     }
 
                     // Output the final blocks
                     //_blocks[writeIndex] = highBits | lowBits;
-                    UnsafeAtU32(ref _blocks, writeIndex) = highBits | lowBits;
+                    AtMut(ref this, writeIndex) = highBits | lowBits;
                     //_blocks[writeIndex - 1] = block << (int)remainingBitsToShift;
-                    UnsafeAtU32(ref _blocks, writeIndex - 1) = block << (int)remainingBitsToShift;
+                    AtMut(ref this, writeIndex - 1) = block << (int)remainingBitsToShift;
 
                     // Zero the remaining low blocks
                     // Using different memory zeroing method
                     //Buffer.ZeroMemory((byte*)GetBlocksPointer(), blocksToShift * sizeof(uint));
-                    Buffer.ZeroMemory(ref GetBlocksRef(ref this), blocksToShift * sizeof(uint));
+                    Buffer.ZeroMemory(ref GetBlockMut(ref this), blocksToShift * sizeof(uint));
                     // Check if the terminating block has no set bits
                     //if (_blocks[_length - 1] == 0) _length--;
-                    if (UnsafeAtU32(ref _blocks, _length - 1) == 0) _length--;
+                    if (At(in this, _length - 1) == 0) 
+                        _length--;
                 }
             }
 
             //public uint ToUInt32() => _length > 0 ? _blocks[0] : 0;
-            public uint ToUInt32() => _length > 0 ? GetU32Ref(ref _blocks) : 0;
+            public readonly uint ToUInt32() => _length > 0 ? At(in this, 0) : 0;
 
 
-            public ulong ToUInt64()
+            public readonly ulong ToUInt64()
             {
                 if (_length > 1)
                     //return ((ulong) _blocks[1] << 32) + _blocks[0];
-                    return ((ulong)UnsafeAtU32(ref _blocks, 1) << 32) + GetU32Ref(ref _blocks);
+                    return ((ulong)At(in this, 1) << 32) + At(in this, 0);
 
                 //return _length > 0 ? _blocks[0] : (ulong) 0;
-                return _length > 0 ? GetU32Ref(ref _blocks) : 0;
+                return _length > 0 ? At(in this, 0) : 0;
             }
 
             //private uint* GetBlocksPointer()
@@ -1222,7 +1219,7 @@ namespace Backports.System
             //private ref byte GetBlocksRef() => ref Unsafe.As<uint, byte>(ref _blocks[0]);
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static ref byte GetBlocksRef(ref BigInteger value) => ref Unsafe.As<uint, byte>(ref GetU32Ref(ref value._blocks));
+            private static ref byte GetBlockMut(ref BigInteger value) => ref Unsafe.As<uint, byte>(ref AtMut(ref value, 0));
 
             private static uint DivRem32(uint value, out uint remainder)
             {
@@ -1244,6 +1241,7 @@ namespace Backports.System
                 ref BigIntBuff128.UnsafeAtU32(ref @this._blocks, offset);
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            // ReSharper disable once UnusedMember.Local
             private static ref uint AtMut(ref BigInteger @this, uint offset) =>
                ref BigIntBuff128.UnsafeAtU32(ref @this._blocks, offset);
         }

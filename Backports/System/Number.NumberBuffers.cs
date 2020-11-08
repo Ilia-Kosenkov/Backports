@@ -70,7 +70,7 @@ namespace Backports.System
             }
 
             [Conditional("DEBUG")]
-            public void CheckConsistency()
+            public readonly void CheckConsistency()
             {
 #if DEBUG
                 Debug.Assert((Kind == NumberBufferKind.Integer) || (Kind == NumberBufferKind.Decimal) || (Kind == NumberBufferKind.FloatingPoint));

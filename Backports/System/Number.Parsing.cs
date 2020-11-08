@@ -47,8 +47,9 @@ namespace Backports.System
         private const int HalfMaxExponent = 5;
         private const int HalfMinExponent = -8;
 
-        private static bool TryNumberToInt32(ref NumberBuffer number, ref int value)
+        private static bool TryNumberToInt32(ref NumberBuffer number, out int value)
         {
+            value = default;
             number.CheckConsistency();
 
             var i = number.Scale;
@@ -85,8 +86,9 @@ namespace Backports.System
             return true;
         }
 
-        private static bool TryNumberToInt64(ref NumberBuffer number, ref long value)
+        private static bool TryNumberToInt64(ref NumberBuffer number, out long value)
         {
+            value = default;
             number.CheckConsistency();
 
             var i = number.Scale;
@@ -120,8 +122,9 @@ namespace Backports.System
             return true;
         }
 
-        private static bool TryNumberToUInt32(ref NumberBuffer number, ref uint value)
+        private static bool TryNumberToUInt32(ref NumberBuffer number, out uint value)
         {
+            value = default;
             number.CheckConsistency();
 
             var i = number.Scale;
@@ -150,8 +153,9 @@ namespace Backports.System
             return true;
         }
 
-        private static bool TryNumberToUInt64(ref NumberBuffer number, ref ulong value)
+        private static bool TryNumberToUInt64(ref NumberBuffer number, out ulong value)
         {
+            value = default;
             number.CheckConsistency();
 
             var i = number.Scale;
@@ -663,7 +667,7 @@ namespace Backports.System
             if (!TryStringToNumber(value, styles, ref number, info))
                 return ParsingStatus.Failed;
 
-            if (!TryNumberToInt32(ref number, ref result))
+            if (!TryNumberToInt32(ref number, out result))
                 return ParsingStatus.Overflow;
 
             return ParsingStatus.OK;
@@ -677,7 +681,7 @@ namespace Backports.System
             if (value.IsEmpty)
                 goto FalseExit;
 
-            int index = 0;
+            var index = 0;
             int num = value[0];
 
             // Skip past any whitespace at the beginning.
@@ -1038,7 +1042,7 @@ namespace Backports.System
             if (!TryStringToNumber(value, styles, ref number, info))
                 return ParsingStatus.Failed;
 
-            if (!TryNumberToInt64(ref number, ref result))
+            if (!TryNumberToInt64(ref number, out result))
                 return ParsingStatus.Overflow;
 
             return ParsingStatus.OK;
@@ -1069,7 +1073,7 @@ namespace Backports.System
             if (!TryStringToNumber(value, styles, ref number, info))
                 return ParsingStatus.Failed;
 
-            if (!TryNumberToUInt32(ref number, ref result))
+            if (!TryNumberToUInt32(ref number, out result))
                 return ParsingStatus.Overflow;
 
             return ParsingStatus.OK;
@@ -1393,7 +1397,7 @@ namespace Backports.System
             if (!TryStringToNumber(value, styles, ref number, info))
                 return ParsingStatus.Failed;
 
-            if (!TryNumberToUInt64(ref number, ref result))
+            if (!TryNumberToUInt64(ref number, out result))
                 return ParsingStatus.Overflow;
 
             return ParsingStatus.OK;

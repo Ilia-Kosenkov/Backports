@@ -1,21 +1,18 @@
 ﻿#if NETSTANDARD2_0
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Backports
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    [SuppressMessage("ReSharper", "FieldCanBeMadeReadOnly.Local")]
-    // ReSharper disable once InconsistentNaming
     internal struct BigIntBuff128
     {
         
         [StructLayout(LayoutKind.Explicit, Pack = 1)]
-        [SuppressMessage("ReSharper", "FieldCanBeMadeReadOnly.Local")]
         internal struct Byte64
         {
+            // ReSharper disable FieldCanBeMadeReadOnly.Local
             // 0
             [FieldOffset(sizeof(ulong) * 0)]
             private ulong field1;
@@ -42,6 +39,7 @@ namespace Backports
             private ulong field8;
             // 64
 
+            // ReSharper restore FieldCanBeMadeReadOnly.Local
             [FieldOffset(0)]
             internal uint zeroUint;
 
@@ -51,6 +49,7 @@ namespace Backports
         }
 
         // 0 : 0
+        // ReSharper disable FieldCanBeMadeReadOnly.Local
         private Byte64 field1;
         // 64 : 16
         private Byte64 field2;
@@ -72,6 +71,7 @@ namespace Backports
         private uint field83;
         // 460 : 115
         //private Byte64 field8;
+        // ReSharper restore FieldCanBeMadeReadOnly.Local
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

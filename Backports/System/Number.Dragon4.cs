@@ -4,6 +4,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Backports.System
 {
@@ -113,7 +114,7 @@ namespace Backports.System
         //  "Printing Floating-Point Numbers Quickly and Accurately"
         //    Burger and Dybvig
         //    http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.72.4656&rep=rep1&type=pdf
-        private static unsafe uint Dragon4(ulong mantissa, int exponent, uint mantissaHighBitIdx, bool hasUnequalMargins, int cutoffNumber, bool isSignificantDigits, Span<byte> buffer, out int decimalExponent)
+        private static uint Dragon4(ulong mantissa, int exponent, uint mantissaHighBitIdx, bool hasUnequalMargins, int cutoffNumber, bool isSignificantDigits, Span<byte> buffer, out int decimalExponent)
         {
             var curDigit = 0;
 
@@ -130,14 +131,14 @@ namespace Backports.System
             //      value     = scaledValue / scale
             //      marginLow = scaledMarginLow / scale
 
-            BigInteger scale;           // positive scale applied to value and margin such that they can be represented as whole numbers
+            BigInteger scale = default;           // positive scale applied to value and margin such that they can be represented as whole numbers
             BigInteger scaledValue;     // scale * mantissa
             BigInteger scaledMarginLow; // scale * 0.5 * (distance between this floating-point number and its immediate lower value)
 
             // For normalized IEEE floating-point values, each time the exponent is incremented the margin also doubles.
             // That creates a subset of transition numbers where the high margin is twice the size of the low margin.
-            BigInteger* pScaledMarginHigh;
             BigInteger optionalMarginHigh;
+            ref var pScaledMarginHigh = ref scale;
 
             if (hasUnequalMargins)
             {
@@ -179,7 +180,7 @@ namespace Backports.System
                 }
 
                 // The high and low margins are different
-                pScaledMarginHigh = &optionalMarginHigh;
+                pScaledMarginHigh = ref optionalMarginHigh;
             }
             else
             {
@@ -215,7 +216,7 @@ namespace Backports.System
                 }
 
                 // The high and low margins are equal
-                pScaledMarginHigh = &scaledMarginLow;
+                pScaledMarginHigh = ref scaledMarginLow;
             }
 
             // Compute an estimate for digitExponent that will be correct or undershoot by one.
@@ -238,10 +239,8 @@ namespace Backports.System
 
             // Divide value by 10^digitExponent.
             if (digitExponent > 0)
-            {
                 // The exponent is positive creating a division so we multiply up the scale.
-                scale.MultiplyPow10((uint)digitExponent);
-            }
+                scale.MultiplyPow10((uint) digitExponent);
             else if (digitExponent < 0)
             {
                 // The exponent is negative creating a multiplication so we multiply up the scaledValue, scaledMarginLow and scaledMarginHigh.
@@ -251,10 +250,9 @@ namespace Backports.System
                 scaledValue.Multiply(ref pow10);
                 scaledMarginLow.Multiply(ref pow10);
 
-                if (pScaledMarginHigh != &scaledMarginLow)
-                {
-                    BigInteger.Multiply(ref scaledMarginLow, 2, out *pScaledMarginHigh);
-                }
+                //if (pScaledMarginHigh != &scaledMarginLow)
+                if (!Unsafe.AreSame(ref pScaledMarginHigh, ref scaledMarginLow))
+                    BigInteger.Multiply(in scaledMarginLow, 2, out pScaledMarginHigh);
             }
 
             var isEven = mantissa % 2 == 0;
@@ -266,13 +264,13 @@ namespace Backports.System
                 // take IEEE unbiased rounding into account so we can return
                 // shorter strings for various edge case values like 1.23E+22
 
-                BigInteger.Add(ref scaledValue, ref *pScaledMarginHigh, out var scaledValueHigh);
-                var cmpHigh = BigInteger.Compare(ref scaledValueHigh, ref scale);
+                BigInteger.Add(in scaledValue, in pScaledMarginHigh, out var scaledValueHigh);
+                var cmpHigh = BigInteger.Compare(in scaledValueHigh, in scale);
                 estimateTooLow = isEven ? cmpHigh >= 0 : cmpHigh > 0;
             }
             else
             {
-                estimateTooLow = BigInteger.Compare(ref scaledValue, ref scale) >= 0;
+                estimateTooLow = BigInteger.Compare(in scaledValue, in scale) >= 0;
             }
 
             // Was our estimate for digitExponent was too low?
@@ -289,10 +287,9 @@ namespace Backports.System
                 scaledValue.Multiply10();
                 scaledMarginLow.Multiply10();
 
-                if (pScaledMarginHigh != &scaledMarginLow)
-                {
-                    BigInteger.Multiply(ref scaledMarginLow, 2, out *pScaledMarginHigh);
-                }
+                //if (pScaledMarginHigh != &scaledMarginLow)
+                if (!Unsafe.AreSame(ref pScaledMarginHigh, ref scaledMarginLow))
+                    BigInteger.Multiply(in scaledMarginLow, 2, out pScaledMarginHigh);
             }
 
             // Compute the cutoff exponent (the exponent of the final digit to print).
@@ -348,10 +345,9 @@ namespace Backports.System
                 scaledValue.ShiftLeft(shift);
                 scaledMarginLow.ShiftLeft(shift);
 
-                if (pScaledMarginHigh != &scaledMarginLow)
-                {
-                    BigInteger.Multiply(ref scaledMarginLow, 2, out *pScaledMarginHigh);
-                }
+                //if (pScaledMarginHigh != &scaledMarginLow)
+                if (!Unsafe.AreSame(ref pScaledMarginHigh, ref scaledMarginLow))
+                    BigInteger.Multiply(in scaledMarginLow, 2, out pScaledMarginHigh);
             }
 
             // These values are used to inspect why the print loop terminated so we can properly round the final digit.
@@ -370,15 +366,15 @@ namespace Backports.System
                 while (true)
                 {
                     // divide out the scale to extract the digit
-                    outputDigit = BigInteger.HeuristicDivide(ref scaledValue, ref scale);
+                    outputDigit = BigInteger.HeuristicDivide(ref scaledValue, in scale);
                     Debug.Assert(outputDigit < 10);
 
                     // update the high end of the value
-                    BigInteger.Add(ref scaledValue, ref *pScaledMarginHigh, out var scaledValueHigh);
+                    BigInteger.Add(in scaledValue, in pScaledMarginHigh, out var scaledValueHigh);
 
                     // stop looping if we are far enough away from our neighboring values or if we have reached the cutoff digit
-                    var cmpLow = BigInteger.Compare(ref scaledValue, ref scaledMarginLow);
-                    var cmpHigh = BigInteger.Compare(ref scaledValueHigh, ref scale);
+                    var cmpLow = BigInteger.Compare(in scaledValue, in scaledMarginLow);
+                    var cmpHigh = BigInteger.Compare(in scaledValueHigh, in scale);
 
                     if (isEven)
                     {
@@ -404,10 +400,9 @@ namespace Backports.System
                     scaledValue.Multiply10();
                     scaledMarginLow.Multiply10();
 
-                    if (pScaledMarginHigh != &scaledMarginLow)
-                    {
-                        BigInteger.Multiply(ref scaledMarginLow, 2, out *pScaledMarginHigh);
-                    }
+                    //if (pScaledMarginHigh != &scaledMarginLow)
+                    if (!Unsafe.AreSame(ref pScaledMarginHigh, ref scaledMarginLow))
+                        BigInteger.Multiply(in scaledMarginLow, 2, out pScaledMarginHigh);
 
                     digitExponent--;
                 }
@@ -424,7 +419,7 @@ namespace Backports.System
                 while (true)
                 {
                     // divide out the scale to extract the digit
-                    outputDigit = BigInteger.HeuristicDivide(ref scaledValue, ref scale);
+                    outputDigit = BigInteger.HeuristicDivide(ref scaledValue, in scale);
                     Debug.Assert(outputDigit < 10);
 
                     if (scaledValue.IsZero() || digitExponent <= cutoffExponent)
@@ -452,7 +447,7 @@ namespace Backports.System
                 // would not cause the next one to round, we preserve that digit as is.
 
                 // divide out the scale to extract the digit
-                outputDigit = BigInteger.HeuristicDivide(ref scaledValue, ref scale);
+                outputDigit = BigInteger.HeuristicDivide(ref scaledValue, in scale);
                 Debug.Assert(0 < outputDigit && outputDigit < 10);
 
                 if (outputDigit > 5 || outputDigit == 5 && !scaledValue.IsZero())
@@ -481,7 +476,7 @@ namespace Backports.System
                 //      compare(scale * value, scale * 0.5)
                 //      compare(2 * scale * value, scale)
                 scaledValue.ShiftLeft(1); // Multiply by 2
-                var compare = BigInteger.Compare(ref scaledValue, ref scale);
+                var compare = BigInteger.Compare(in scaledValue, in scale);
                 roundDown = compare < 0;
 
                 // if we are directly in the middle, round towards the even digit (i.e. IEEE rouding rules)
