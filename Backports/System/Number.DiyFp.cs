@@ -3,6 +3,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Backports.System
 {
@@ -15,6 +16,7 @@ namespace Backports.System
         // Normalized DiyFp numbers will have the most significant bit of the significand set.
         // Multiplication and Subtraction do not normalize their results.
         // DiyFp are not designed to contain special doubles (NaN and Infinity).
+        [SuppressMessage("ReSharper", "InconsistentNaming")]
         internal readonly ref struct DiyFp
         {
             public const int DoubleImplicitBitIndex = 52;

@@ -5,6 +5,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
@@ -26,6 +27,7 @@ namespace Backports.System
     // specified. Note, however, that the Parse methods do not accept
     // NaNs or Infinities.
 
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
     internal static partial class Number
     {
         private const int Int32Precision = 10;

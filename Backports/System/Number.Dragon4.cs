@@ -258,7 +258,7 @@ namespace Backports.System
             }
 
             var isEven = mantissa % 2 == 0;
-            var estimateTooLow = false;
+            bool estimateTooLow;
 
             if (cutoffNumber == -1)
             {
@@ -414,6 +414,7 @@ namespace Backports.System
             }
             else if (digitExponent >= cutoffExponent)
             {
+                // ReSharper disable once ConditionIsAlwaysTrueOrFalse
                 Debug.Assert(cutoffNumber > 0 || cutoffNumber == 0 && !isSignificantDigits);
 
                 // For length based cutoff modes, we will try to print until we have exhausted all precision (i.e. all remaining digits are zeros) or until we reach the desired cutoff digit.

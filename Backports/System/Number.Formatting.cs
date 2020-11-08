@@ -5,10 +5,11 @@
 
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.CompilerServices;
-using Backports.System.Text;
 using Backports.System.Buffers.Text;
+using Backports.System.Text;
 
 namespace Backports.System
 {
@@ -241,6 +242,7 @@ namespace Backports.System
     // PositiveInfinitySymbol, or NegativeInfinitySymbol property of
     // the NumberFormatInfo used to format the number.
 
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
     internal static partial class Number
     {
         internal const int DecimalPrecision = 29; // Decimal.DecCalc also uses this value

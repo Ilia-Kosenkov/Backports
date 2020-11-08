@@ -1,7 +1,6 @@
 ﻿#if NETSTANDARD2_0
 
 using System;
-using System.Data.Common;
 using System.Runtime.InteropServices;
 
 namespace Backports
@@ -12,6 +11,7 @@ namespace Backports
         // Scale mask for the flags field. This byte in the flags field contains
         // the power of 10 to divide the Decimal value by. The scale byte must
         // contain a value between 0 and 28 inclusive.
+        // ReSharper disable once UnusedMember.Local
         private const int ScaleMask = 0x00FF0000;
 
         // Number of bits scale is shifted by.
