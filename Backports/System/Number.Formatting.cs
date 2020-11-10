@@ -11,6 +11,8 @@ using System.Runtime.CompilerServices;
 using Backports.System.Buffers.Text;
 using Backports.System.Text;
 
+using static Backports.Ref;
+
 namespace Backports.System
 {
     // The Format methods provided by the numeric classes convert
@@ -331,7 +333,6 @@ namespace Backports.System
             ref var buffer = ref number.GetDigitsReference();
             number.DigitsCount = DecimalPrecision;
             //var rep = d.AsBitsRep();
-            // This is in-place ref cast, cannot be achieved using a method
             ref var rep = ref Unsafe.As<decimal, DecimalRep>(ref d);
 
 
@@ -349,7 +350,7 @@ namespace Backports.System
             
             p = ref UInt32ToDecChars(ref p, rep.ULo, 0);
 
-            var i = (int)Ref.Offset(ref p, ref Unsafe.Add(ref buffer, DecimalPrecision));
+            var i = (int)Ref.Offset(in p, in Ref.Add(in buffer, DecimalPrecision));
                 
             //(int)((buffer + DecimalPrecision) - p);
 
@@ -1000,10 +1001,10 @@ namespace Backports.System
             number.IsNegative = false;
 
             ref var buffer = ref number.GetDigitsReference();
-            ref var p = ref UInt32ToDecChars(ref Unsafe.Add(ref buffer, UInt32Precision), value, 0);
+            ref readonly var p = ref UInt32ToDecChars(ref Unsafe.Add(ref buffer, UInt32Precision), value, 0);
 
             //var i = (int)(buffer + UInt32Precision - p);
-            var i = (int)Ref.Offset(ref p, ref Unsafe.Add(ref buffer, UInt32Precision));
+            var i = (int)Ref.Offset(in p, in Add(in buffer, UInt32Precision));
             
 
             number.DigitsCount = i;
@@ -1013,8 +1014,10 @@ namespace Backports.System
             while (--i >= 0)
             {
                 dst = p;
-                dst = ref Ref.Increment(ref dst);
-                p = ref Ref.Increment(ref p);
+                //dst = ref Ref.Increment(ref dst);
+                dst = ref IncMut(ref dst);
+                //p = ref Ref.Increment(ref p);
+                p = ref Inc(in p);
             }
 
             dst = (byte)('\0');
@@ -1028,7 +1031,7 @@ namespace Backports.System
             while (--digits >= 0 || value != 0)
             {
                 value = MathP.DivRem(value, 10, out var remainder);
-                (bufferEnd = ref Ref.Decrement(ref bufferEnd)) = (byte)(remainder + '0');
+                (bufferEnd = ref DecMut(ref bufferEnd)) = (byte)(remainder + '0');
             }
             return ref bufferEnd;
         }
@@ -1038,7 +1041,7 @@ namespace Backports.System
             while (--digits >= 0 || value != 0)
             {
                 value = MathP.DivRem(value, 10, out var remainder);
-                (bufferEnd = ref Ref.Decrement(ref bufferEnd)) = (char)(remainder + '0');
+                (bufferEnd = ref DecMut(ref bufferEnd)) = (char)(remainder + '0');
             }
             return ref bufferEnd;
         }
@@ -1060,7 +1063,7 @@ namespace Backports.System
                 do
                 {
                     value = MathP.DivRem(value, 10, out var remainder);
-                    (p = ref Ref.Decrement(ref p)) = (char)(remainder + '0');
+                    (p = ref DecMut(ref p)) = (char)(remainder + '0');
                 }
                 while (value != 0);
             }
@@ -1087,7 +1090,7 @@ namespace Backports.System
             p = ref UInt32ToDecChars(ref p, Low32(value), 0);
 
             //var i = (int)(buffer + Int64Precision - p);
-            var i = (int)Ref.Offset(ref p, ref Unsafe.Add(ref buffer, Int64Precision));
+            var i = (int)Offset(in p, in Add(in buffer, Int64Precision));
 
             number.DigitsCount = i;
             number.Scale = i;
@@ -1097,8 +1100,8 @@ namespace Backports.System
             {
                 //*dst++ = *p++;
                 dst = p;
-                dst = ref Ref.Increment(ref dst);
-                p = ref Ref.Increment(ref p);
+                dst = ref IncMut(ref dst);
+                p = ref IncMut(ref p);
             }
 
             dst = (byte)('\0');
@@ -1133,11 +1136,11 @@ namespace Backports.System
                     digits -= 9;
                 }
                 p = ref UInt32ToDecChars(ref p, Low32(value), digits);
-                Debug.Assert((int) Ref.Offset(ref buffer, ref p) == sNegative.Length);
+                Debug.Assert((int) Ref.Offset(in buffer, in p) == sNegative.Length);
 
                 for (var i = sNegative.Length - 1; i >= 0; i--)
                     // *(--p)
-                    (p = ref Ref.Decrement(ref p)) = sNegative[i];
+                    (p = ref DecMut(ref p)) = sNegative[i];
 
                 Debug.Assert(Unsafe.AreSame(ref p, ref buffer));
             }
@@ -1156,18 +1159,16 @@ namespace Backports.System
             charsWritten = bufferLength;
             //fixed (char* buffer = &MemoryMarshal.GetReference(destination))
             ref var buffer = ref destination[0];
+            ref var p = ref Unsafe.Add(ref buffer, bufferLength);
+            if (High32((ulong) value) != 0)
             {
-                ref var p = ref Unsafe.Add(ref buffer, bufferLength);
-                if (High32((ulong)value) != 0)
-                {
-                    p = ref Int32ToHexChars(ref p, Low32((ulong)value), hexBase, 8);
-                    p = ref Int32ToHexChars(ref p, High32((ulong)value), hexBase, digits - 8);
-                }
-                else
-                    p = ref Int32ToHexChars(ref p, Low32((ulong) value), hexBase, Math.Max(digits, 1));
-
-                Debug.Assert(Unsafe.AreSame(ref p, ref buffer));
+                p = ref Int32ToHexChars(ref p, Low32((ulong) value), hexBase, 8);
+                p = ref Int32ToHexChars(ref p, High32((ulong) value), hexBase, digits - 8);
             }
+            else
+                p = ref Int32ToHexChars(ref p, Low32((ulong) value), hexBase, Math.Max(digits, 1));
+
+            Debug.Assert(Unsafe.AreSame(ref p, ref buffer));
             return true;
         }
 
@@ -1184,17 +1185,21 @@ namespace Backports.System
             p = ref UInt32ToDecChars(ref p, Low32(value), 0);
 
             //var i = (int)(buffer + UInt64Precision - p);
-            var i = (int) Ref.Offset(ref p, ref Unsafe.Add(ref buffer, UInt64Precision));
+            var i = (int) Offset(in p, in Add(in buffer, UInt64Precision));
 
             number.DigitsCount = i;
             number.Scale = i;
 
             ref var dst = ref number.GetDigitsReference();
+            ref readonly var src = ref p;
             while (--i >= 0)
             {
-                dst = p;
-                dst = ref Ref.Increment(ref dst);
-                p = ref Ref.Increment(ref p);
+                //dst = p;
+                //dst = ref IncMut(ref dst);
+                //p = ref IncMut(ref p);
+                dst = src;
+                dst = ref IncMut(ref dst);
+                src = ref Inc(in src);
                 //*dst++ = *p++;
             }
 
@@ -1314,7 +1319,7 @@ namespace Backports.System
 
                         RoundNumber(ref number, number.Scale + nMaxDigits, isCorrectlyRounded); // Don't change this line to use digPos since digCount could have its sign changed.
 
-                        FormatCurrency(ref sb, ref number, nMaxDigits, info);
+                        FormatCurrency(ref sb, in number, nMaxDigits, info);
 
                         break;
                     }
@@ -1330,7 +1335,7 @@ namespace Backports.System
                         if (number.IsNegative)
                             sb.Append(info.NegativeSign);
 
-                        FormatFixed(ref sb, ref number, nMaxDigits, null, info.NumberDecimalSeparator, null);
+                        FormatFixed(ref sb, in number, nMaxDigits, null, info.NumberDecimalSeparator, null);
 
                         break;
                     }
@@ -1343,7 +1348,7 @@ namespace Backports.System
 
                         RoundNumber(ref number, number.Scale + nMaxDigits, isCorrectlyRounded);
 
-                        FormatNumber(ref sb, ref number, nMaxDigits, info);
+                        FormatNumber(ref sb, in number, nMaxDigits, info);
 
                         break;
                     }
@@ -1360,7 +1365,7 @@ namespace Backports.System
                         if (number.IsNegative)
                             sb.Append(info.NegativeSign);
 
-                        FormatScientific(ref sb, ref number, nMaxDigits, info, format);
+                        FormatScientific(ref sb, in number, nMaxDigits, info, format);
 
                         break;
                     }
@@ -1397,7 +1402,7 @@ namespace Backports.System
                             sb.Append(info.NegativeSign);
 
                         SkipSign:
-                        FormatGeneral(ref sb, ref number, nMaxDigits, info, (char)(format - ('G' - 'E')), noRounding);
+                        FormatGeneral(ref sb, in number, nMaxDigits, info, (char)(format - ('G' - 'E')), noRounding);
 
                         break;
                     }
@@ -1411,7 +1416,7 @@ namespace Backports.System
 
                         RoundNumber(ref number, number.Scale + nMaxDigits, isCorrectlyRounded);
 
-                        FormatPercent(ref sb, ref number, nMaxDigits, info);
+                        FormatPercent(ref sb, in number, nMaxDigits, info);
 
                         break;
                     }
@@ -1816,7 +1821,7 @@ namespace Backports.System
                 sb.Insert(0, info.NegativeSign);
         }
 
-        private static void FormatCurrency(ref ValueStringBuilder sb, ref NumberBuffer number, int nMaxDigits, NumberFormatInfo info)
+        private static void FormatCurrency(ref ValueStringBuilder sb, in NumberBuffer number, int nMaxDigits, NumberFormatInfo info)
         {
             string fmt = number.IsNegative ?
                 s_negCurrencyFormats[info.CurrencyNegativePattern] :
@@ -1827,7 +1832,7 @@ namespace Backports.System
                 switch (ch)
                 {
                     case '#':
-                        FormatFixed(ref sb, ref number, nMaxDigits, info.CurrencyGroupSizes, info.CurrencyDecimalSeparator, info.CurrencyGroupSeparator);
+                        FormatFixed(ref sb, in number, nMaxDigits, info.CurrencyGroupSizes, info.CurrencyDecimalSeparator, info.CurrencyGroupSeparator);
                         break;
                     case '-':
                         sb.Append(info.NegativeSign);
@@ -1842,10 +1847,10 @@ namespace Backports.System
             }
         }
 
-        private static void FormatFixed(ref ValueStringBuilder sb, ref NumberBuffer number, int nMaxDigits, int[]? groupDigits, string? sDecimal, string? sGroup)
+        private static void FormatFixed(ref ValueStringBuilder sb, in NumberBuffer number, int nMaxDigits, int[]? groupDigits, string? sDecimal, string? sGroup)
         {
             var digPos = number.Scale;
-            ref var dig = ref number.GetDigitsReference();
+            ref readonly var dig = ref number.GetDigitsReferenceRO();
 
             if (digPos > 0)
             {
@@ -1890,8 +1895,8 @@ namespace Backports.System
                         ref var p = ref Unsafe.Add(ref spanPtr, bufferSize - 1);
                         for (var i = digPos - 1; i >= 0; i--)
                         {
-                            p = i < digStart ? (char)Unsafe.Add(ref dig, i) : '0';
-                            p = ref Ref.Decrement(ref p);
+                            p = i < digStart ? (char)Add(in dig, i) : '0';
+                            p = ref DecMut(ref p);
 
                             if (groupSize <= 0) 
                                 continue;
@@ -1901,7 +1906,7 @@ namespace Backports.System
                             for (var j = sGroup!.Length - 1; j >= 0; j--)
                             {
                                 p = sGroup[j];
-                                p = ref Ref.Decrement(ref p);
+                                p = ref DecMut(ref p);
                             }
 
                             if (groupSizeIndex < groupDigits.Length - 1)
@@ -1912,8 +1917,8 @@ namespace Backports.System
                             digitCount = 0;
                         }
                         
-                        Debug.Assert(Ref.Offset(ref p, ref spanPtr).ToInt64() >= 1, "Underflow");
-                        dig = ref Unsafe.Add(ref dig, digStart);
+                        Debug.Assert(Offset(in p, in spanPtr).ToInt64() >= 1, "Underflow");
+                        dig = ref Add(in dig, digStart);
                     }
                 }
                 else
@@ -1923,7 +1928,7 @@ namespace Backports.System
                         if (dig != 0)
                         {
                             sb.Append((char) dig);
-                            dig = ref Ref.Increment(ref dig);
+                            dig = ref Inc(in dig);
                         }
                         else
                             sb.Append('0');
@@ -1955,7 +1960,7 @@ namespace Backports.System
                 if (dig != 0)
                 {
                     sb.Append((char)dig);
-                    dig = ref Ref.Increment(ref dig);
+                    dig = ref Inc(in dig);
                 }
                 else
                     sb.Append('0');
@@ -1964,7 +1969,7 @@ namespace Backports.System
             }
         }
 
-        private static void FormatNumber(ref ValueStringBuilder sb, ref NumberBuffer number, int nMaxDigits, NumberFormatInfo info)
+        private static void FormatNumber(ref ValueStringBuilder sb, in NumberBuffer number, int nMaxDigits, NumberFormatInfo info)
         {
             string fmt = number.IsNegative ?
                 s_negNumberFormats[info.NumberNegativePattern] :
@@ -1975,7 +1980,7 @@ namespace Backports.System
                 switch (ch)
                 {
                     case '#':
-                        FormatFixed(ref sb, ref number, nMaxDigits, info.NumberGroupSizes, info.NumberDecimalSeparator, info.NumberGroupSeparator);
+                        FormatFixed(ref sb, in number, nMaxDigits, info.NumberGroupSizes, info.NumberDecimalSeparator, info.NumberGroupSeparator);
                         break;
                     case '-':
                         sb.Append(info.NegativeSign);
@@ -1987,14 +1992,14 @@ namespace Backports.System
             }
         }
 
-        private static void FormatScientific(ref ValueStringBuilder sb, ref NumberBuffer number, int nMaxDigits, NumberFormatInfo info, char expChar)
+        private static void FormatScientific(ref ValueStringBuilder sb, in NumberBuffer number, int nMaxDigits, NumberFormatInfo info, char expChar)
         {
-            ref var dig = ref number.GetDigitsReference();
+            ref readonly var dig = ref number.GetDigitsReferenceRO();
 
             if (dig != 0)
             {
                 sb.Append((char) dig);
-                dig = ref Ref.Increment(ref dig);
+                dig = ref Inc(in dig);
             }
             else
                 sb.Append('0');
@@ -2008,7 +2013,7 @@ namespace Backports.System
                 if (dig != 0)
                 {
                     sb.Append((char)dig);
-                    dig = ref Ref.Increment(ref dig);
+                    dig = ref Inc(in dig);
                 }
                 else
                     sb.Append('0');
@@ -2031,11 +2036,11 @@ namespace Backports.System
                 sb.Append(info.PositiveSign);
 
             Span<char> digits = stackalloc char[MaxUInt32DecDigits];
-            ref var p = ref UInt32ToDecChars(ref Unsafe.Add(ref digits[0],  MaxUInt32DecDigits), (uint)value, minDigits);
-            sb.Append(ref p, (int)Ref.Offset(ref p, ref Unsafe.Add(ref digits[0], MaxUInt32DecDigits)));
+            ref readonly var p = ref UInt32ToDecChars(ref Unsafe.Add(ref digits[0],  MaxUInt32DecDigits), (uint)value, minDigits);
+            sb.Append(in p, (int) Offset(in p, in Add(in digits[0], MaxUInt32DecDigits)));
         }
 
-        private static void FormatGeneral(ref ValueStringBuilder sb, ref NumberBuffer number, int nMaxDigits, NumberFormatInfo info, char expChar, bool bSuppressScientific)
+        private static void FormatGeneral(ref ValueStringBuilder sb, in NumberBuffer number, int nMaxDigits, NumberFormatInfo info, char expChar, bool bSuppressScientific)
         {
             var digPos = number.Scale;
             var scientific = false;
@@ -2050,7 +2055,7 @@ namespace Backports.System
                 }
             }
 
-            ref var dig = ref number.GetDigitsReference();
+            ref readonly var dig = ref number.GetDigitsReferenceRO();
 
             if (digPos > 0)
             {
@@ -2059,7 +2064,7 @@ namespace Backports.System
                     if (dig != 0)
                     {
                         sb.Append((char) dig);
-                        dig = ref Ref.Increment(ref dig);
+                        dig = ref Inc(in dig);
                     }
                     else
                         sb.Append('0');
@@ -2083,7 +2088,7 @@ namespace Backports.System
                 while (dig != 0)
                 {
                     sb.Append((char) dig);
-                    dig = ref Ref.Increment(ref dig);
+                    dig = ref Inc(in dig);
                 }
             }
 
@@ -2091,7 +2096,7 @@ namespace Backports.System
                 FormatExponent(ref sb, info, number.Scale - 1, expChar, 2, true);
         }
 
-        private static void FormatPercent(ref ValueStringBuilder sb, ref NumberBuffer number, int nMaxDigits, NumberFormatInfo info)
+        private static void FormatPercent(ref ValueStringBuilder sb, in NumberBuffer number, int nMaxDigits, NumberFormatInfo info)
         {
             string fmt = number.IsNegative ?
                 s_negPercentFormats[info.PercentNegativePattern] :
@@ -2102,7 +2107,7 @@ namespace Backports.System
                 switch (ch)
                 {
                     case '#':
-                        FormatFixed(ref sb, ref number, nMaxDigits, info.PercentGroupSizes, info.PercentDecimalSeparator, info.PercentGroupSeparator);
+                        FormatFixed(ref sb, in number, nMaxDigits, info.PercentGroupSizes, info.PercentDecimalSeparator, info.PercentGroupSeparator);
                         break;
                     case '-':
                         sb.Append(info.NegativeSign);

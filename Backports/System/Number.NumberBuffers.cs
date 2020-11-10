@@ -101,6 +101,8 @@ namespace Backports.System
             //}
 
             public ref byte GetDigitsReference() => ref Digits[0];
+            // ReSharper disable once InconsistentNaming
+            public readonly ref readonly byte GetDigitsReferenceRO() => ref Digits[0];
 
             //
             // Code coverage note: This only exists so that Number displays nicely in the VS watch window. So yes, I know it works.

@@ -1229,20 +1229,20 @@ namespace Backports.System
 
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static ref readonly uint At(in BigInteger @this, int offset) =>
+            public static ref readonly uint At(in BigInteger @this, int offset) =>
                 ref BigIntBuff128.UnsafeAtU32RO(in @this._blocks, offset);
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static ref readonly uint At(in BigInteger @this, uint offset) =>
+            public static ref readonly uint At(in BigInteger @this, uint offset) =>
                 ref BigIntBuff128.UnsafeAtU32RO(in @this._blocks, offset);
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static ref uint AtMut(ref BigInteger @this, int offset) =>
+            public static ref uint AtMut(ref BigInteger @this, int offset) =>
                 ref BigIntBuff128.UnsafeAtU32(ref @this._blocks, offset);
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             // ReSharper disable once UnusedMember.Local
-            private static ref uint AtMut(ref BigInteger @this, uint offset) =>
+            public static ref uint AtMut(ref BigInteger @this, uint offset) =>
                ref BigIntBuff128.UnsafeAtU32(ref @this._blocks, offset);
         }
     }

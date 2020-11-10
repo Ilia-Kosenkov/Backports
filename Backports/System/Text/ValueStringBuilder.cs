@@ -33,7 +33,7 @@ namespace Backports.System.Text
         public int Length
         {
             get => _pos;
-            set
+            internal set
             {
                 Debug.Assert(value >= 0);
                 Debug.Assert(value <= _chars.Length);
@@ -55,10 +55,8 @@ namespace Backports.System.Text
         /// This overload is pattern matched in the C# 7.3+ compiler so you can omit
         /// the explicit method call, and write eg "fixed (char* c = builder)"
         /// </summary>
-        public ref char GetPinnableReference()
-        {
-            return ref MemoryMarshal.GetReference(_chars);
-        }
+        public ref char GetPinnableReference() => 
+            ref MemoryMarshal.GetReference(_chars);
 
         /// <summary>
         /// Get a pinnable reference to the builder.
@@ -66,11 +64,10 @@ namespace Backports.System.Text
         /// <param name="terminate">Ensures that the builder has a null char after <see cref="Length"/></param>
         public ref char GetPinnableReference(bool terminate)
         {
-            if (terminate)
-            {
-                EnsureCapacity(Length + 1);
-                _chars[Length] = '\0';
-            }
+            if (!terminate)
+                return ref MemoryMarshal.GetReference(_chars);
+            EnsureCapacity(Length + 1);
+            _chars[Length] = '\0';
             return ref MemoryMarshal.GetReference(_chars);
         }
 
@@ -203,7 +200,7 @@ namespace Backports.System.Text
             _pos += count;
         }
 
-        public void Append(ref char value, int length)
+        public void Append(in char value, int length)
         {
             var pos = _pos;
             if (pos > _chars.Length - length) 
@@ -213,7 +210,8 @@ namespace Backports.System.Text
             for (var i = 0; i < dst.Length; i++)
             {
                 dst[i] = value;
-                value = ref Ref.Increment(ref value);
+                //value = ref Ref.Increment(ref value);
+                value = ref Ref.Inc(in value);
             }
             _pos += length;
         }
@@ -266,10 +264,8 @@ namespace Backports.System.Text
 
             var toReturn = _arrayToReturnToPool;
             _chars = _arrayToReturnToPool = poolArray;
-            if (toReturn != null)
-            {
+            if (toReturn is not null) 
                 ArrayPool<char>.Shared.Return(toReturn);
-            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -277,7 +273,7 @@ namespace Backports.System.Text
         {
             var toReturn = _arrayToReturnToPool;
             this = default; // for safety, to avoid using pooled array if this instance is erroneously appended to again
-            if (toReturn != null)
+            if (toReturn is not null)
             {
                 ArrayPool<char>.Shared.Return(toReturn);
             }

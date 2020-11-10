@@ -9,6 +9,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
+using static Backports.Ref;
 
 namespace Backports.System
 {
@@ -47,7 +48,7 @@ namespace Backports.System
         private const int HalfMaxExponent = 5;
         private const int HalfMinExponent = -8;
 
-        private static bool TryNumberToInt32(ref NumberBuffer number, out int value)
+        private static bool TryNumberToInt32(in NumberBuffer number, out int value)
         {
             value = default;
             number.CheckConsistency();
@@ -56,7 +57,7 @@ namespace Backports.System
             if (i > Int32Precision || i < number.DigitsCount)
                 return false;
             //var p = number.GetDigitsPointer();
-            ref var p = ref number.GetDigitsReference();
+            ref readonly var p = ref number.GetDigitsReferenceRO();
             var n = 0;
             while (--i >= 0)
             {
@@ -69,7 +70,8 @@ namespace Backports.System
                     continue;
                 //n += (*p++ - '0');
                 n += p - '0';
-                p = ref Ref.Increment(ref p);
+                //p = ref Ref.Increment(ref p);
+                p = ref Inc(in p);
             }
             if (number.IsNegative)
             {
@@ -667,7 +669,7 @@ namespace Backports.System
             if (!TryStringToNumber(value, styles, ref number, info))
                 return ParsingStatus.Failed;
 
-            if (!TryNumberToInt32(ref number, out result))
+            if (!TryNumberToInt32(in number, out result))
                 return ParsingStatus.Overflow;
 
             return ParsingStatus.OK;

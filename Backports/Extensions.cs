@@ -127,12 +127,31 @@ namespace Backports
 
     internal static class Ref
     {
-        public static ref T Increment<T>(ref T origin) where T : unmanaged => ref Unsafe.Add(ref origin, 1);
-        public static ref T Decrement<T>(ref T origin) where T : unmanaged => ref Unsafe.Subtract(ref origin, 1);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ref T Increment<T>(this ref T origin) where T : unmanaged => ref Unsafe.Add(ref origin, 1);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ref T Decrement<T>(this ref T origin) where T : unmanaged => ref Unsafe.Subtract(ref origin, 1);
 
-        public static IntPtr Offset<T>(ref T origin, ref T target) where T : unmanaged =>
-            new IntPtr(Unsafe.ByteOffset(ref origin, ref target).ToInt64() / Unsafe.SizeOf<T>());
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ref readonly T Inc<T>(in T @this) where T : unmanaged =>
+            ref Unsafe.Add(ref Unsafe.AsRef(in @this), 1);
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ref readonly T Dec<T>(in T @this) where T : unmanaged =>
+            ref Unsafe.Subtract(ref Unsafe.AsRef(in @this), 1);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ref T IncMut<T>(ref T @this) where T : unmanaged => ref Unsafe.Add(ref @this, 1);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ref T DecMut<T>(ref T @this) where T : unmanaged => ref Unsafe.Subtract(ref @this, 1);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static IntPtr Offset<T>(in T origin, in T target) where T : unmanaged =>
+            new IntPtr(Unsafe.ByteOffset(ref Unsafe.AsRef(in origin), ref Unsafe.AsRef(in target)).ToInt64() / Unsafe.SizeOf<T>());
+
+
+        public static ref readonly T Add<T>(in T source, int elementOffset) where T : unmanaged =>
+            ref Unsafe.Add(ref Unsafe.AsRef(in source), elementOffset);
     }
 }
 
