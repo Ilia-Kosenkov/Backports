@@ -35,10 +35,10 @@ namespace Backports.System
                 mantissaHighBitIdx = (uint)BitOperations.Log2(mantissa);
             }
 
-            var length = (int)(Dragon4(mantissa, exponent, mantissaHighBitIdx, hasUnequalMargins, cutoffNumber, isSignificantDigits, number.Digits, out int decimalExponent));
+            var length = (int)(Dragon4(mantissa, exponent, mantissaHighBitIdx, hasUnequalMargins, cutoffNumber, isSignificantDigits, number.DigitsMut, out int decimalExponent));
 
             number.Scale = decimalExponent + 1;
-            number.Digits[length] = (byte)('\0');
+            number.DigitsMut[length] = (byte)('\0');
             number.DigitsCount = length;
         }
 
@@ -95,10 +95,10 @@ namespace Backports.System
                 mantissaHighBitIdx = (uint)BitOperations.Log2(mantissa);
             }
 
-            var length = (int)(Dragon4(mantissa, exponent, mantissaHighBitIdx, hasUnequalMargins, cutoffNumber, isSignificantDigits, number.Digits, out int decimalExponent));
+            var length = (int)(Dragon4(mantissa, exponent, mantissaHighBitIdx, hasUnequalMargins, cutoffNumber, isSignificantDigits, number.DigitsMut, out int decimalExponent));
 
             number.Scale = decimalExponent + 1;
-            number.Digits[length] = (byte)('\0');
+            number.DigitsMut[length] = (byte)('\0');
             number.DigitsCount = length;
         }
 

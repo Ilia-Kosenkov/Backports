@@ -28,7 +28,8 @@ namespace Backports.System
             public bool IsNegative;
             public bool HasNonZeroTail;
             public NumberBufferKind Kind;
-            public Span<byte> Digits;
+            private Span<byte> _digits;
+            public Span<byte> DigitsMut => _digits;
 
 //            public NumberBuffer(NumberBufferKind kind, byte* digits, int digitsLength)
 //            {
@@ -59,13 +60,13 @@ namespace Backports.System
                 IsNegative = false;
                 HasNonZeroTail = false;
                 Kind = kind;
-                Digits = digits;
+                _digits = digits;
 
 #if DEBUG
-                Digits.Fill(0xCC);
+                DigitsMut.Fill(0xCC);
 #endif
 
-                Digits[0] = (byte)('\0');
+                DigitsMut[0] = (byte)('\0');
                 CheckConsistency();
             }
 
@@ -73,7 +74,7 @@ namespace Backports.System
             public readonly void CheckConsistency()
             {
 #if DEBUG
-                Debug.Assert((Kind == NumberBufferKind.Integer) || (Kind == NumberBufferKind.Decimal) || (Kind == NumberBufferKind.FloatingPoint));
+                Debug.Assert(Kind == NumberBufferKind.Integer || (Kind == NumberBufferKind.Decimal) || (Kind == NumberBufferKind.FloatingPoint));
                 Debug.Assert(Digits[0] != '0', "Leading zeros should never be stored in a Number");
 
                 int numDigits;
@@ -82,11 +83,9 @@ namespace Backports.System
                     var digit = Digits[numDigits];
 
                     if (digit == 0)
-                    {
                         break;
-                    }
 
-                    Debug.Assert((digit >= '0') && (digit <= '9'), "Unexpected character found in Number");
+                    Debug.Assert(digit >= '0' && digit <= '9', "Unexpected character found in Number");
                 }
 
                 Debug.Assert(numDigits == DigitsCount, "Null terminator found in unexpected location in Number");
@@ -100,24 +99,24 @@ namespace Backports.System
             //    return (byte*)Unsafe.AsPointer(ref Digits[0]);
             //}
 
-            public ref byte GetDigitsReference() => ref Digits[0];
+            public readonly ReadOnlySpan<byte> Digits => _digits;
+
+            public ref byte GetRefMut() => ref DigitsMut[0];
             // ReSharper disable once InconsistentNaming
-            public readonly ref readonly byte GetDigitsReferenceRO() => ref Digits[0];
+            public readonly ref readonly byte GetRef() => ref _digits[0];
 
             //
             // Code coverage note: This only exists so that Number displays nicely in the VS watch window. So yes, I know it works.
             //
-            public override string ToString()
+            public override readonly string ToString()
             {
                 StringBuilder sb = new StringBuilder();
 
                 sb.Append('[');
                 sb.Append('"');
 
-                for (var i = 0; i < Digits.Length; i++)
+                foreach (var digit in Digits)
                 {
-                    var digit = Digits[i];
-
                     if (digit == 0)
                         break;
 
@@ -134,6 +133,7 @@ namespace Backports.System
 
                 return sb.ToString();
             }
+
         }
 
         internal enum NumberBufferKind : byte

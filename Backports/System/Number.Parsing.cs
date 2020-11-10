@@ -57,7 +57,7 @@ namespace Backports.System
             if (i > Int32Precision || i < number.DigitsCount)
                 return false;
             //var p = number.GetDigitsPointer();
-            ref readonly var p = ref number.GetDigitsReferenceRO();
+            ref readonly var p = ref number.GetRef();
             var n = 0;
             while (--i >= 0)
             {
@@ -88,7 +88,7 @@ namespace Backports.System
             return true;
         }
 
-        private static bool TryNumberToInt64(ref NumberBuffer number, out long value)
+        private static bool TryNumberToInt64(in NumberBuffer number, out long value)
         {
             value = default;
             number.CheckConsistency();
@@ -96,7 +96,7 @@ namespace Backports.System
             var i = number.Scale;
             if (i > Int64Precision || i < number.DigitsCount)
                 return false;
-            ref var p = ref number.GetDigitsReference();
+            ref readonly var p = ref number.GetRef();
             long n = 0;
             while (--i >= 0)
             {
@@ -107,7 +107,7 @@ namespace Backports.System
                     continue;
                 //n += (*p++ - '0');
                 n += p - '0';
-                p = ref Ref.Increment(ref p);
+                p = ref Inc(in p);
             }
             if (number.IsNegative)
             {
@@ -124,7 +124,7 @@ namespace Backports.System
             return true;
         }
 
-        private static bool TryNumberToUInt32(ref NumberBuffer number, out uint value)
+        private static bool TryNumberToUInt32(in NumberBuffer number, out uint value)
         {
             value = default;
             number.CheckConsistency();
@@ -132,7 +132,7 @@ namespace Backports.System
             var i = number.Scale;
             if (i > UInt32Precision || i < number.DigitsCount || number.IsNegative)
                 return false;
-            ref var p = ref number.GetDigitsReference();
+            ref readonly var p = ref number.GetRef();
             uint n = 0;
             while (--i >= 0)
             {
@@ -145,7 +145,7 @@ namespace Backports.System
                     continue;
                 //var newN = n + (uint)(*p++ - '0');
                 var newN = n + (uint) (p - '0');
-                p = ref Ref.Increment(ref p);
+                p = ref Inc(in p);
                 // Detect an overflow here...
                 if (newN < n)
                     return false;
@@ -155,7 +155,7 @@ namespace Backports.System
             return true;
         }
 
-        private static bool TryNumberToUInt64(ref NumberBuffer number, out ulong value)
+        private static bool TryNumberToUInt64(in NumberBuffer number, out ulong value)
         {
             value = default;
             number.CheckConsistency();
@@ -163,7 +163,7 @@ namespace Backports.System
             var i = number.Scale;
             if (i > UInt64Precision || i < number.DigitsCount || number.IsNegative)
                 return false;
-            ref var p = ref number.GetDigitsReference();
+            ref readonly var p = ref number.GetRef();
             ulong n = 0;
             while (--i >= 0)
             {
@@ -174,7 +174,7 @@ namespace Backports.System
                     continue;
                 //var newN = n + (ulong)(*p++ - '0');
                 var newN = n + (ulong) (p - '0');
-                p = ref Ref.Increment(ref p);
+                p = ref Inc(in p);
                 // Detect an overflow here...
                 if (newN < n)
                     return false;
@@ -489,7 +489,7 @@ namespace Backports.System
 
             var digCount = 0;
             var digEnd = 0;
-            var maxDigCount = number.Digits.Length - 1;
+            var maxDigCount = number.DigitsMut.Length - 1;
 
             while (true)
             {
@@ -501,7 +501,7 @@ namespace Backports.System
                     {
                         if (digCount < maxDigCount)
                         {
-                            number.Digits[digCount++] = (byte)ch;
+                            number.DigitsMut[digCount++] = (byte)ch;
                             if (ch != '0' || number.Kind != NumberBufferKind.Integer)
                             {
                                 digEnd = digCount;
@@ -549,7 +549,7 @@ namespace Backports.System
 
             var negExp = false;
             number.DigitsCount = digEnd;
-            number.Digits[digEnd] = (byte)'\0';
+            number.DigitsMut[digEnd] = (byte)'\0';
             if ((state & stateDigits) != 0)
             {
                 if ((ch == 'E' || ch == 'e') && (styles & NumberStyles.AllowExponent) != 0)
@@ -700,25 +700,30 @@ namespace Backports.System
             }
 
             // Parse leading sign.
-            int sign = 1;
+            var sign = 1;
             if ((styles & NumberStyles.AllowLeadingSign) != 0)
             {
                 if (info.HasInvariantNumberSigns())
                 {
-                    if (num == '-')
+                    switch (num)
                     {
-                        sign = -1;
-                        index++;
-                        if ((uint)index >= (uint)value.Length)
-                            goto FalseExit;
-                        num = value[index];
-                    }
-                    else if (num == '+')
-                    {
-                        index++;
-                        if ((uint)index >= (uint)value.Length)
-                            goto FalseExit;
-                        num = value[index];
+                        case '-':
+                        {
+                            sign = -1;
+                            index++;
+                            if ((uint)index >= (uint)value.Length)
+                                goto FalseExit;
+                            num = value[index];
+                            break;
+                        }
+                        case '+':
+                        {
+                            index++;
+                            if ((uint)index >= (uint)value.Length)
+                                goto FalseExit;
+                            num = value[index];
+                            break;
+                        }
                     }
                 }
                 else
@@ -744,8 +749,8 @@ namespace Backports.System
                 }
             }
 
-            bool overflow = false;
-            int answer = 0;
+            var overflow = false;
+            var answer = 0;
 
             if (IsDigit(num))
             {
@@ -766,7 +771,7 @@ namespace Backports.System
                 // Parse most digits, up to the potential for overflow, which can't happen until after 9 digits.
                 answer = num - '0'; // first digit
                 index++;
-                for (int i = 0; i < 8; i++) // next 8 digits can't overflow
+                for (var i = 0; i < 8; i++) // next 8 digits can't overflow
                 {
                     if ((uint)index >= (uint)value.Length)
                         goto DoneAtEnd;
@@ -807,10 +812,8 @@ namespace Backports.System
 
         DoneAtEndButPotentialOverflow:
             if (overflow)
-            {
                 goto OverflowExit;
-            }
-     
+
         DoneAtEnd:
             result = answer * sign;
             var status = ParsingStatus.OK;
@@ -872,7 +875,7 @@ namespace Backports.System
             }
 
             // Parse leading sign.
-            int sign = 1;
+            var sign = 1;
             if ((styles & NumberStyles.AllowLeadingSign) != 0)
             {
                 if (info.HasInvariantNumberSigns())
@@ -916,7 +919,7 @@ namespace Backports.System
                 }
             }
 
-            bool overflow = false;
+            var overflow = false;
             long answer = 0;
 
             if (IsDigit(num))
@@ -938,7 +941,7 @@ namespace Backports.System
                 // Parse most digits, up to the potential for overflow, which can't happen until after 18 digits.
                 answer = num - '0'; // first digit
                 index++;
-                for (int i = 0; i < 17; i++) // next 17 digits can't overflow
+                for (var i = 0; i < 17; i++) // next 17 digits can't overflow
                 {
                     if ((uint)index >= (uint)value.Length)
                         goto DoneAtEnd;
@@ -979,12 +982,10 @@ namespace Backports.System
 
         DoneAtEndButPotentialOverflow:
             if (overflow)
-            {
-                goto OverflowExit;
-            }
+                goto OverflowExit; 
         DoneAtEnd:
             result = answer * sign;
-            ParsingStatus status = ParsingStatus.OK;
+            var status = ParsingStatus.OK;
         Exit:
             return status;
 
@@ -1044,7 +1045,7 @@ namespace Backports.System
             if (!TryStringToNumber(value, styles, ref number, info))
                 return ParsingStatus.Failed;
 
-            if (!TryNumberToInt64(ref number, out result))
+            if (!TryNumberToInt64(in number, out result))
                 return ParsingStatus.Overflow;
 
             return ParsingStatus.OK;
@@ -1075,7 +1076,7 @@ namespace Backports.System
             if (!TryStringToNumber(value, styles, ref number, info))
                 return ParsingStatus.Failed;
 
-            if (!TryNumberToUInt32(ref number, out result))
+            if (!TryNumberToUInt32(in number, out result))
                 return ParsingStatus.Overflow;
 
             return ParsingStatus.OK;
@@ -1089,7 +1090,7 @@ namespace Backports.System
             if (value.IsEmpty)
                 goto FalseExit;
 
-            int index = 0;
+            var index = 0;
             int num = value[0];
 
             // Skip past any whitespace at the beginning.
@@ -1106,7 +1107,7 @@ namespace Backports.System
             }
 
             // Parse leading sign.
-            bool overflow = false;
+            var overflow = false;
             if ((styles & NumberStyles.AllowLeadingSign) != 0)
             {
                 if (info.HasInvariantNumberSigns())
@@ -1150,7 +1151,7 @@ namespace Backports.System
                 }
             }
 
-            int answer = 0;
+            var answer = 0;
 
             if (IsDigit(num))
             {
@@ -1171,7 +1172,7 @@ namespace Backports.System
                 // Parse most digits, up to the potential for overflow, which can't happen until after 9 digits.
                 answer = num - '0'; // first digit
                 index++;
-                for (int i = 0; i < 8; i++) // next 8 digits can't overflow
+                for (var i = 0; i < 8; i++) // next 8 digits can't overflow
                 {
                     if ((uint)index >= (uint)value.Length)
                         goto DoneAtEndButPotentialOverflow;
@@ -1216,7 +1217,7 @@ namespace Backports.System
             }
         DoneAtEnd:
             result = (uint)answer;
-            ParsingStatus status = ParsingStatus.OK;
+            var status = ParsingStatus.OK;
         Exit:
             return status;
 
@@ -1399,7 +1400,7 @@ namespace Backports.System
             if (!TryStringToNumber(value, styles, ref number, info))
                 return ParsingStatus.Failed;
 
-            if (!TryNumberToUInt64(ref number, out result))
+            if (!TryNumberToUInt64(in number, out result))
                 return ParsingStatus.Overflow;
 
             return ParsingStatus.OK;
@@ -1697,11 +1698,11 @@ namespace Backports.System
             goto DoneAtEndButPotentialOverflow;
         }
 
-        internal static bool TryNumberToDecimal(ref NumberBuffer number, ref decimal value)
+        internal static bool TryNumberToDecimal(in NumberBuffer number, ref decimal value)
         {
             number.CheckConsistency();
 
-            ref var p = ref number.GetDigitsReference();
+            ref readonly var p = ref number.GetRef();
             var e = number.Scale;
             var sign = number.IsNegative;
             uint c = p;
@@ -1723,7 +1724,7 @@ namespace Backports.System
                 low64 *= 10;
                 low64 += c - '0';
                 //c = *++p;
-                c = (p = ref Ref.Increment(ref p));
+                c = p = ref Inc(in p);
                 if (low64 >= ulong.MaxValue / 10)
                     break;
                 if (c != 0) 
@@ -1739,8 +1740,8 @@ namespace Backports.System
             }
 
             uint high = 0;
-            while ((e > 0 || (c != 0 && e > -28)) &&
-              (high < uint.MaxValue / 10 || (high == uint.MaxValue / 10 && (low64 < 0x99999999_99999999 || (low64 == 0x99999999_99999999 && c <= '5')))))
+            while ((e > 0 || c != 0 && e > -28) &&
+              (high < uint.MaxValue / 10 || high == uint.MaxValue / 10 && (low64 < 0x99999999_99999999 || low64 == 0x99999999_99999999 && c <= '5')))
             {
                 // multiply by 10
                 var tmpLow = (uint)low64 * 10UL;
@@ -1755,17 +1756,17 @@ namespace Backports.System
                     if (low64 < c)
                         high++;
                     //c = *++p;
-                    c = (p = ref Ref.Increment(ref p));
+                    c = p = ref Inc(in p);
                 }
                 e--;
             }
 
             if (c >= '5')
             {
-                if ((c == '5') && ((low64 & 1) == 0))
+                if (c == '5' && (low64 & 1) == 0)
                 {
                     //c = *++p;
-                    c = (p = ref Ref.Increment(ref p));
+                    c = p = ref Inc(in p);
 
                     var hasZeroTail = !number.HasNonZeroTail;
 
@@ -1777,15 +1778,15 @@ namespace Backports.System
                     // buffer, however, will still contain a number of trailing zeros and
                     // a trailing non-zero number.
 
-                    while ((c != 0) && hasZeroTail)
+                    while (c != 0 && hasZeroTail)
                     {
-                        hasZeroTail &= (c == '0');
+                        hasZeroTail &= c == '0';
                         //c = *++p;
-                        c = (p = ref Ref.Increment(ref p));
+                        c = p = ref Inc(in p);
                     }
 
                     // We should either be at the end of the stream or have a non-zero tail
-                    Debug.Assert((c == 0) || !hasZeroTail);
+                    Debug.Assert(c == 0 || !hasZeroTail);
 
                     if (hasZeroTail)
                     {
@@ -1804,19 +1805,20 @@ namespace Backports.System
             }
         NoRounding:
 
-            if (e > 0)
-                return false;
+            switch (e)
+            {
+                case > 0:
+                    return false;
+                case <= -DecimalPrecision:
+                    // Parsing a large scale zero can give you more precision than fits in the decimal.
+                    // This should only happen for actual zeros or very small numbers that round to zero.
+                    value = new decimal(0, 0, 0, sign, DecimalPrecision - 1);
+                    break;
+                default:
+                    value = new decimal((int)low64, (int)(low64 >> 32), (int)high, sign, (byte)-e);
+                    break;
+            }
 
-            if (e <= -DecimalPrecision)
-            {
-                // Parsing a large scale zero can give you more precision than fits in the decimal.
-                // This should only happen for actual zeros or very small numbers that round to zero.
-                value = new decimal(0, 0, 0, sign, DecimalPrecision - 1);
-            }
-            else
-            {
-                value = new decimal((int)low64, (int)(low64 >> 32), (int)high, sign, (byte)-e);
-            }
             return true;
         }
 
@@ -1829,7 +1831,7 @@ namespace Backports.System
             if (!TryStringToNumber(value, styles, ref number, info))
                 return ParsingStatus.Failed;
 
-            if (!TryNumberToDecimal(ref number, ref result))
+            if (!TryNumberToDecimal(in number, ref result))
                 return ParsingStatus.Overflow;
 
             return ParsingStatus.OK;
@@ -1878,7 +1880,7 @@ namespace Backports.System
                 }
             }
             else
-                result = NumberToDouble(ref number);
+                result = NumberToDouble(in number);
 
             return true;
         }
@@ -2132,7 +2134,7 @@ namespace Backports.System
         //    return new OverflowException(message);
         //}
 
-        internal static double NumberToDouble(ref NumberBuffer number)
+        internal static double NumberToDouble(in NumberBuffer number)
         {
             // This is for debug purposes
             number.CheckConsistency();
@@ -2142,7 +2144,7 @@ namespace Backports.System
                 {DigitsCount: 0} or {Scale: < DoubleMinExponent} => 0,
                 {Scale: > DoubleMaxExponent} => double.PositiveInfinity,
                 _ => global::System.BitConverter.Int64BitsToDouble(
-                    (long) NumberToFloatingPointBits(ref number, in FloatingPointInfo.Double))
+                    (long) NumberToFloatingPointBits(in number, in FloatingPointInfo.Double))
             };
 
             return number.IsNegative ? -result : result;
@@ -2180,7 +2182,7 @@ namespace Backports.System
                 {DigitsCount: 0} or {Scale: < SingleMinExponent} => 0,
                 {Scale: > SingleMaxExponent} => float.PositiveInfinity,
                 _ => BitConverter.Int32BitsToSingle(
-                    (int) (uint) NumberToFloatingPointBits(ref number, in FloatingPointInfo.Single))
+                    (int) (uint) NumberToFloatingPointBits(in number, in FloatingPointInfo.Single))
             };
             
             return number.IsNegative ? -result : result;

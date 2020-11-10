@@ -332,21 +332,21 @@ namespace Backports.System
 
                 if (requestedDigits == -1)
                 {
-                    var w = DiyFp.CreateAndGetBoundaries(v, out DiyFp boundaryMinus, out DiyFp boundaryPlus).Normalize();
-                    result = TryRunShortest(in boundaryMinus, in w, in boundaryPlus, number.Digits, out length, out decimalExponent);
+                    var w = DiyFp.CreateAndGetBoundaries(v, out var boundaryMinus, out var boundaryPlus).Normalize();
+                    result = TryRunShortest(in boundaryMinus, in w, in boundaryPlus, number.DigitsMut, out length, out decimalExponent);
                 }
                 else
                 {
                     var w = new DiyFp(v).Normalize();
-                    result = TryRunCounted(in w, requestedDigits, number.Digits, out length, out decimalExponent);
+                    result = TryRunCounted(in w, requestedDigits, number.DigitsMut, out length, out decimalExponent);
                 }
 
                 if (!result) 
                     return result;
-                Debug.Assert((requestedDigits == -1) || (length == requestedDigits));
+                Debug.Assert(requestedDigits == -1 || (length == requestedDigits));
 
                 number.Scale = length + decimalExponent;
-                number.Digits[length] = (byte)('\0');
+                number.DigitsMut[length] = (byte)('\0');
                 number.DigitsCount = length;
 
                 return result;
@@ -400,12 +400,12 @@ namespace Backports.System
                 if (requestedDigits == -1)
                 {
                     var w = DiyFp.CreateAndGetBoundaries(v, out var boundaryMinus, out var boundaryPlus).Normalize();
-                    result = TryRunShortest(in boundaryMinus, in w, in boundaryPlus, number.Digits, out length, out decimalExponent);
+                    result = TryRunShortest(in boundaryMinus, in w, in boundaryPlus, number.DigitsMut, out length, out decimalExponent);
                 }
                 else
                 {
                     var w = new DiyFp(v).Normalize();
-                    result = TryRunCounted(in w, requestedDigits, number.Digits, out length, out decimalExponent);
+                    result = TryRunCounted(in w, requestedDigits, number.DigitsMut, out length, out decimalExponent);
                 }
 
                 if (result)
@@ -413,7 +413,7 @@ namespace Backports.System
                     Debug.Assert((requestedDigits == -1) || (length == requestedDigits));
 
                     number.Scale = length + decimalExponent;
-                    number.Digits[length] = (byte)('\0');
+                    number.DigitsMut[length] = (byte)('\0');
                     number.DigitsCount = length;
                 }
 
@@ -427,10 +427,10 @@ namespace Backports.System
             {
                 Debug.Assert(requestedDigits > 0);
 
-                int tenMkMinimalBinaryExponent = MinimalTargetExponent - (w.e + DiyFp.SignificandSize);
-                int tenMkMaximalBinaryExponent = MaximalTargetExponent - (w.e + DiyFp.SignificandSize);
+                var tenMkMinimalBinaryExponent = MinimalTargetExponent - (w.e + DiyFp.SignificandSize);
+                var tenMkMaximalBinaryExponent = MaximalTargetExponent - (w.e + DiyFp.SignificandSize);
 
-                DiyFp tenMk = GetCachedPowerForBinaryExponentRange(tenMkMinimalBinaryExponent, tenMkMaximalBinaryExponent, out int mk);
+                var tenMk = GetCachedPowerForBinaryExponentRange(tenMkMinimalBinaryExponent, tenMkMaximalBinaryExponent, out var mk);
 
                 Debug.Assert(MinimalTargetExponent <= (w.e + tenMk.e + DiyFp.SignificandSize));
                 Debug.Assert(MaximalTargetExponent >= (w.e + tenMk.e + DiyFp.SignificandSize));
@@ -445,7 +445,7 @@ namespace Backports.System
                 // In other words, let f = scaledW.f and e = scaledW.e, then:
                 //      (f - 1) * 2^e < (w * 10^k) < (f + 1) * 2^e
 
-                DiyFp scaledW = w.Multiply(in tenMk);
+                var scaledW = w.Multiply(in tenMk);
 
                 // We now have (double)(scaledW * 10^-mk).
                 //
@@ -454,7 +454,7 @@ namespace Backports.System
                 //
                 // It will not always be exactly the same since DigitGenCounted only produces a limited number of digits.
 
-                bool result = TryDigitGenCounted(in scaledW, requestedDigits, buffer, out length, out int kappa);
+                var result = TryDigitGenCounted(in scaledW, requestedDigits, buffer, out length, out var kappa);
                 decimalExponent = -mk + kappa;
                 return result;
             }
@@ -536,10 +536,10 @@ namespace Backports.System
                 Debug.Assert(number < (1U << (numberBits + 1)));
 
                 // 1233/4096 is approximately 1/log2(10)
-                int exponentGuess = ((numberBits + 1) * 1233) >> 12;
+                var exponentGuess = ((numberBits + 1) * 1233) >> 12;
                 Debug.Assert((uint)(exponentGuess) < s_SmallPowersOfTen.Length);
 
-                uint power = s_SmallPowersOfTen[exponentGuess];
+                var power = s_SmallPowersOfTen[exponentGuess];
 
                 // We don't have any guarantees that 2^numberBits <= number
                 if (number < power)
@@ -591,10 +591,10 @@ namespace Backports.System
                 var one = new DiyFp(1UL << -w.e, w.e);
 
                 // Division by one is a shift.
-                uint integrals = (uint)(w.f >> -one.e);
+                var integrals = (uint)(w.f >> -one.e);
 
                 // Modulo by one is an and.
-                ulong fractionals = w.f & (one.f - 1);
+                var fractionals = w.f & (one.f - 1);
 
                 // We deviate from the original algorithm here and do some early checks to determine if we can satisfy requestedDigits.
                 // If we determine that we can't, we exit early and avoid most of the heavy lifting that the algorithm otherwise does.
@@ -603,7 +603,7 @@ namespace Backports.System
                 //      If requestedDigits >= 11, integrals is not able to exhaust the count by itself since 10^(11 -1) > uint.MaxValue >= integrals.
                 //      If integrals < 10^(requestedDigits - 1), integrals cannot exhaust the count.
                 //      Otherwise, integrals might be able to exhaust the count and we need to execute the rest of the code.
-                if ((fractionals == 0) && ((requestedDigits >= 11) || (integrals < s_SmallPowersOfTen[requestedDigits - 1])))
+                if (fractionals == 0 && (requestedDigits >= 11 || integrals < s_SmallPowersOfTen[requestedDigits - 1]))
                 {
                     Debug.Assert(buffer[0] == '\0');
                     length = 0;
@@ -611,7 +611,7 @@ namespace Backports.System
                     return false;
                 }
 
-                uint divisor = BiggestPowerTen(integrals, DiyFp.SignificandSize - (-one.e), out kappa);
+                var divisor = BiggestPowerTen(integrals, DiyFp.SignificandSize - -one.e, out kappa);
                 length = 0;
 
                 // Loop invariant:
@@ -621,7 +621,7 @@ namespace Backports.System
                 //      The divisor is the biggest power of ten that is smaller than integrals
                 while (kappa > 0)
                 {
-                    uint digit = MathP.DivRem(integrals, divisor, out integrals);
+                    var digit = MathP.DivRem(integrals, divisor, out integrals);
                     Debug.Assert(digit <= 9);
                     buffer[length] = (byte)('0' + digit);
 
@@ -641,12 +641,12 @@ namespace Backports.System
 
                 if (requestedDigits == 0)
                 {
-                    ulong rest = ((ulong)(integrals) << -one.e) + fractionals;
+                    var rest = ((ulong)integrals << -one.e) + fractionals;
                     return TryRoundWeedCounted(
                         buffer,
                         length,
                         rest,
-                        tenKappa: ((ulong)(divisor)) << -one.e,
+                        tenKappa: (ulong)divisor << -one.e,
                         unit: wError,
                         ref kappa
                     );
@@ -660,15 +660,15 @@ namespace Backports.System
 
                 Debug.Assert(one.e >= MinimalTargetExponent);
                 Debug.Assert(fractionals < one.f);
-                Debug.Assert((ulong.MaxValue / 10) >= one.f);
+                Debug.Assert(ulong.MaxValue / 10 >= one.f);
 
-                while ((requestedDigits > 0) && (fractionals > wError))
+                while (requestedDigits > 0 && fractionals > wError)
                 {
                     fractionals *= 10;
                     wError *= 10;
 
                     // Integer division by one.
-                    uint digit = (uint)(fractionals >> -one.e);
+                    var digit = (uint)(fractionals >> -one.e);
                     Debug.Assert(digit <= 9);
                     buffer[length] = (byte)('0' + digit);
 
@@ -677,12 +677,12 @@ namespace Backports.System
                     kappa--;
 
                     // Modulo by one.
-                    fractionals &= (one.f - 1);
+                    fractionals &= one.f - 1;
                 }
 
                 if (requestedDigits != 0)
                 {
-                    buffer[0] = (byte)('\0');
+                    buffer[0] = (byte)'\0';
                     length = 0;
                     kappa = 0;
                     return false;
@@ -841,7 +841,7 @@ namespace Backports.System
 
                 Debug.Assert(one.e >= MinimalTargetExponent);
                 Debug.Assert(fractionals < one.f);
-                Debug.Assert((ulong.MaxValue / 10) >= one.f);
+                Debug.Assert(ulong.MaxValue / 10 >= one.f);
 
                 while (true)
                 {

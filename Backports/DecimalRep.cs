@@ -38,14 +38,14 @@ namespace Backports
 
 
 
-        internal int Scale => (byte) (Flags >> ScaleShift);
+        internal readonly int Scale => (byte) (Flags >> ScaleShift);
 
-        public void Deconstruct(out int lo, out int mid, out int hi, out int flags) =>
+        public readonly void Deconstruct(out int lo, out int mid, out int hi, out int flags) =>
             (flags, hi, lo, mid) = (Flags, Hi, Lo, Mid);
 
-        public override string ToString() => (Lo, Mid, Hi, Flags).ToString();
+        public override readonly string ToString() => (Lo, Mid, Hi, Flags).ToString();
 
-        public bool TryGetBits(Span<int> destination, out int valuesWritten)
+        public readonly bool TryGetBits(Span<int> destination, out int valuesWritten)
         {
             if (destination.Length < 4)
             {
@@ -61,7 +61,7 @@ namespace Backports
             return true;
         }
 
-        public int GetBits(Span<int> destination)
+        public readonly int GetBits(Span<int> destination)
         {
             if (destination.Length < 4)
                 throw new ArgumentException("Target buffer is too short", nameof(destination));

@@ -90,18 +90,11 @@ namespace Backports.System
         {
             Debug.Assert(chars.Length >= bytes.Length * 2);
 
-            for (var pos = 0; pos < bytes.Length; ++pos)
-            {
-                ToCharsBuffer(bytes[pos], chars, pos * 2, casing);
-            }
+            for (var pos = 0; pos < bytes.Length; ++pos) ToCharsBuffer(bytes[pos], chars, pos * 2, casing);
         }
 
-#if ALLOW_PARTIALLY_TRUSTED_CALLERS
-        [System.Security.SecuritySafeCriticalAttribute]
-#endif
         public static string ToString(ReadOnlySpan<byte> bytes, Casing casing = Casing.Upper)
         {
-#if NETFRAMEWORK || NETSTANDARD1_0 || NETSTANDARD1_3 || NETSTANDARD2_0
             // ReSharper disable once RedundantAssignment
             Span<char> result = stackalloc char[0];
             if (bytes.Length > 16)
@@ -110,9 +103,7 @@ namespace Backports.System
                 result = array.AsSpan();
             }
             else
-            {
                 result = stackalloc char[bytes.Length * 2];
-            }
 
             var pos = 0;
             foreach (var b in bytes)
@@ -121,16 +112,6 @@ namespace Backports.System
                 pos += 2;
             }
             return result.ToString();
-#else
-            fixed (byte* bytesPtr = bytes)
-            {
-                return string.Create(bytes.Length * 2, (Ptr: (IntPtr)bytesPtr, bytes.Length, casing), static (chars, args) =>
-                {
-                    var ros = new ReadOnlySpan<byte>((byte*)args.Ptr, args.Length);
-                    EncodeToUtf16(ros, chars, args.casing);
-                });
-            }
-#endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -139,10 +120,8 @@ namespace Backports.System
             value &= 0xF;
             value += '0';
 
-            if (value > '9')
-            {
+            if (value > '9') 
                 value += ('A' - ('9' + 1));
-            }
 
             return (char)value;
         }
@@ -153,18 +132,13 @@ namespace Backports.System
             value &= 0xF;
             value += '0';
 
-            if (value > '9')
-            {
+            if (value > '9') 
                 value += ('a' - ('9' + 1));
-            }
 
             return (char)value;
         }
 
-        public static bool TryDecodeFromUtf16(ReadOnlySpan<char> chars, Span<byte> bytes)
-        {
-            return TryDecodeFromUtf16(chars, bytes, out _);
-        }
+        public static bool TryDecodeFromUtf16(ReadOnlySpan<char> chars, Span<byte> bytes) => TryDecodeFromUtf16(chars, bytes, out _);
 
         public static bool TryDecodeFromUtf16(ReadOnlySpan<char> chars, Span<byte> bytes, out int charsProcessed)
         {

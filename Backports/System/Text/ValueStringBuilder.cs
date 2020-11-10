@@ -32,7 +32,7 @@ namespace Backports.System.Text
 
         public int Length
         {
-            get => _pos;
+            readonly get => _pos;
             internal set
             {
                 Debug.Assert(value >= 0);
@@ -103,9 +103,9 @@ namespace Backports.System.Text
             return _chars.Slice(0, _pos);
         }
 
-        public ReadOnlySpan<char> AsSpan() => _chars.Slice(0, _pos);
-        public ReadOnlySpan<char> AsSpan(int start) => _chars.Slice(start, _pos - start);
-        public ReadOnlySpan<char> AsSpan(int start, int length) => _chars.Slice(start, length);
+        public readonly ReadOnlySpan<char> AsSpan() => _chars.Slice(0, _pos);
+        public readonly ReadOnlySpan<char> AsSpan(int start) => _chars.Slice(start, _pos - start);
+        public readonly ReadOnlySpan<char> AsSpan(int start, int length) => _chars.Slice(start, length);
 
         public bool TryCopyTo(Span<char> destination, out int charsWritten)
         {

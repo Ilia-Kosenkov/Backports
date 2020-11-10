@@ -330,7 +330,7 @@ namespace Backports.System
 
         internal static void DecimalToNumber(ref decimal d, ref NumberBuffer number)
         {
-            ref var buffer = ref number.GetDigitsReference();
+            ref var buffer = ref number.GetRefMut();
             number.DigitsCount = DecimalPrecision;
             //var rep = d.AsBitsRep();
             ref var rep = ref Unsafe.As<decimal, DecimalRep>(ref d);
@@ -357,7 +357,7 @@ namespace Backports.System
             number.DigitsCount = i;
             number.Scale = i - rep.Scale;
 
-            ref var dst = ref number.GetDigitsReference();
+            ref var dst = ref number.GetRefMut();
             while (--i >= 0)
             {
                 //*dst++ = *p++;
@@ -538,7 +538,8 @@ namespace Backports.System
             // because we know we have enough digits to satisfy roundtrippability), we should validate
             // that the number actually roundtrips back to the original result.
 
-            Debug.Assert(precision != -1 && precision < DoublePrecision || BitConverter.DoubleToInt64Bits(value) == BitConverter.DoubleToInt64Bits(NumberToDouble(ref number)));
+            Debug.Assert(precision != -1 && precision < DoublePrecision || 
+                         BitConverter.DoubleToInt64Bits(value) == BitConverter.DoubleToInt64Bits(NumberToDouble(in number)));
 
             if (fmt != 0)
             {
@@ -907,7 +908,7 @@ namespace Backports.System
                 value = -value;
             }
 
-            ref var buffer = ref number.GetDigitsReference();
+            ref var buffer = ref number.GetRefMut();
             ref var p = ref UInt32ToDecChars(ref Unsafe.Add(ref buffer, Int32Precision), (uint)value, 0);
 
             //var i = (int)(buffer + Int32Precision - p);
@@ -916,7 +917,7 @@ namespace Backports.System
             number.DigitsCount = i;
             number.Scale = i;
 
-            ref var dst = ref number.GetDigitsReference();
+            ref var dst = ref number.GetRefMut();
             while (--i >= 0)
             {
                 dst = p;
@@ -1000,7 +1001,7 @@ namespace Backports.System
             number.DigitsCount = UInt32Precision;
             number.IsNegative = false;
 
-            ref var buffer = ref number.GetDigitsReference();
+            ref var buffer = ref number.GetRefMut();
             ref readonly var p = ref UInt32ToDecChars(ref Unsafe.Add(ref buffer, UInt32Precision), value, 0);
 
             //var i = (int)(buffer + UInt32Precision - p);
@@ -1010,7 +1011,7 @@ namespace Backports.System
             number.DigitsCount = i;
             number.Scale = i;
 
-            ref var dst = ref number.GetDigitsReference();
+            ref var dst = ref number.GetRefMut();
             while (--i >= 0)
             {
                 dst = p;
@@ -1082,7 +1083,7 @@ namespace Backports.System
             if (number.IsNegative) 
                 value = (ulong) (-input);
 
-            ref var buffer = ref number.GetDigitsReference();
+            ref var buffer = ref number.GetRefMut();
             ref var p = ref Unsafe.Add(ref buffer, Int64Precision);
 
             while (High32(value) != 0)
@@ -1095,7 +1096,7 @@ namespace Backports.System
             number.DigitsCount = i;
             number.Scale = i;
 
-            ref var dst = ref number.GetDigitsReference();
+            ref var dst = ref number.GetRefMut();
             while (--i >= 0)
             {
                 //*dst++ = *p++;
@@ -1177,7 +1178,7 @@ namespace Backports.System
             number.DigitsCount = UInt64Precision;
             number.IsNegative = false;
 
-            ref var buffer = ref number.GetDigitsReference();
+            ref var buffer = ref number.GetRefMut();
             ref var p = ref Unsafe.Add(ref buffer, UInt64Precision);
 
             while (High32(value) != 0)
@@ -1190,7 +1191,7 @@ namespace Backports.System
             number.DigitsCount = i;
             number.Scale = i;
 
-            ref var dst = ref number.GetDigitsReference();
+            ref var dst = ref number.GetRefMut();
             ref readonly var src = ref p;
             while (--i >= 0)
             {
@@ -1380,7 +1381,7 @@ namespace Backports.System
                             {
                                 noRounding = true;  // Turn off rounding for ECMA compliance to output trailing 0's after decimal as significant
 
-                                if (number.Digits[0] == 0)
+                                if (number.DigitsMut[0] == 0)
                                 {
                                     // -0 should be formatted as 0 for decimal. This is normally handled by RoundNumber (which we are skipping)
                                     goto SkipSign;
@@ -1454,7 +1455,7 @@ namespace Backports.System
             int adjust;
 
             int src;
-            var dig = number.Digits;
+            var dig = number.DigitsMut;
             char ch;
 
             var section = FindSection(format, dig[0] == 0 ? 2 : number.IsNegative ? 1 : 0);
@@ -1850,7 +1851,7 @@ namespace Backports.System
         private static void FormatFixed(ref ValueStringBuilder sb, in NumberBuffer number, int nMaxDigits, int[]? groupDigits, string? sDecimal, string? sGroup)
         {
             var digPos = number.Scale;
-            ref readonly var dig = ref number.GetDigitsReferenceRO();
+            ref readonly var dig = ref number.GetRef();
 
             if (digPos > 0)
             {
@@ -1994,7 +1995,7 @@ namespace Backports.System
 
         private static void FormatScientific(ref ValueStringBuilder sb, in NumberBuffer number, int nMaxDigits, NumberFormatInfo info, char expChar)
         {
-            ref readonly var dig = ref number.GetDigitsReferenceRO();
+            ref readonly var dig = ref number.GetRef();
 
             if (dig != 0)
             {
@@ -2019,7 +2020,7 @@ namespace Backports.System
                     sb.Append('0');
             }
 
-            var e = number.Digits[0] == 0 ? 0 : number.Scale - 1;
+            var e = number.DigitsMut[0] == 0 ? 0 : number.Scale - 1;
             FormatExponent(ref sb, info, e, expChar, 3, true);
         }
 
@@ -2055,7 +2056,7 @@ namespace Backports.System
                 }
             }
 
-            ref readonly var dig = ref number.GetDigitsReferenceRO();
+            ref readonly var dig = ref number.GetRef();
 
             if (digPos > 0)
             {
@@ -2124,7 +2125,7 @@ namespace Backports.System
 
         internal static void RoundNumber(ref NumberBuffer number, int pos, bool isCorrectlyRounded)
         {
-            var dig = number.Digits;
+            var dig = number.DigitsMut;
 
             var i = 0;
             while (i < pos && dig[i] != '\0')

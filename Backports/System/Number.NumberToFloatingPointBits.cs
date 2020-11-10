@@ -116,7 +116,7 @@ namespace Backports.System
             1e22,   // 10^22
         };
 
-        private static void AccumulateDecimalDigitsIntoBigInteger(ref NumberBuffer number, uint firstIndex, uint lastIndex, out BigInteger result)
+        private static void AccumulateDecimalDigitsIntoBigInteger(in NumberBuffer number, uint firstIndex, uint lastIndex, out BigInteger result)
         {
             BigInteger.SetZero(out result);
 
@@ -347,9 +347,9 @@ namespace Backports.System
             return res;
         }
 
-        private static ulong NumberToFloatingPointBits(ref NumberBuffer number, in FloatingPointInfo info)
+        private static ulong NumberToFloatingPointBits(in NumberBuffer number, in FloatingPointInfo info)
         {
-            Debug.Assert(number.Digits[0] != '0');
+            Debug.Assert(number.DigitsMut[0] != '0');
 
             Debug.Assert(number.Scale <= FloatingPointMaxExponent);
             Debug.Assert(number.Scale >= FloatingPointMinExponent);
@@ -425,10 +425,10 @@ namespace Backports.System
                 return (uint)BitConverter.HalfToInt16Bits((Half)result);
             }
 
-            return NumberToFloatingPointBitsSlow(ref number, in info, positiveExponent, integerDigitsPresent, fractionalDigitsPresent);
+            return NumberToFloatingPointBitsSlow(in number, in info, positiveExponent, integerDigitsPresent, fractionalDigitsPresent);
         }
 
-        private static ulong NumberToFloatingPointBitsSlow(ref NumberBuffer number, in FloatingPointInfo info, uint positiveExponent, uint integerDigitsPresent, uint fractionalDigitsPresent)
+        private static ulong NumberToFloatingPointBitsSlow(in NumberBuffer number, in FloatingPointInfo info, uint positiveExponent, uint integerDigitsPresent, uint fractionalDigitsPresent)
         {
             // To generate an N bit mantissa we require N + 1 bits of precision.  The
             // extra bit is used to correctly round the mantissa (if there are fewer bits
@@ -436,7 +436,7 @@ namespace Backports.System
             // have and we don't need to round).
             var requiredBitsOfPrecision = (uint)(info.NormalMantissaBits + 1);
 
-            var totalDigits = (uint)(number.DigitsCount);
+            var totalDigits = (uint)number.DigitsCount;
             var integerDigitsMissing = positiveExponent - integerDigitsPresent;
 
             const uint integerFirstIndex = 0;
@@ -446,7 +446,7 @@ namespace Backports.System
             var fractionalLastIndex = totalDigits;
 
             // First, we accumulate the integer part of the mantissa into a big_integer:
-            AccumulateDecimalDigitsIntoBigInteger(ref number, integerFirstIndex, integerLastIndex, out var integerValue);
+            AccumulateDecimalDigitsIntoBigInteger(in number, integerFirstIndex, integerLastIndex, out var integerValue);
 
             if (integerDigitsMissing > 0)
             {
@@ -464,7 +464,7 @@ namespace Backports.System
             // then we can assemble the result immediately:
             var integerBitsOfPrecision = BigInteger.CountSignificantBits(in integerValue);
 
-            if ((integerBitsOfPrecision >= requiredBitsOfPrecision) || (fractionalDigitsPresent == 0))
+            if (integerBitsOfPrecision >= requiredBitsOfPrecision || fractionalDigitsPresent == 0)
             {
                 return ConvertBigIntegerToFloatingPointBits(
                     ref integerValue,
@@ -486,10 +486,10 @@ namespace Backports.System
 
             if (number.Scale < 0)
             {
-                fractionalDenominatorExponent += (uint)(-number.Scale);
+                fractionalDenominatorExponent += (uint)-number.Scale;
             }
 
-            if ((integerBitsOfPrecision == 0) && (fractionalDenominatorExponent - (int)(totalDigits)) > info.OverflowDecimalExponent)
+            if (integerBitsOfPrecision == 0 && fractionalDenominatorExponent - (int)totalDigits > info.OverflowDecimalExponent)
             {
                 // If there were any digits in the integer part, it is impossible to
                 // underflow (because the exponent cannot possibly be small enough),
@@ -497,7 +497,7 @@ namespace Backports.System
                 return info.ZeroBits;
             }
 
-            AccumulateDecimalDigitsIntoBigInteger(ref number, fractionalFirstIndex, fractionalLastIndex, out var fractionalNumerator);
+            AccumulateDecimalDigitsIntoBigInteger(in number, fractionalFirstIndex, fractionalLastIndex, out var fractionalNumerator);
 
             if (fractionalNumerator.IsZero())
             {
@@ -527,10 +527,7 @@ namespace Backports.System
                 fractionalShift = fractionalDenominatorBits - fractionalNumeratorBits;
             }
 
-            if (fractionalShift > 0)
-            {
-                fractionalNumerator.ShiftLeft(fractionalShift);
-            }
+            if (fractionalShift > 0) fractionalNumerator.ShiftLeft(fractionalShift);
 
             var requiredFractionalBitsOfPrecision = requiredBitsOfPrecision - integerBitsOfPrecision;
             var remainingBitsOfPrecisionRequired = requiredFractionalBitsOfPrecision;
@@ -593,7 +590,7 @@ namespace Backports.System
 
             // Compose the mantissa from the integer and fractional parts:
             var integerMantissa = integerValue.ToUInt64();
-            var completeMantissa = (integerMantissa << (int)(requiredFractionalBitsOfPrecision)) + fractionalMantissa;
+            var completeMantissa = (integerMantissa << (int)requiredFractionalBitsOfPrecision) + fractionalMantissa;
 
             // Compute the final exponent:
             // * If the mantissa had an integer part, then the exponent is one less than
@@ -605,7 +602,7 @@ namespace Backports.System
             // Then, in both cases, we subtract an additional one from the exponent, to
             // account for the fact that we've generated an extra bit of precision, for
             // use in rounding.
-            var finalExponent = (integerBitsOfPrecision > 0) ? (int)(integerBitsOfPrecision) - 2 : -(int)(fractionalExponent) - 1;
+            var finalExponent = integerBitsOfPrecision > 0 ? (int)integerBitsOfPrecision - 2 : -(int)fractionalExponent - 1;
 
             return AssembleFloatingPointBits(in info, completeMantissa, finalExponent, hasZeroTail);
         }
