@@ -269,7 +269,8 @@ namespace Backports.System
         private const int DefaultPrecisionExponentialFormat = 6;
 
         private const int MaxUInt32DecDigits = 10;
-        private const int CharStackBufferSize = 32;
+        // WATCH: increasing buffer size
+        internal const int CharStackBufferSize = 64;//32;
         private const string PosNumberFormat = "#";
 
         private static readonly string[] s_singleDigitStringCache = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
@@ -350,7 +351,7 @@ namespace Backports.System
             
             p = ref UInt32ToDecChars(ref p, rep.ULo, 0);
 
-            var i = (int)Ref.Offset(in p, in Ref.Add(in buffer, DecimalPrecision));
+            var i = (int)Offset(in p, in Add(in buffer, DecimalPrecision));
                 
             //(int)((buffer + DecimalPrecision) - p);
 
@@ -358,12 +359,16 @@ namespace Backports.System
             number.Scale = i - rep.Scale;
 
             ref var dst = ref number.GetRefMut();
+            ref readonly var src = ref p;
             while (--i >= 0)
             {
                 //*dst++ = *p++;
-                dst = p;
-                dst = ref Ref.Increment(ref dst);
-                p = ref Ref.Increment(ref p);
+                //dst = p;
+                //dst = ref Ref.Increment(ref dst);
+                //p = ref Ref.Increment(ref p);
+                dst = src;
+                dst = ref IncMut(ref dst);
+                src = ref Inc(in src);
             }
             //*dst = (byte)('\0');
             dst = (byte) ('\0');
@@ -912,17 +917,22 @@ namespace Backports.System
             ref var p = ref UInt32ToDecChars(ref Unsafe.Add(ref buffer, Int32Precision), (uint)value, 0);
 
             //var i = (int)(buffer + Int32Precision - p);
-            var i = (int)Unsafe.ByteOffset(ref p, ref Unsafe.Add(ref buffer, Int32Precision));
+            //var i = (int)Unsafe.ByteOffset(ref p, ref Unsafe.Add(ref buffer, Int32Precision));
+            var i = (int) Offset(in p, in Add(in buffer, Int32Precision));
 
             number.DigitsCount = i;
             number.Scale = i;
 
             ref var dst = ref number.GetRefMut();
+            ref readonly var src = ref p;
             while (--i >= 0)
             {
-                dst = p;
-                dst = ref Ref.Increment(ref dst);
-                p = ref Ref.Increment(ref p);
+                //dst = p;
+                //dst = ref Ref.Increment(ref dst);
+                //p = ref Ref.Increment(ref p);
+                dst = src;
+                dst = ref IncMut(ref dst);
+                src = ref Inc(in src);
             }
 
             dst = (byte)('\0');
@@ -954,7 +964,7 @@ namespace Backports.System
 
                 for (var i = sNegative.Length - 1; i >= 0; i--)
                 {
-                    (p = ref Ref.Decrement(ref p)) = sNegative[i];
+                    (p = ref DecMut(ref p)) = sNegative[i];
                 }
 
                 //Debug.Assert(p == buffer);
@@ -989,7 +999,7 @@ namespace Backports.System
             {
                 var digit = (byte)(value & 0xF);
                 
-                (buffer = ref Ref.Decrement(ref buffer)) = (char)(digit + (digit < 10 ? (byte)'0' : hexBase));
+                (buffer = ref DecMut(ref buffer)) = (char)(digit + (digit < 10 ? (byte)'0' : hexBase));
                 value >>= 4;
             }
             return ref buffer;
@@ -1005,7 +1015,7 @@ namespace Backports.System
             ref readonly var p = ref UInt32ToDecChars(ref Unsafe.Add(ref buffer, UInt32Precision), value, 0);
 
             //var i = (int)(buffer + UInt32Precision - p);
-            var i = (int)Ref.Offset(in p, in Add(in buffer, UInt32Precision));
+            var i = (int)Offset(in p, in Add(in buffer, UInt32Precision));
             
 
             number.DigitsCount = i;
@@ -1137,7 +1147,7 @@ namespace Backports.System
                     digits -= 9;
                 }
                 p = ref UInt32ToDecChars(ref p, Low32(value), digits);
-                Debug.Assert((int) Ref.Offset(in buffer, in p) == sNegative.Length);
+                Debug.Assert((int) Offset(in buffer, in p) == sNegative.Length);
 
                 for (var i = sNegative.Length - 1; i >= 0; i--)
                     // *(--p)
@@ -1651,7 +1661,7 @@ namespace Backports.System
 
             //fixed (char* pFormat = &MemoryMarshal.GetReference(format))
             {
-                ref var cur = ref dig[0];
+                ref readonly var cur = ref dig[0];
 
                 while (src < format.Length && (ch = format[src++]) != 0 && ch != ';')
                 {
@@ -1669,7 +1679,7 @@ namespace Backports.System
                                     if (cur != 0)
                                     {
                                         sb.Append((char) cur);
-                                        cur = ref Ref.Increment(ref cur);
+                                        cur = ref Inc(in cur);
                                     }
                                     else
                                         sb.Append('0');
@@ -1704,7 +1714,7 @@ namespace Backports.System
                                     if (cur != 0)
                                     {
                                         ch = (char) cur;
-                                        cur = ref Ref.Increment(ref cur);
+                                        cur = ref Inc(in cur);
                                     }
                                     else
                                         ch = digPos > lastDigit ? '0' : '\0';

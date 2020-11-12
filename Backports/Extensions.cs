@@ -149,9 +149,18 @@ namespace Backports
         public static IntPtr Offset<T>(in T origin, in T target) where T : unmanaged =>
             new IntPtr(Unsafe.ByteOffset(ref Unsafe.AsRef(in origin), ref Unsafe.AsRef(in target)).ToInt64() / Unsafe.SizeOf<T>());
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static IntPtr Offset(in byte origin, in byte target) =>
+            Unsafe.ByteOffset(ref Unsafe.AsRef(in origin), ref Unsafe.AsRef(in target));
 
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ref readonly T Add<T>(in T source, int elementOffset) where T : unmanaged =>
             ref Unsafe.Add(ref Unsafe.AsRef(in source), elementOffset);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ref readonly T Sub<T>(in T source, int elementOffset) where T : unmanaged =>
+            ref Unsafe.Subtract(ref Unsafe.AsRef(in source), elementOffset);
     }
 }
 

@@ -18,6 +18,21 @@ namespace Backports
 #endif
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string ToStringCompat<T>(this T @this, string? format = null, IFormatProvider? provider = null)
+            where T : unmanaged
+        {
+            ThrowIfTypeNotSupported<T>();
+            Span<char> destination = stackalloc char[
+            //    System.Number.CharStackBufferSize
+            64
+            ];
+            // ReSharper disable once MergeConditionalExpression
+            if (@this.TryFormat(destination, out var nChars, format is not null ? format.AsSpan() : default, provider))
+                return destination.Slice(0, nChars).ToString();
+            throw new FormatException("Unable to format value");
+        }
+
 #if NETSTANDARD2_0
         private static bool TryFormatBackported<T>(this T @this, Span<char> destination, out int charsWritten,
             ReadOnlySpan<char> format = default, IFormatProvider? provider = null) where T : unmanaged
@@ -56,7 +71,9 @@ namespace Backports
                 return System.Number.TryFormatDecimal(Unsafe.As<T, decimal>(ref @this), format, NumberFormatInfo.GetInstance(provider),
                     destination, out charsWritten);
 
-            throw TypeDoesNotSupportTryFormat<T>();
+            //throw TypeDoesNotSupportTryFormat<T>();
+            charsWritten = 0;
+            return false;
         }
 #else
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -85,10 +102,30 @@ namespace Backports
                 return Unsafe.As<T, double>(ref @this).TryFormat(destination, out charsWritten, format, provider);
             if (typeof(T) == typeof(decimal))
                 return Unsafe.As<T, decimal>(ref @this).TryFormat(destination, out charsWritten, format, provider);
-            throw TypeDoesNotSupportTryFormat<T>();
+            //throw TypeDoesNotSupportTryFormat<T>();
+            charsWritten = 0;
+            return false;
         }
 #endif
-        private static Exception TypeDoesNotSupportTryFormat<T>() where T : unmanaged => new NotSupportedException($"{typeof(T)} has no compatible TryFormat method");
+        //private static Exception TypeDoesNotSupportTryFormat<T>() where T : unmanaged => new NotSupportedException($"{typeof(T)} has no compatible TryFormat method");
+
+        private static void ThrowIfTypeNotSupported<T>() where T : unmanaged
+        {
+            if (typeof(T) == typeof(sbyte) ||
+                typeof(T) == typeof(byte) ||
+                typeof(T) == typeof(short) ||
+                typeof(T) == typeof(ushort) ||
+                typeof(T) == typeof(int) ||
+                typeof(T) == typeof(uint) ||
+                typeof(T) == typeof(long) ||
+                typeof(T) == typeof(ulong) ||
+                typeof(T) == typeof(float) ||
+                typeof(T) == typeof(double) ||
+                typeof(T) == typeof(decimal))
+                return;
+
+            throw new NotSupportedException($"{typeof(T)} does not support parsing/formatting");
+        }
 
     }
 }

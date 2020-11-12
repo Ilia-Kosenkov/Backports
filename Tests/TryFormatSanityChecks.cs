@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Backports;
 using NUnit.Framework;
@@ -10,7 +11,7 @@ namespace Tests
     {
         public static IEnumerable<int> IntValues { get; } = new[] {int.MaxValue, int.MinValue, 0, 4, -4, 42};
 
-        public static IEnumerable<string> Formats { get; } = new[] {string.Empty, "C", "X", "G", "E", "E8", "G10", "D5", "D05", "###.0###"};
+        public static IEnumerable<string> Formats { get; } = new[] {string.Empty, "C", "X", "G", "E", "E8", "G10", "D5", "D05", "###.0###", "P"};
 
         
 
@@ -24,7 +25,7 @@ namespace Tests
     {
         public static IEnumerable<uint> IntValues { get; } = new uint[] { uint.MaxValue, uint.MinValue, 4, 10500, 42 };
 
-        public static IEnumerable<string> Formats { get; } = new[] { string.Empty, "C", "X", "G", "E", "E8", "G10", "D5", "D05", "###.0###" };
+        public static IEnumerable<string> Formats { get; } = new[] { string.Empty, "C", "X", "G", "E", "E8", "G10", "D5", "D05", "###.0###", "P" };
 
 
 
@@ -38,7 +39,7 @@ namespace Tests
     {
         public static IEnumerable<long> IntValues { get; } = new[] { long.MaxValue, long.MinValue, 0, 4, -4, 42 };
 
-        public static IEnumerable<string> Formats { get; } = new[] { string.Empty, "C", "X", "G", "E", "E8", "G10", "D5", "D05", "###.0###" };
+        public static IEnumerable<string> Formats { get; } = new[] { string.Empty, "C", "X", "G", "E", "E8", "G10", "D5", "D05", "###.0###", "P" };
 
 
 
@@ -52,7 +53,7 @@ namespace Tests
     {
         public static IEnumerable<ulong> IntValues { get; } = new ulong[] { ulong.MaxValue, ulong.MinValue, 4, 10500, 42 };
 
-        public static IEnumerable<string> Formats { get; } = new[] { string.Empty, "C", "X", "G", "E", "E8", "G10", "D5", "D05", "###.0###" };
+        public static IEnumerable<string> Formats { get; } = new[] { string.Empty, "C", "X", "G", "E", "E8", "G10", "D5", "D05", "###.0###", "P"};
 
 
 
@@ -190,12 +191,14 @@ namespace Tests
 
         public static IEnumerable<string> Formats { get; } = new[] { "G3", "G6", "E", "E6", "F", "F6", "F10", "###.0###" };
 
+        public static IEnumerable<string> Cultures { get; } = new[] {"en-US", "ru-RU", "fi-FI"};
 
 
         public static IEnumerable<TestCaseData> TryFormatData =>
             from x in IntValues
             from y in Formats
-            select new TestCaseData(x, y);
+            from z in Cultures
+            select new TestCaseData(x, y, new CultureInfo(z));
 
         public static IEnumerable<TestCaseData> TryFormatSpecialCaseData
         {
@@ -250,6 +253,16 @@ namespace Tests
     [TestFixture]
     public class TryFormatSanityChecks
     {
+        [SetUp]
+        public void SetUp()
+        {
+            var culture = new CultureInfo("en-US");
+            CultureInfo.CurrentCulture = culture;
+            CultureInfo.CurrentUICulture = culture;
+            CultureInfo.DefaultThreadCurrentCulture = culture;
+            CultureInfo.DefaultThreadCurrentUICulture = culture;
+        }
+
         [Test]
         [Parallelizable(ParallelScope.All)]
         [TestCaseSource(typeof(Int32TryFormatSource), nameof(Int32TryFormatSource.TryFormatData))]
@@ -281,7 +294,7 @@ namespace Tests
         [TestCaseSource(typeof(Int64TryFormatSource), nameof(Int64TryFormatSource.TryFormatData))]
         public void Test_TryFormatInt64_Fmt(long value, string format)
         {
-            Span<char> buff = stackalloc char[32];
+            Span<char> buff = stackalloc char[64];
             var wasFormatted = value.TryFormat<long>(buff, out var charsWritten, format.AsSpan());
             Assert.IsTrue(wasFormatted);
 
@@ -295,7 +308,7 @@ namespace Tests
         [TestCaseSource(typeof(UInt64TryFormatSource), nameof(UInt64TryFormatSource.TryFormatData))]
         public void Test_TryFormatUInt64_Fmt(ulong value, string format)
         {
-            Span<char> buff = stackalloc char[32];
+            Span<char> buff = stackalloc char[64];
             var wasFormatted = value.TryFormat<ulong>(buff, out var charsWritten, format.AsSpan());
             Assert.IsTrue(wasFormatted);
 
@@ -304,6 +317,7 @@ namespace Tests
         }
 
         [Test]
+        [Parallelizable(ParallelScope.All)]
         [TestCaseSource(typeof(SingleTryFormatSource), nameof(SingleTryFormatSource.TryFormatData))]
         public void Test_TryFormatSingle_Fmt(float value, string format)
         {
@@ -317,6 +331,7 @@ namespace Tests
         }
 
         [Test]
+        [Parallelizable(ParallelScope.All)]
         [TestCaseSource(typeof(SingleTryFormatSource), nameof(SingleTryFormatSource.TryFormatSpecialCaseData))]
         public void Test_TryFormatSingle_Fmt(float value, string format, string expected)
         {
@@ -330,6 +345,7 @@ namespace Tests
 
 
         [Test]
+        [Parallelizable(ParallelScope.All)]
         [TestCaseSource(typeof(DoubleTryFormatSource), nameof(DoubleTryFormatSource.TryFormatData))]
         public void Test_TryFormatDouble_Fmt(double value, string format)
         {
@@ -343,6 +359,7 @@ namespace Tests
         }
 
         [Test]
+        [Parallelizable(ParallelScope.All)]
         [TestCaseSource(typeof(DoubleTryFormatSource), nameof(DoubleTryFormatSource.TryFormatSpecialCaseData))]
         public void Test_TryFormatDouble_Fmt(double value, string format, string expected)
         {
@@ -355,19 +372,21 @@ namespace Tests
         }
 
         [Test]
+        [Parallelizable(ParallelScope.All)]
         [TestCaseSource(typeof(DecimalTryFormatSource), nameof(DecimalTryFormatSource.TryFormatData))]
-        public void Test_TryFormatDecimal_Fmt(decimal value, string format)
+        public void Test_TryFormatDecimal_Fmt_Culture(decimal value, string format, IFormatProvider culture)
         {
             Span<char> buff = stackalloc char[384];
-            var wasFormatted = value.TryFormat<decimal>(buff, out var charsWritten, format.AsSpan());
+            var wasFormatted = value.TryFormat<decimal>(buff, out var charsWritten, format.AsSpan(), culture);
             Assert.IsTrue(wasFormatted);
 
             var str = buff.Slice(0, charsWritten).ToString();
-            var expStr = value.ToString(format);
+            var expStr = value.ToString(format, culture);
             Assert.AreEqual(expStr, str);
         }
 
         [Test]
+        [Parallelizable(ParallelScope.All)]
         [TestCaseSource(typeof(DecimalTryFormatSource), nameof(DecimalTryFormatSource.TryFormatSpecialCaseData))]
         public void Test_TryFormatDecimal_Fmt(decimal value, string format, string expected)
         {
