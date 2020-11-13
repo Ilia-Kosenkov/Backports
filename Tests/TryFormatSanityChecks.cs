@@ -91,7 +91,7 @@ namespace Tests
                 yield return new TestCaseData(fPi, "E7", "3.1415927E+000");
                 yield return new TestCaseData(fPi, "E10", "3.1415927410E+000");
                 yield return new TestCaseData(fPi, "E30", "3.141592741012573242187500000000E+000");
-                yield return new TestCaseData(fPi, "F", "3.14");
+                yield return new TestCaseData(fPi, "F", "3.142");
                 yield return new TestCaseData(fPi, "F7", "3.1415927");
                 yield return new TestCaseData(fPi, "F10", "3.1415927410");
                 yield return new TestCaseData(fPi, "F30", "3.141592741012573242187500000000");
@@ -100,13 +100,13 @@ namespace Tests
                 yield return new TestCaseData(float.MinValue, "G7", "-3.402823E+38");
                 yield return new TestCaseData(float.MinValue, "G10", "-3.402823466E+38");
                 yield return new TestCaseData(float.MinValue, "G30", "-3.40282346638528859811704183485E+38");
-                yield return new TestCaseData(float.MinValue, "C", "($340,282,346,638,528,859,811,704,183,484,516,925,440.00)");
-                yield return new TestCaseData(float.MinValue, "C10", "($340,282,346,638,528,859,811,704,183,484,516,925,440.0000000000)");
+                yield return new TestCaseData(float.MinValue, "C", "-$340,282,346,638,528,859,811,704,183,484,516,925,440.00");
+                yield return new TestCaseData(float.MinValue, "C10", "-$340,282,346,638,528,859,811,704,183,484,516,925,440.0000000000");
                 yield return new TestCaseData(float.MinValue, "E", "-3.402823E+038");
                 yield return new TestCaseData(float.MinValue, "E7", "-3.4028235E+038");
                 yield return new TestCaseData(float.MinValue, "E10", "-3.4028234664E+038");
                 yield return new TestCaseData(float.MinValue, "E30", "-3.402823466385288598117041834845E+038");
-                yield return new TestCaseData(float.MinValue, "F", "-340282346638528859811704183484516925440.00");
+                yield return new TestCaseData(float.MinValue, "F", "-340282346638528859811704183484516925440.000");
                 yield return new TestCaseData(float.MinValue, "F7", "-340282346638528859811704183484516925440.0000000");
                 yield return new TestCaseData(float.MinValue, "F10", "-340282346638528859811704183484516925440.0000000000");
                 yield return new TestCaseData(float.MinValue, "F30", "-340282346638528859811704183484516925440.000000000000000000000000000000");
@@ -121,7 +121,7 @@ namespace Tests
                 yield return new TestCaseData(float.MaxValue, "E7", "3.4028235E+038");
                 yield return new TestCaseData(float.MaxValue, "E10", "3.4028234664E+038");
                 yield return new TestCaseData(float.MaxValue, "E30", "3.402823466385288598117041834845E+038");
-                yield return new TestCaseData(float.MaxValue, "F", "340282346638528859811704183484516925440.00");
+                yield return new TestCaseData(float.MaxValue, "F", "340282346638528859811704183484516925440.000");
                 yield return new TestCaseData(float.MaxValue, "F7", "340282346638528859811704183484516925440.0000000");
                 yield return new TestCaseData(float.MaxValue, "F10", "340282346638528859811704183484516925440.0000000000");
                 yield return new TestCaseData(float.MaxValue, "F30", "340282346638528859811704183484516925440.000000000000000000000000000000");
@@ -158,7 +158,7 @@ namespace Tests
                 yield return new TestCaseData(pi, "E7", "3.1415927E+000");
                 yield return new TestCaseData(pi, "E16", "3.1415926535897931E+000");
                 yield return new TestCaseData(pi, "E30", "3.141592653589793115997963468544E+000");
-                yield return new TestCaseData(pi, "F", "3.14");
+                yield return new TestCaseData(pi, "F", "3.142");
                 yield return new TestCaseData(pi, "F7", "3.1415927");
                 yield return new TestCaseData(pi, "F16", "3.1415926535897931");
                 yield return new TestCaseData(pi, "F30", "3.141592653589793115997963468544");
@@ -215,7 +215,7 @@ namespace Tests
                 yield return new TestCaseData(pi, "E", "3.141593E+000");
                 yield return new TestCaseData(pi, "E7", "3.1415927E+000");
                 yield return new TestCaseData(pi, "E16", "3.1415926535897900E+000");
-                yield return new TestCaseData(pi, "F", "3.14");
+                yield return new TestCaseData(pi, "F", "3.142");
                 yield return new TestCaseData(pi, "F7", "3.1415927");
                 yield return new TestCaseData(pi, "F16", "3.1415926535897900");
 
@@ -229,20 +229,20 @@ namespace Tests
                 yield return new TestCaseData(decimal.MaxValue, "E", "7.922816E+028");
                 yield return new TestCaseData(decimal.MaxValue, "E7", "7.9228163E+028");
                 yield return new TestCaseData(decimal.MaxValue, "E16", "7.9228162514264338E+028");
-                yield return new TestCaseData(decimal.MaxValue, "F", "79228162514264337593543950335.00");
+                yield return new TestCaseData(decimal.MaxValue, "F", "79228162514264337593543950335.000");
                 yield return new TestCaseData(decimal.MaxValue, "F7", "79228162514264337593543950335.0000000");
                 yield return new TestCaseData(decimal.MaxValue, "F16", "79228162514264337593543950335.0000000000000000");
 
                 yield return new TestCaseData(decimal.MinValue, "G", "-79228162514264337593543950335");
                 yield return new TestCaseData(decimal.MinValue, "G7", "-7.922816E+28");
                 yield return new TestCaseData(decimal.MinValue, "G16", "-7.922816251426434E+28");
-                yield return new TestCaseData(decimal.MinValue, "C", "($79,228,162,514,264,337,593,543,950,335.00)");
-                yield return new TestCaseData(decimal.MinValue, "C7", "($79,228,162,514,264,337,593,543,950,335.0000000)");
-                yield return new TestCaseData(decimal.MinValue, "C16", "($79,228,162,514,264,337,593,543,950,335.0000000000000000)");
+                yield return new TestCaseData(decimal.MinValue, "C", "-$79,228,162,514,264,337,593,543,950,335.00");
+                yield return new TestCaseData(decimal.MinValue, "C7", "-$79,228,162,514,264,337,593,543,950,335.0000000");
+                yield return new TestCaseData(decimal.MinValue, "C16", "-$79,228,162,514,264,337,593,543,950,335.0000000000000000");
                 yield return new TestCaseData(decimal.MinValue, "E", "-7.922816E+028");
                 yield return new TestCaseData(decimal.MinValue, "E7", "-7.9228163E+028");
                 yield return new TestCaseData(decimal.MinValue, "E16", "-7.9228162514264338E+028");
-                yield return new TestCaseData(decimal.MinValue, "F", "-79228162514264337593543950335.00");
+                yield return new TestCaseData(decimal.MinValue, "F", "-79228162514264337593543950335.000");
                 yield return new TestCaseData(decimal.MinValue, "F7", "-79228162514264337593543950335.0000000");
                 yield return new TestCaseData(decimal.MinValue, "F16", "-79228162514264337593543950335.0000000000000000");
 
@@ -252,15 +252,26 @@ namespace Tests
 
     [TestFixture]
     public class TryFormatSanityChecks
+
     {
+
+        private CultureInfo _formatInfo = CultureInfo.InvariantCulture;
         [SetUp]
         public void SetUp()
         {
-            var culture = new CultureInfo("en-US");
-            CultureInfo.CurrentCulture = culture;
-            CultureInfo.CurrentUICulture = culture;
-            CultureInfo.DefaultThreadCurrentCulture = culture;
-            CultureInfo.DefaultThreadCurrentUICulture = culture;
+            _formatInfo = new CultureInfo("en-US", false)
+            {
+                // This ensures compatibility between default values provided by different runtimes
+                NumberFormat =
+                {
+                    NumberDecimalDigits = 3,
+                    CurrencyNegativePattern = 1
+                }
+            };
+            CultureInfo.CurrentCulture = _formatInfo;
+            CultureInfo.CurrentUICulture = _formatInfo;
+            CultureInfo.DefaultThreadCurrentCulture = _formatInfo;
+            CultureInfo.DefaultThreadCurrentUICulture = _formatInfo;
         }
 
         [Test]
@@ -269,11 +280,11 @@ namespace Tests
         public void Test_TryFormatInt32_Fmt(int value, string format)
         {
             Span<char> buff = stackalloc char[32];
-            var wasFormatted = value.TryFormat<int>(buff, out var charsWritten, format.AsSpan());
+            var wasFormatted = value.TryFormat<int>(buff, out var charsWritten, format.AsSpan(), _formatInfo.NumberFormat);
             Assert.IsTrue(wasFormatted);
 
             var str = buff.Slice(0, charsWritten).ToString();
-            Assert.AreEqual(value.ToString(format), str);
+            Assert.AreEqual(value.ToString(format, _formatInfo.NumberFormat), str);
         }
 
         [Test]
@@ -282,11 +293,11 @@ namespace Tests
         public void Test_TryFormatUInt32_Fmt(uint value, string format)
         {
             Span<char> buff = stackalloc char[32];
-            var wasFormatted = value.TryFormat<uint>(buff, out var charsWritten, format.AsSpan());
+            var wasFormatted = value.TryFormat<uint>(buff, out var charsWritten, format.AsSpan(), _formatInfo.NumberFormat);
             Assert.IsTrue(wasFormatted);
 
             var str = buff.Slice(0, charsWritten).ToString();
-            Assert.AreEqual(value.ToString(format), str);
+            Assert.AreEqual(value.ToString(format, _formatInfo.NumberFormat), str);
         }
 
         [Test]
@@ -295,11 +306,11 @@ namespace Tests
         public void Test_TryFormatInt64_Fmt(long value, string format)
         {
             Span<char> buff = stackalloc char[64];
-            var wasFormatted = value.TryFormat<long>(buff, out var charsWritten, format.AsSpan());
+            var wasFormatted = value.TryFormat<long>(buff, out var charsWritten, format.AsSpan(), _formatInfo.NumberFormat);
             Assert.IsTrue(wasFormatted);
 
             var str = buff.Slice(0, charsWritten).ToString();
-            Assert.AreEqual(value.ToString(format), str);
+            Assert.AreEqual(value.ToString(format, _formatInfo.NumberFormat), str);
         }
 
 
@@ -309,11 +320,11 @@ namespace Tests
         public void Test_TryFormatUInt64_Fmt(ulong value, string format)
         {
             Span<char> buff = stackalloc char[64];
-            var wasFormatted = value.TryFormat<ulong>(buff, out var charsWritten, format.AsSpan());
+            var wasFormatted = value.TryFormat<ulong>(buff, out var charsWritten, format.AsSpan(), _formatInfo.NumberFormat);
             Assert.IsTrue(wasFormatted);
 
             var str = buff.Slice(0, charsWritten).ToString();
-            Assert.AreEqual(value.ToString(format), str);
+            Assert.AreEqual(value.ToString(format, _formatInfo.NumberFormat), str);
         }
 
         [Test]
@@ -322,11 +333,11 @@ namespace Tests
         public void Test_TryFormatSingle_Fmt(float value, string format)
         {
             Span<char> buff = stackalloc char[64];
-            var wasFormatted = value.TryFormat<float>(buff, out var charsWritten, format.AsSpan());
+            var wasFormatted = value.TryFormat<float>(buff, out var charsWritten, format.AsSpan(), _formatInfo.NumberFormat);
             Assert.IsTrue(wasFormatted);
 
             var str = buff.Slice(0, charsWritten).ToString();
-            var expStr = value.ToString(format);
+            var expStr = value.ToString(format, _formatInfo.NumberFormat);
             Assert.AreEqual(expStr, str);
         }
 
@@ -336,7 +347,7 @@ namespace Tests
         public void Test_TryFormatSingle_Fmt(float value, string format, string expected)
         {
             Span<char> buff = stackalloc char[128];
-            var wasFormatted = value.TryFormat<float>(buff, out var charsWritten, format.AsSpan());
+            var wasFormatted = value.TryFormat<float>(buff, out var charsWritten, format.AsSpan(), _formatInfo.NumberFormat);
             Assert.IsTrue(wasFormatted);
 
             var str = buff.Slice(0, charsWritten).ToString();
@@ -350,11 +361,11 @@ namespace Tests
         public void Test_TryFormatDouble_Fmt(double value, string format)
         {
             Span<char> buff = stackalloc char[384];
-            var wasFormatted = value.TryFormat<double>(buff, out var charsWritten, format.AsSpan());
+            var wasFormatted = value.TryFormat<double>(buff, out var charsWritten, format.AsSpan(), _formatInfo.NumberFormat);
             Assert.IsTrue(wasFormatted);
 
             var str = buff.Slice(0, charsWritten).ToString();
-            var expStr = value.ToString(format);
+            var expStr = value.ToString(format, _formatInfo.NumberFormat);
             Assert.AreEqual(expStr, str);
         }
 
@@ -364,7 +375,7 @@ namespace Tests
         public void Test_TryFormatDouble_Fmt(double value, string format, string expected)
         {
             Span<char> buff = stackalloc char[128];
-            var wasFormatted = value.TryFormat<double>(buff, out var charsWritten, format.AsSpan());
+            var wasFormatted = value.TryFormat<double>(buff, out var charsWritten, format.AsSpan(), _formatInfo.NumberFormat);
             Assert.IsTrue(wasFormatted);
 
             var str = buff.Slice(0, charsWritten).ToString();
@@ -391,7 +402,7 @@ namespace Tests
         public void Test_TryFormatDecimal_Fmt(decimal value, string format, string expected)
         {
             Span<char> buff = stackalloc char[128];
-            var wasFormatted = value.TryFormat<decimal>(buff, out var charsWritten, format.AsSpan());
+            var wasFormatted = value.TryFormat<decimal>(buff, out var charsWritten, format.AsSpan(), _formatInfo.NumberFormat);
             Assert.IsTrue(wasFormatted);
 
             var str = buff.Slice(0, charsWritten).ToString();
