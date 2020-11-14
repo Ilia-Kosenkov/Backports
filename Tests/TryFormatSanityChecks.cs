@@ -268,10 +268,10 @@ namespace Tests
                     CurrencyNegativePattern = 1
                 }
             };
-            CultureInfo.CurrentCulture = _formatInfo;
-            CultureInfo.CurrentUICulture = _formatInfo;
-            CultureInfo.DefaultThreadCurrentCulture = _formatInfo;
-            CultureInfo.DefaultThreadCurrentUICulture = _formatInfo;
+            //CultureInfo.CurrentCulture = _formatInfo;
+            //CultureInfo.CurrentUICulture = _formatInfo;
+            //CultureInfo.DefaultThreadCurrentCulture = _formatInfo;
+            //CultureInfo.DefaultThreadCurrentUICulture = _formatInfo;
         }
 
         [Test]
