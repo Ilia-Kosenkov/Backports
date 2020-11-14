@@ -10,9 +10,11 @@ namespace Backports
 {
     public static partial class Numbers
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T? Parse<T>(this ReadOnlySpan<char> input) where T : unmanaged
             => TryParse(input, out T result) ? result : null;
-
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T? Parse<T>(this ReadOnlySpan<char> input, NumberStyles style, IFormatProvider? format) where T : unmanaged
             => TryParse(input, style, format, out T result) ? result : null;
 
@@ -90,7 +92,9 @@ namespace Backports
                 value = Unsafe.As<decimal, T>(ref result);
                 return parseStatus is Number.ParsingStatus.OK;
             }
-            throw TypeDoesNotSupportTryParse<T>();
+
+            value = default;
+            return false;
         }
 
         private static bool TryParseBackported<T>(this ReadOnlySpan<char> input, NumberStyles style, IFormatProvider? format,
@@ -228,7 +232,9 @@ namespace Backports
                 value = Unsafe.As<decimal, T>(ref result);
                 return parseStatus is Number.ParsingStatus.OK;
             }
-            throw TypeDoesNotSupportTryParse<T>();
+
+            value = default;
+            return false;
         }
 #else
         private static bool TryParseRuntime<T>(this ReadOnlySpan<char> input, out T value) where T : unmanaged
@@ -301,7 +307,8 @@ namespace Backports
                 return wasSuccessful;
             }
             
-            throw TypeDoesNotSupportTryParse<T>();
+            value = default;
+            return false;
         }
 
         private static bool TryParseRuntime<T>(this ReadOnlySpan<char> input, NumberStyles style, IFormatProvider? format,
@@ -375,10 +382,12 @@ namespace Backports
                 value = Unsafe.As<decimal, T>(ref result);
                 return wasSuccessful;
             }
-            throw TypeDoesNotSupportTryParse<T>();
+            
+            value = default;
+            return false;
         }
 #endif
 
-        private static Exception TypeDoesNotSupportTryParse<T>() where T : unmanaged => new NotSupportedException($"{typeof(T)} has no compatible TryParse method");
+        //private static Exception TypeDoesNotSupportTryParse<T>() where T : unmanaged => new NotSupportedException($"{typeof(T)} has no compatible TryParse method");
     }
 }

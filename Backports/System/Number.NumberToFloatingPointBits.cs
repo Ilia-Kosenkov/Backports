@@ -12,7 +12,7 @@ namespace Backports.System
     {
         public readonly struct FloatingPointInfo
         {
-            public static readonly FloatingPointInfo Double = new FloatingPointInfo(
+            public static readonly FloatingPointInfo Double = new(
                 denormalMantissaBits: 52,
                 exponentBits: 11,
                 maxBinaryExponent: 1023,
@@ -20,7 +20,7 @@ namespace Backports.System
                 infinityBits: 0x7FF00000_00000000
             );
 
-            public static readonly FloatingPointInfo Single = new FloatingPointInfo(
+            public static readonly FloatingPointInfo Single = new(
                 denormalMantissaBits: 23,
                 exponentBits: 8,
                 maxBinaryExponent: 127,
@@ -28,7 +28,7 @@ namespace Backports.System
                 infinityBits: 0x7F800000
             );
 
-            public static readonly FloatingPointInfo Half = new FloatingPointInfo(
+            public static readonly FloatingPointInfo Half = new(
                 denormalMantissaBits: 10,
                 exponentBits: 5,
                 maxBinaryExponent: 15,

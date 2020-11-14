@@ -814,6 +814,7 @@ namespace Backports.System
             if (overflow)
                 goto OverflowExit;
 
+            // ReSharper disable once BadChildStatementIndent
         DoneAtEnd:
             result = answer * sign;
             var status = ParsingStatus.OK;
@@ -982,7 +983,8 @@ namespace Backports.System
 
         DoneAtEndButPotentialOverflow:
             if (overflow)
-                goto OverflowExit; 
+                goto OverflowExit;
+            // ReSharper disable once BadChildStatementIndent
         DoneAtEnd:
             result = answer * sign;
             var status = ParsingStatus.OK;
@@ -1215,6 +1217,7 @@ namespace Backports.System
             {
                 goto OverflowExit;
             }
+            // ReSharper disable once BadChildStatementIndent
         DoneAtEnd:
             result = (uint)answer;
             var status = ParsingStatus.OK;
@@ -1338,9 +1341,11 @@ namespace Backports.System
             {
                 goto OverflowExit;
             }
+
+            // ReSharper disable once BadChildStatementIndent
         DoneAtEnd:
             result = answer;
-            ParsingStatus status = ParsingStatus.OK;
+            var status = ParsingStatus.OK;
         Exit:
             return status;
 
@@ -1539,6 +1544,7 @@ namespace Backports.System
             {
                 goto OverflowExit;
             }
+            // ReSharper disable once BadChildStatementIndent
         DoneAtEnd:
             result = (ulong)answer;
             ParsingStatus status = ParsingStatus.OK;
@@ -1662,6 +1668,7 @@ namespace Backports.System
             {
                 goto OverflowExit;
             }
+            // ReSharper disable once BadChildStatementIndent
         DoneAtEnd:
             result = answer;
             ParsingStatus status = ParsingStatus.OK;
@@ -1803,6 +1810,7 @@ namespace Backports.System
                     e++;
                 }
             }
+            // ReSharper disable once BadChildStatementIndent
         NoRounding:
 
             switch (e)
@@ -2009,7 +2017,6 @@ namespace Backports.System
 
         internal static bool TryStringToNumber(ReadOnlySpan<char> value, NumberStyles styles, ref NumberBuffer number, NumberFormatInfo info)
         {
-            Debug.Assert(info != null);
             //fixed (char* stringPointer = &MemoryMarshal.GetReference(value))
             //{
             //    var p = stringPointer;
@@ -2020,8 +2027,8 @@ namespace Backports.System
             //        return false;
             //    }
             //}
-            if (!TryParseNumber(value, styles, ref number, info!, out var nParsed) ||
-                (nParsed < value.Length && !TrailingZeros(value, nParsed)))
+            if (!TryParseNumber(value, styles, ref number, info, out var nParsed) ||
+                nParsed < value.Length && !TrailingZeros(value, nParsed))
             {
                 number.CheckConsistency();
                 return false;
@@ -2101,7 +2108,9 @@ namespace Backports.System
 
         // Ternary op is a workaround for https://github.com/dotnet/runtime/issues/4207
         // ReSharper disable once RedundantTernaryExpression
+#pragma warning disable IDE0075 // Simplify conditional expression
         private static bool IsWhite(int ch) => ch == 0x20 || (uint)(ch - 0x09) <= (0x0D - 0x09) ? true : false;
+#pragma warning restore IDE0075 // Simplify conditional expression
 
         private static bool IsDigit(int ch) => (uint)ch - '0' <= 9;
 

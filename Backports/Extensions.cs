@@ -4,6 +4,10 @@ using System;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
+using nint = System.IntPtr;
+
+
+
 namespace Backports
 {
     internal static class Extensions
@@ -75,10 +79,10 @@ namespace Backports
 
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DecimalRep AsBitsRep(this decimal d) => Unsafe.As<decimal, DecimalRep>(ref d);
+        public static ref DecimalRep AsBitsRep(ref this decimal d) => ref Unsafe.As<decimal, DecimalRep>(ref d);
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static decimal BitsRepToDec(this DecimalRep rep) => Unsafe.As<DecimalRep, decimal>(ref rep);
+        public static ref decimal BitsRepToDec(ref this DecimalRep rep) => ref Unsafe.As<DecimalRep, decimal>(ref rep);
 
     }
 
@@ -98,28 +102,28 @@ namespace Backports
             // In the meantime, a * and - is measurably faster than an extra /.
 
             var div = a / b;
-            result = a - (div * b);
+            result = a - div * b;
             return div;
         }
 
         public static long DivRem(long a, long b, out long result)
         {
             var div = a / b;
-            result = a - (div * b);
+            result = a - div * b;
             return div;
         }
 
         internal static uint DivRem(uint a, uint b, out uint result)
         {
             var div = a / b;
-            result = a - (div * b);
+            result = a - div * b;
             return div;
         }
 
         internal static ulong DivRem(ulong a, ulong b, out ulong result)
         {
             var div = a / b;
-            result = a - (div * b);
+            result = a - div * b;
             return div;
         }
 
@@ -146,11 +150,11 @@ namespace Backports
         public static ref T DecMut<T>(ref T @this) where T : unmanaged => ref Unsafe.Subtract(ref @this, 1);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static IntPtr Offset<T>(in T origin, in T target) where T : unmanaged =>
-            new IntPtr(Unsafe.ByteOffset(ref Unsafe.AsRef(in origin), ref Unsafe.AsRef(in target)).ToInt64() / Unsafe.SizeOf<T>());
+        public static nint Offset<T>(in T origin, in T target) where T : unmanaged =>
+            new(Unsafe.ByteOffset(ref Unsafe.AsRef(in origin), ref Unsafe.AsRef(in target)).ToInt64() / Unsafe.SizeOf<T>());
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static IntPtr Offset(in byte origin, in byte target) =>
+        public static nint Offset(in byte origin, in byte target) =>
             Unsafe.ByteOffset(ref Unsafe.AsRef(in origin), ref Unsafe.AsRef(in target));
 
 
