@@ -17,11 +17,13 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 5.0.100
-    - name: Setup Mono
-      run: sudo apt install mono-devel -y
+    #- name: Setup Mono
+      #run: sudo apt install mono-devel -y
     - name: Install dependencies
       run: dotnet restore
     - name: Build
       run: dotnet build -c Release --no-restore
-    - name: Test
+    - name: Test .NET Standard 2.1 using .NET 5.0
       run: dotnet test --no-restore --verbosity normal -f net5.0
+    - name: Test .NET Standard 2.0 using Mono
+      run: dotnet test --no-restore --verbosity normal -f net4.8
