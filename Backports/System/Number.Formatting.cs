@@ -371,7 +371,7 @@ namespace Backports.System
                 src = ref Inc(in src);
             }
             //*dst = (byte)('\0');
-            dst = (byte) ('\0');
+            dst = (byte) '\0';
 
             number.CheckConsistency();
         }
@@ -621,15 +621,15 @@ namespace Backports.System
             // because we know we have enough digits to satisfy roundtrippability), we should validate
             // that the number actually roundtrips back to the original result.
 
-            Debug.Assert(((precision != -1) && (precision < SinglePrecision)) ||
-                         (BitConverter.SingleToInt32Bits(value) ==
-                          BitConverter.SingleToInt32Bits(NumberToSingle(ref number))));
+            Debug.Assert(precision != -1 && precision < SinglePrecision ||
+                         BitConverter.SingleToInt32Bits(value) ==
+                         BitConverter.SingleToInt32Bits(NumberToSingle(ref number)));
 
             if (fmt != 0)
             {
                 if (precision == -1)
                 {
-                    Debug.Assert((fmt == 'G') || (fmt == 'g') || (fmt == 'R') || (fmt == 'r'));
+                    Debug.Assert(fmt == 'G' || fmt == 'g' || fmt == 'R' || fmt == 'r');
 
                     // For the roundtrip and general format specifiers, when returning the shortest roundtrippable
                     // string, we need to update the maximum number of digits to be the greater of number.DigitsCount
@@ -872,31 +872,26 @@ namespace Backports.System
                 var fmt = ParseFormatSpecifier(format, out var digits);
                 var fmtUpper = (char)(fmt & 0xFFDF); // ensure fmt is upper-cased for purposes of comparison
                 if (fmtUpper == 'G' ? digits < 1 : fmtUpper == 'D')
-                {
                     return TryUInt64ToDecStr(value, digits, destination, out charsWritten);
-                }
-                else if (fmtUpper == 'X')
-                {
-                    return TryInt64ToHexStr((long)value, GetHexBase(fmt), digits, destination, out charsWritten);
-                }
-                else
-                {
-                    NumberFormatInfo info = NumberFormatInfo.GetInstance(provider);
+
+                if (fmtUpper == 'X')
+                    return TryInt64ToHexStr((long) value, GetHexBase(fmt), digits, destination, out charsWritten);
+
+                NumberFormatInfo info = NumberFormatInfo.GetInstance(provider);
                     
-                    Span<byte> pDigits = stackalloc byte[UInt64NumberBufferLength];
-                    var number = new NumberBuffer(NumberBufferKind.Integer, pDigits);
+                Span<byte> pDigits = stackalloc byte[UInt64NumberBufferLength];
+                var number = new NumberBuffer(NumberBufferKind.Integer, pDigits);
 
-                    UInt64ToNumber(value, ref number);
+                UInt64ToNumber(value, ref number);
 
-                    Span<char> stackPtr = stackalloc char[CharStackBufferSize];
-                    var sb = new ValueStringBuilder(stackPtr);
+                Span<char> stackPtr = stackalloc char[CharStackBufferSize];
+                var sb = new ValueStringBuilder(stackPtr);
 
-                    if (fmt != 0)
-                        NumberToString(ref sb, ref number, fmt, digits, info);
-                    else
-                        NumberToStringFormat(ref sb, ref number, format, info);
-                    return sb.TryCopyTo(destination, out charsWritten);
-                }
+                if (fmt != 0)
+                    NumberToString(ref sb, ref number, fmt, digits, info);
+                else
+                    NumberToStringFormat(ref sb, ref number, format, info);
+                return sb.TryCopyTo(destination, out charsWritten);
             }
         }
 
@@ -935,7 +930,7 @@ namespace Backports.System
                 src = ref Inc(in src);
             }
 
-            dst = (byte)('\0');
+            dst = (byte)'\0';
 
             number.CheckConsistency();
         }
@@ -947,7 +942,7 @@ namespace Backports.System
             if (digits < 1)
                 digits = 1;
 
-            var bufferLength = Math.Max(digits, FormattingHelpers.CountDigits((uint)(-value))) + sNegative.Length;
+            var bufferLength = Math.Max(digits, FormattingHelpers.CountDigits((uint)-value)) + sNegative.Length;
             if (bufferLength > destination.Length)
             {
                 charsWritten = 0;
@@ -958,7 +953,7 @@ namespace Backports.System
             //fixed (char* buffer = &MemoryMarshal.GetReference(destination))
             ref var buffer = ref destination[0];
             {
-                ref var p = ref UInt32ToDecChars(ref Unsafe.Add(ref buffer, bufferLength), (uint)(-value), digits);
+                ref var p = ref UInt32ToDecChars(ref Unsafe.Add(ref buffer, bufferLength), (uint)-value, digits);
                 //Debug.Assert(p == buffer + sNegative.Length);
                 Debug.Assert((int) Unsafe.ByteOffset(ref buffer, ref p) / sizeof(char) == sNegative.Length);
 
@@ -1031,7 +1026,7 @@ namespace Backports.System
                 p = ref Inc(in p);
             }
 
-            dst = (byte)('\0');
+            dst = (byte)'\0';
 
             number.CheckConsistency();
         }
@@ -1091,7 +1086,7 @@ namespace Backports.System
             number.IsNegative = input < 0;
             number.DigitsCount = Int64Precision;
             if (number.IsNegative) 
-                value = (ulong) (-input);
+                value = (ulong) -input;
 
             ref var buffer = ref number.GetRefMut();
             ref var p = ref Unsafe.Add(ref buffer, Int64Precision);
@@ -1115,7 +1110,7 @@ namespace Backports.System
                 p = ref IncMut(ref p);
             }
 
-            dst = (byte)('\0');
+            dst = (byte)'\0';
 
             number.CheckConsistency();
         }
@@ -1127,9 +1122,9 @@ namespace Backports.System
             if (digits < 1) 
                 digits = 1;
 
-            var value = (ulong)(-input);
+            var value = (ulong)-input;
 
-            var bufferLength = Math.Max(digits, FormattingHelpers.CountDigits((ulong)(-input))) + sNegative.Length;
+            var bufferLength = Math.Max(digits, FormattingHelpers.CountDigits((ulong)-input)) + sNegative.Length;
             if (bufferLength > destination.Length)
             {
                 charsWritten = 0;
@@ -1214,7 +1209,7 @@ namespace Backports.System
                 //*dst++ = *p++;
             }
 
-            dst = (byte)('\0');
+            dst = (byte)'\0';
 
             number.CheckConsistency();
         }
@@ -1318,7 +1313,7 @@ namespace Backports.System
         internal static void NumberToString(ref ValueStringBuilder sb, ref NumberBuffer number, char format, int nMaxDigits, NumberFormatInfo info)
         {
             number.CheckConsistency();
-            var isCorrectlyRounded = (number.Kind == NumberBufferKind.FloatingPoint);
+            var isCorrectlyRounded = number.Kind == NumberBufferKind.FloatingPoint;
 
             switch (format)
             {
@@ -1387,7 +1382,7 @@ namespace Backports.System
                         var noRounding = false;
                         if (nMaxDigits < 1)
                         {
-                            if ((number.Kind == NumberBufferKind.Decimal) && (nMaxDigits == -1))
+                            if (number.Kind == NumberBufferKind.Decimal && nMaxDigits == -1)
                             {
                                 noRounding = true;  // Turn off rounding for ECMA compliance to output trailing 0's after decimal as significant
 
@@ -1399,11 +1394,9 @@ namespace Backports.System
 
                                 goto SkipRounding;
                             }
-                            else
-                            {
-                                // This ensures that the PAL code pads out to the correct place even when we use the default precision
-                                nMaxDigits = number.DigitsCount;
-                            }
+
+                            // This ensures that the PAL code pads out to the correct place even when we use the default precision
+                            nMaxDigits = number.DigitsCount;
                         }
 
                         RoundNumber(ref number, nMaxDigits, isCorrectlyRounded);
@@ -1441,7 +1434,7 @@ namespace Backports.System
                         }
 
                         format = (char)(format - ('R' - 'G'));
-                        Debug.Assert((format == 'G') || (format == 'g'));
+                        Debug.Assert(format == 'G' || format == 'g');
                         goto case 'G';
                     }
 
@@ -1858,6 +1851,7 @@ namespace Backports.System
             }
         }
 
+        // ReSharper disable once SuggestBaseTypeForParameter
         private static void FormatFixed(ref ValueStringBuilder sb, in NumberBuffer number, int nMaxDigits, int[]? groupDigits, string? sDecimal, string? sGroup)
         {
             var digPos = number.Scale;
@@ -2151,7 +2145,7 @@ namespace Backports.System
                 else
                 {
                     number.Scale++;
-                    dig[0] = (byte)('1');
+                    dig[0] = (byte)'1';
                     i = 1;
                 }
             }
@@ -2167,7 +2161,7 @@ namespace Backports.System
                 number.Scale = 0;      // Decimals with scale ('0.00') should be rounded.
             }
 
-            dig[i] = (byte)('\0');
+            dig[i] = (byte)'\0';
             number.DigitsCount = i;
             number.CheckConsistency();
 
@@ -2252,9 +2246,9 @@ namespace Backports.System
 
         private static ulong ExtractFractionAndBiasedExponent(double value, out int exponent)
         {
-            var bits = (ulong)(BitConverter.DoubleToInt64Bits(value));
-            var fraction = (bits & 0xFFFFFFFFFFFFF);
-            exponent = ((int)(bits >> 52) & 0x7FF);
+            var bits = (ulong)BitConverter.DoubleToInt64Bits(value);
+            var fraction = bits & 0xFFFFFFFFFFFFF;
+            exponent = (int)(bits >> 52) & 0x7FF;
 
             if (exponent != 0)
             {
@@ -2265,7 +2259,7 @@ namespace Backports.System
                 //
                 // So f = (2^52 + mantissa), e = exp - 1075;
 
-                fraction |= (1UL << 52);
+                fraction |= 1UL << 52;
                 exponent -= 1075;
             }
             else

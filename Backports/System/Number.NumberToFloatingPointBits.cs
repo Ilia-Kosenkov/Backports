@@ -145,7 +145,7 @@ namespace Backports.System
             // correct position, and compute the resulting base two exponent for the
             // normalized mantissa:
             var initialMantissaBits = BigInteger.CountSignificantBits(initialMantissa);
-            var normalMantissaShift = info.NormalMantissaBits - (int)(initialMantissaBits);
+            var normalMantissaShift = info.NormalMantissaBits - (int)initialMantissaBits;
             var normalExponent = initialExponent - normalMantissaShift;
 
             var mantissa = initialMantissa;
@@ -238,7 +238,7 @@ namespace Backports.System
             mantissa &= info.DenormalMantissaMask;
 
             Debug.Assert((info.DenormalMantissaMask & (1UL << info.DenormalMantissaBits)) == 0);
-            var shiftedExponent = ((ulong)(exponent + info.ExponentBias)) << info.DenormalMantissaBits;
+            var shiftedExponent = (ulong)(exponent + info.ExponentBias) << info.DenormalMantissaBits;
             Debug.Assert((shiftedExponent & info.DenormalMantissaMask) == 0);
             Debug.Assert((mantissa & ~info.DenormalMantissaMask) == 0);
             Debug.Assert((shiftedExponent & ~(((1UL << info.ExponentBits) - 1) << info.DenormalMantissaBits)) == 0); // exponent fits in its place
@@ -259,36 +259,36 @@ namespace Backports.System
             var bottomBlockIndex = middleBlockIndex - 1;
 
             ulong mantissa;
-            var exponent = baseExponent + ((int)(bottomBlockIndex) * 32);
+            var exponent = baseExponent + (int)bottomBlockIndex * 32;
             var hasZeroTail = !hasNonZeroFractionalPart;
 
             // When the top 64-bits perfectly span two blocks, we can get those blocks directly
             if (topBlockBits == 0)
-                mantissa = ((ulong) (value.GetBlock(middleBlockIndex)) << 32) + value.GetBlock(bottomBlockIndex);
+                mantissa = ((ulong) value.GetBlock(middleBlockIndex) << 32) + value.GetBlock(bottomBlockIndex);
             else
             {
                 // Otherwise, we need to read three blocks and combine them into a 64-bit mantissa
 
-                var bottomBlockShift = (int)(topBlockBits);
+                var bottomBlockShift = (int)topBlockBits;
                 var topBlockShift = 64 - bottomBlockShift;
                 var middleBlockShift = topBlockShift - 32;
 
-                exponent += (int)(topBlockBits);
+                exponent += (int)topBlockBits;
 
                 var bottomBlock = value.GetBlock(bottomBlockIndex);
                 var bottomBits = bottomBlock >> bottomBlockShift;
 
-                var middleBits = (ulong)(value.GetBlock(middleBlockIndex)) << middleBlockShift;
-                var topBits = (ulong)(value.GetBlock(topBlockIndex)) << topBlockShift;
+                var middleBits = (ulong)value.GetBlock(middleBlockIndex) << middleBlockShift;
+                var topBits = (ulong)value.GetBlock(topBlockIndex) << topBlockShift;
 
                 mantissa = topBits + middleBits + bottomBits;
 
-                var unusedBottomBlockBitsMask = (1u << (int)(topBlockBits)) - 1;
+                var unusedBottomBlockBitsMask = (1u << (int)topBlockBits) - 1;
                 hasZeroTail &= (bottomBlock & unusedBottomBlockBitsMask) == 0;
             }
 
             for (uint i = 0; i != bottomBlockIndex; i++) 
-                hasZeroTail &= (value.GetBlock(i) == 0);
+                hasZeroTail &= value.GetBlock(i) == 0;
 
             return AssembleFloatingPointBits(in info, mantissa, exponent, hasZeroTail);
         }
@@ -415,14 +415,16 @@ namespace Backports.System
                 else
                     result *= scale;
 
-                if (info.DenormalMantissaBits == 52)
-                    return (ulong) BitConverter.DoubleToInt64Bits(result);
-
-                if (info.DenormalMantissaBits == 23)
-                    return (uint) BitConverter.SingleToInt32Bits((float) result);
-
-                Debug.Assert(info.DenormalMantissaBits == 10);
-                return (uint)BitConverter.HalfToInt16Bits((Half)result);
+                switch (info.DenormalMantissaBits)
+                {
+                    case 52:
+                        return (ulong) BitConverter.DoubleToInt64Bits(result);
+                    case 23:
+                        return (uint) BitConverter.SingleToInt32Bits((float) result);
+                    default:
+                        Debug.Assert(info.DenormalMantissaBits == 10);
+                        return (uint)BitConverter.HalfToInt16Bits((Half)result);
+                }
             }
 
             return NumberToFloatingPointBitsSlow(in number, in info, positiveExponent, integerDigitsPresent, fractionalDigitsPresent);
@@ -617,7 +619,7 @@ namespace Backports.System
             }
 
             var extraBitsMask = (1UL << (shift - 1)) - 1;
-            var roundBitMask = (1UL << (shift - 1));
+            var roundBitMask = 1UL << (shift - 1);
             var lsbBitMask = 1UL << shift;
 
             var lsbBit = (value & lsbBitMask) != 0;

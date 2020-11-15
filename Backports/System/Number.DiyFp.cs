@@ -102,7 +102,7 @@ namespace Backports.System
                 // Simply "emulates" a 128-bit multiplication
                 //
                 // However: the resulting number only contains 64-bits. The least
-                // signficant 64-bits are only used for rounding the most significant
+                // significant 64-bits are only used for rounding the most significant
                 // 64-bits.
 
                 var a = (uint)(f >> 32);
@@ -153,7 +153,7 @@ namespace Backports.System
             {
                 mPlus = new DiyFp((f << 1) + 1, e - 1).Normalize();
 
-                // The boundary is closer if the sigificand is of the form:
+                // The boundary is closer if the significand is of the form:
                 //      f == 2^p-1
                 //
                 // Think of v = 1000e10 and v- = 9999e9
@@ -164,7 +164,7 @@ namespace Backports.System
 
                 // We deviate from the reference implementation by just checking if the significand has only the implicit bit set.
                 // In this scenario, we know that all the explicit bits are 0 and that the unbiased exponent is non-zero.
-                mMinus = f == (1UL << implicitBitIndex) 
+                mMinus = f == 1UL << implicitBitIndex 
                     ? new DiyFp((f << 2) - 1, e - 2) 
                     : new DiyFp((f << 1) - 1, e - 1);
 

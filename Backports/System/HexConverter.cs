@@ -67,7 +67,7 @@ namespace Backports.System
         public static void ToBytesBuffer(byte value, Span<byte> buffer, int startingIndex = 0, Casing casing = Casing.Upper)
         {
             var difference = ((value & 0xF0U) << 4) + (value & 0x0FU) - 0x8989U;
-            var packedResult = ((((uint)(-(int)difference) & 0x7070U) >> 4) + difference + 0xB9B9U) | (uint)casing;
+            var packedResult = ((((uint)-(int)difference & 0x7070U) >> 4) + difference + 0xB9B9U) | (uint)casing;
 
             buffer[startingIndex + 1] = (byte)packedResult;
             buffer[startingIndex] = (byte)(packedResult >> 8);
@@ -121,7 +121,7 @@ namespace Backports.System
             value += '0';
 
             if (value > '9') 
-                value += ('A' - ('9' + 1));
+                value += 'A' - ('9' + 1);
 
             return (char)value;
         }
@@ -133,7 +133,7 @@ namespace Backports.System
             value += '0';
 
             if (value > '9') 
-                value += ('a' - ('9' + 1));
+                value += 'a' - ('9' + 1);
 
             return (char)value;
         }
@@ -192,10 +192,10 @@ namespace Backports.System
         public static bool IsHexChar(int c) => FromChar(c) != 0xFF;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsHexUpperChar(int c) => (uint)(c - '0') <= 9 || (uint)(c - 'A') <= ('F' - 'A');
+        public static bool IsHexUpperChar(int c) => (uint)(c - '0') <= 9 || (uint)(c - 'A') <= 'F' - 'A';
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsHexLowerChar(int c) => (uint)(c - '0') <= 9 || (uint)(c - 'a') <= ('f' - 'a');
+        public static bool IsHexLowerChar(int c) => (uint)(c - '0') <= 9 || (uint)(c - 'a') <= 'f' - 'a';
 
         /// <summary>Map from an ASCII char to its hex value, e.g. arr['b'] == 11. 0xFF means it's not a hex digit.</summary>
         public static ReadOnlySpan<byte> CharToHexLookup => new byte[]

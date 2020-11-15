@@ -115,12 +115,10 @@ namespace Backports.System.Text
                 Dispose();
                 return true;
             }
-            else
-            {
-                charsWritten = 0;
-                Dispose();
-                return false;
-            }
+
+            charsWritten = 0;
+            Dispose();
+            return false;
         }
 
         public void Insert(int index, char value, int count)

@@ -4,6 +4,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Backports.System
 {
@@ -18,6 +19,8 @@ namespace Backports.System
         // The general idea behind Grisu3 is to leverage additional bits and cached powers of ten to generate the correct digits.
         // The algorithm is imprecise for some numbers. Fortunately, the algorithm itself can determine this scenario and gives us
         // a result indicating success or failure. We must fallback to a different algorithm for the failing scenario.
+        [SuppressMessage("ReSharper", "ArgumentsStyleOther")]
+        [SuppressMessage("ReSharper", "ArgumentsStyleNamedExpression")]
         internal static class Grisu3
         {
             private const int CachedPowersDecimalExponentDistance = 8;
@@ -343,10 +346,10 @@ namespace Backports.System
 
                 if (!result) 
                     return result;
-                Debug.Assert(requestedDigits == -1 || (length == requestedDigits));
+                Debug.Assert(requestedDigits == -1 || length == requestedDigits);
 
                 number.Scale = length + decimalExponent;
-                number.DigitsMut[length] = (byte)('\0');
+                number.DigitsMut[length] = (byte)'\0';
                 number.DigitsCount = length;
 
                 return result;
@@ -410,10 +413,10 @@ namespace Backports.System
 
                 if (result)
                 {
-                    Debug.Assert((requestedDigits == -1) || (length == requestedDigits));
+                    Debug.Assert(requestedDigits == -1 || length == requestedDigits);
 
                     number.Scale = length + decimalExponent;
-                    number.DigitsMut[length] = (byte)('\0');
+                    number.DigitsMut[length] = (byte)'\0';
                     number.DigitsCount = length;
                 }
 
@@ -432,8 +435,8 @@ namespace Backports.System
 
                 var tenMk = GetCachedPowerForBinaryExponentRange(tenMkMinimalBinaryExponent, tenMkMaximalBinaryExponent, out var mk);
 
-                Debug.Assert(MinimalTargetExponent <= (w.e + tenMk.e + DiyFp.SignificandSize));
-                Debug.Assert(MaximalTargetExponent >= (w.e + tenMk.e + DiyFp.SignificandSize));
+                Debug.Assert(MinimalTargetExponent <= w.e + tenMk.e + DiyFp.SignificandSize);
+                Debug.Assert(MaximalTargetExponent >= w.e + tenMk.e + DiyFp.SignificandSize);
 
                 // Note that tenMk is only an approximation of 10^-k.
                 // A DiyFp only contains a 64-bit significand and tenMk is thus only precise up to 64-bits.
@@ -466,7 +469,7 @@ namespace Backports.System
             // If the function returns true then:
             //      v == (double)(buffer * 10^decimalExponent)
             //
-            // The digits in the buffer are the shortest represenation possible (no 0.09999999999999999 instead of 0.1).
+            // The digits in the buffer are the shortest representation possible (no 0.09999999999999999 instead of 0.1).
             // The shorter representation will even be chosen if the longer one would be closer to v.
             //
             // The last digit will be closest to the actual v.
@@ -484,11 +487,11 @@ namespace Backports.System
 
                 var tenMk = GetCachedPowerForBinaryExponentRange(tenMkMinimalBinaryExponent, tenMkMaximalBinaryExponent, out var mk);
 
-                Debug.Assert(MinimalTargetExponent <= (w.e + tenMk.e + DiyFp.SignificandSize));
-                Debug.Assert(MaximalTargetExponent >= (w.e + tenMk.e + DiyFp.SignificandSize));
+                Debug.Assert(MinimalTargetExponent <= w.e + tenMk.e + DiyFp.SignificandSize);
+                Debug.Assert(MaximalTargetExponent >= w.e + tenMk.e + DiyFp.SignificandSize);
 
                 // Note that tenMk is only an approximation of 10^-k.
-                // A DiyFp only contains a 64-bit significan and tenMk is thus only precise up to 64-bits.
+                // A DiyFp only contains a 64-bit significant and tenMk is thus only precise up to 64-bits.
 
                 // The DiyFp.Multiply procedure rounds its result and tenMk is approximated too.
                 // The variable scaledW (as well as scaledBoundaryMinus/Plus) are now off by a small amount.
@@ -498,7 +501,7 @@ namespace Backports.System
                 //      (f - 1) * 2^e < (w * 10^k) < (f + 1) * 2^e
 
                 var scaledW = w.Multiply(in tenMk);
-                Debug.Assert(scaledW.e == (boundaryPlus.e + tenMk.e + DiyFp.SignificandSize));
+                Debug.Assert(scaledW.e == boundaryPlus.e + tenMk.e + DiyFp.SignificandSize);
 
                 // In theory, it would be possible to avoid some recomputations by computing the difference between w
                 // and boundaryMinus/Plus (a power of 2) and to compute scaledBoundaryMinus/Plus by subtracting/adding
@@ -533,11 +536,11 @@ namespace Backports.System
                 // Inspired by the method for finding an integer log base 10 from here:
                 // http://graphics.stanford.edu/~seander/bithacks.html#IntegerLog10
 
-                Debug.Assert(number < (1U << (numberBits + 1)));
+                Debug.Assert(number < 1U << (numberBits + 1));
 
                 // 1233/4096 is approximately 1/log2(10)
                 var exponentGuess = ((numberBits + 1) * 1233) >> 12;
-                Debug.Assert((uint)(exponentGuess) < s_SmallPowersOfTen.Length);
+                Debug.Assert((uint)exponentGuess < s_SmallPowersOfTen.Length);
 
                 var power = s_SmallPowersOfTen[exponentGuess];
 
@@ -747,7 +750,7 @@ namespace Backports.System
                 Debug.Assert(low.e == w.e);
                 Debug.Assert(w.e == high.e);
 
-                Debug.Assert((low.f + 1) <= (high.f - 1));
+                Debug.Assert(low.f + 1 <= high.f - 1);
 
                 Debug.Assert(MinimalTargetExponent <= w.e);
                 Debug.Assert(w.e <= MaximalTargetExponent);
@@ -789,7 +792,7 @@ namespace Backports.System
                 // Modulo by one is an and.
                 var fractionals = tooHigh.f & (one.f - 1);
 
-                var divisor = BiggestPowerTen(integrals, DiyFp.SignificandSize - (-one.e), out kappa);
+                var divisor = BiggestPowerTen(integrals, DiyFp.SignificandSize - -one.e, out kappa);
                 length = 0;
 
                 // Loop invariant:
@@ -809,7 +812,7 @@ namespace Backports.System
                     // Note that kappa now equals the exponent of the
                     // divisor and that the invariant thus holds again.
 
-                    var rest = ((ulong)(integrals) << -one.e) + fractionals;
+                    var rest = ((ulong)integrals << -one.e) + fractionals;
 
                     // Invariant: tooHigh = buffer * 10^kappa + DiyFp(rest, one.e)
                     // Reminder: unsafeInterval.e == one.e
@@ -825,7 +828,7 @@ namespace Backports.System
                             tooHigh.Subtract(w).f,
                             unsafeInterval.f,
                             rest,
-                            tenKappa: ((ulong)(divisor)) << -one.e,
+                            tenKappa: (ulong)divisor << -one.e,
                             unit
                         );
                     }
@@ -859,7 +862,7 @@ namespace Backports.System
                     kappa--;
 
                     // Modulo by one.
-                    fractionals &= (one.f - 1);
+                    fractionals &= one.f - 1;
 
                     if (fractionals < unsafeInterval.f)
                     {
@@ -1050,7 +1053,7 @@ namespace Backports.System
 
                 Debug.Assert(rest <= unsafeInterval);
 
-                while ((rest < smallDistance) && ((unsafeInterval - rest) >= tenKappa) && (((rest + tenKappa) < smallDistance) || ((smallDistance - rest) >= (rest + tenKappa - smallDistance))))
+                while (rest < smallDistance && unsafeInterval - rest >= tenKappa && (rest + tenKappa < smallDistance || smallDistance - rest >= rest + tenKappa - smallDistance))
                 {
                     buffer[length - 1]--;
                     rest += tenKappa;
@@ -1059,7 +1062,7 @@ namespace Backports.System
                 // We have approached w+ as much as possible.
                 // We now test if approaching w- would require changing the buffer.
                 // If yes, then we have two possible representations close to w, but we cannot decide which one is closer.
-                if ((rest < bigDistance) && ((unsafeInterval - rest) >= tenKappa) && (((rest + tenKappa) < bigDistance) || ((bigDistance - rest) > (rest + tenKappa - bigDistance))))
+                if (rest < bigDistance && unsafeInterval - rest >= tenKappa && (rest + tenKappa < bigDistance || bigDistance - rest > rest + tenKappa - bigDistance))
                 {
                     return false;
                 }
@@ -1071,7 +1074,7 @@ namespace Backports.System
                 //      [tooHigh - unsafeInterval + 4 ulp; tooHigh - 2 ulp]
                 //
                 // Conceptually we have: rest ~= tooHigh - buffer
-                return ((2 * unit) <= rest) && (rest <= (unsafeInterval - 4 * unit));
+                return 2 * unit <= rest && rest <= unsafeInterval - 4 * unit;
             }
         }
     }

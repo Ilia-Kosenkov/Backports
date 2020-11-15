@@ -70,7 +70,7 @@ namespace Backports.System
         // if dist > bit count, Will be 1 or 0 depending on i
         // (unlike bitwise operators that masks the lower 5 bits)
         private static uint ShiftRightJam(uint i, int dist)
-            => dist < 31 ? (i >> dist) | (i << (-dist & 31) != 0 ? 1U : 0U) : (i != 0 ? 1U : 0U);
+            => dist < 31 ? (i >> dist) | (i << (-dist & 31) != 0 ? 1U : 0U) : i != 0 ? 1U : 0U;
 
         public static explicit operator Half(float value)
         {

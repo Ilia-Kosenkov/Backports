@@ -935,10 +935,7 @@ namespace Backports.System
                 if (chkLo < valLo)
                     return false;
 
-                if (chkLo > valLo)
-                    return true;
-
-                return false;
+                return chkLo > valLo;
             }
 
             private static uint SubtractDivisor(ref BigInteger lhs, int lhsStartIndex, in BigInteger rhs, ulong q)

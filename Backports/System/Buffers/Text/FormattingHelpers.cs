@@ -100,7 +100,7 @@ namespace Backports.System.Buffers.Text
             // to allow codegen to make some extra optimizations.
 
             var difference = ((value & 0xF0U) << 4) + (value & 0x0FU) - 0x8989U;
-            var packedResult = ((((uint)(-(int)difference) & 0x7070U) >> 4) + difference + 0xB9B9U) | (uint)casing;
+            var packedResult = ((((uint)-(int)difference & 0x7070U) >> 4) + difference + 0xB9B9U) | (uint)casing;
 
             // The low byte of the packed result contains the hex representation of the incoming byte's low nibble.
             // The adjacent byte of the packed result contains the hex representation of the incoming byte's high nibble.
@@ -108,7 +108,7 @@ namespace Backports.System.Buffers.Text
             // Finally, write to the output buffer starting with the *highest* index so that codegen can
             // elide all but the first bounds check. (This only works if 'startingIndex' is a compile-time constant.)
 
-            buffer[startingIndex + 1] = (byte)(packedResult);
+            buffer[startingIndex + 1] = (byte)packedResult;
             buffer[startingIndex] = (byte)(packedResult >> 8);
         }
 
@@ -122,7 +122,7 @@ namespace Backports.System.Buffers.Text
             {
                 var temp = '0' + value;
                 value /= 10;
-                buffer[i] = (byte)(temp - (value * 10));
+                buffer[i] = (byte)(temp - value * 10);
             }
 
             Debug.Assert(value < 10);
@@ -140,7 +140,7 @@ namespace Backports.System.Buffers.Text
             {
                 var temp = '0' + value;
                 value /= 10;
-                buffer[i] = (byte)(temp - (value * 10));
+                buffer[i] = (byte)(temp - value * 10);
                 if (digitsWritten == Utf8Constants.GroupSize - 1)
                 {
                     buffer[--i] = Utf8Constants.Comma;
@@ -166,7 +166,7 @@ namespace Backports.System.Buffers.Text
             {
                 var temp = '0' + value;
                 value /= 10;
-                buffer[i] = (byte)(temp - (value * 10));
+                buffer[i] = (byte)(temp - value * 10);
             }
 
             Debug.Assert(value < 10);
@@ -184,15 +184,15 @@ namespace Backports.System.Buffers.Text
 
             var temp = '0' + value;
             value /= 10;
-            buffer[startingIndex + 3] = (byte)(temp - (value * 10));
+            buffer[startingIndex + 3] = (byte)(temp - value * 10);
 
             temp = '0' + value;
             value /= 10;
-            buffer[startingIndex + 2] = (byte)(temp - (value * 10));
+            buffer[startingIndex + 2] = (byte)(temp - value * 10);
 
             temp = '0' + value;
             value /= 10;
-            buffer[startingIndex + 1] = (byte)(temp - (value * 10));
+            buffer[startingIndex + 1] = (byte)(temp - value * 10);
 
             buffer[startingIndex] = (byte)('0' + value);
         }
@@ -208,7 +208,7 @@ namespace Backports.System.Buffers.Text
 
             var temp = '0' + value;
             value /= 10;
-            buffer[startingIndex + 1] = (byte)(temp - (value * 10));
+            buffer[startingIndex + 1] = (byte)(temp - value * 10);
 
             buffer[startingIndex] = (byte)('0' + value);
         }
@@ -224,7 +224,7 @@ namespace Backports.System.Buffers.Text
         public static ulong DivMod(ulong numerator, ulong denominator, out ulong modulo)
         {
             var div = numerator / denominator;
-            modulo = numerator - (div * denominator);
+            modulo = numerator - div * denominator;
             return div;
         }
 
@@ -235,7 +235,7 @@ namespace Backports.System.Buffers.Text
         public static uint DivMod(uint numerator, uint denominator, out uint modulo)
         {
             var div = numerator / denominator;
-            modulo = numerator - (div * denominator);
+            modulo = numerator - div * denominator;
             return div;
         }
 
@@ -295,34 +295,30 @@ namespace Backports.System.Buffers.Text
                 part = (uint)value;
             }
 
-            if (part < 10)
+            switch (part)
             {
-                // no-op
-            }
-            else if (part < 100)
-            {
-                digits += 1;
-            }
-            else if (part < 1000)
-            {
-                digits += 2;
-            }
-            else if (part < 10000)
-            {
-                digits += 3;
-            }
-            else if (part < 100000)
-            {
-                digits += 4;
-            }
-            else if (part < 1000000)
-            {
-                digits += 5;
-            }
-            else
-            {
-                Debug.Assert(part < 10000000);
-                digits += 6;
+                case < 10:
+                    // no-op
+                    break;
+                case < 100:
+                    digits += 1;
+                    break;
+                case < 1000:
+                    digits += 2;
+                    break;
+                case < 10000:
+                    digits += 3;
+                    break;
+                case < 100000:
+                    digits += 4;
+                    break;
+                case < 1000000:
+                    digits += 5;
+                    break;
+                default:
+                    Debug.Assert(part < 10000000);
+                    digits += 6;
+                    break;
             }
 
             return digits;
@@ -338,26 +334,24 @@ namespace Backports.System.Buffers.Text
                 digits += 5;
             }
 
-            if (value < 10)
+            switch (value)
             {
-                // no-op
-            }
-            else if (value < 100)
-            {
-                digits += 1;
-            }
-            else if (value < 1000)
-            {
-                digits += 2;
-            }
-            else if (value < 10000)
-            {
-                digits += 3;
-            }
-            else
-            {
-                Debug.Assert(value < 100000);
-                digits += 4;
+                case < 10:
+                    // no-op
+                    break;
+                case < 100:
+                    digits += 1;
+                    break;
+                case < 1000:
+                    digits += 2;
+                    break;
+                case < 10000:
+                    digits += 3;
+                    break;
+                default:
+                    Debug.Assert(value < 100000);
+                    digits += 4;
+                    break;
             }
 
             return digits;

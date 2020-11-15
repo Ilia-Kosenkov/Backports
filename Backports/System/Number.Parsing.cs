@@ -61,7 +61,7 @@ namespace Backports.System
             var n = 0;
             while (--i >= 0)
             {
-                if ((uint)n > (0x7FFFFFFF / 10))
+                if ((uint)n > 0x7FFFFFFF / 10)
                 {
                     return false;
                 }
@@ -100,7 +100,7 @@ namespace Backports.System
             long n = 0;
             while (--i >= 0)
             {
-                if ((ulong)n > (0x7FFFFFFFFFFFFFFF / 10))
+                if ((ulong)n > 0x7FFFFFFFFFFFFFFF / 10)
                     return false;
                 n *= 10;
                 if (p == '\0') 
@@ -136,7 +136,7 @@ namespace Backports.System
             uint n = 0;
             while (--i >= 0)
             {
-                if (n > (0xFFFFFFFF / 10))
+                if (n > 0xFFFFFFFF / 10)
                 {
                     return false;
                 }
@@ -167,7 +167,7 @@ namespace Backports.System
             ulong n = 0;
             while (--i >= 0)
             {
-                if (n > (0xFFFFFFFFFFFFFFFF / 10))
+                if (n > 0xFFFFFFFFFFFFFFFF / 10)
                     return false;
                 n *= 10;
                 if (p == '\0') 
@@ -669,10 +669,7 @@ namespace Backports.System
             if (!TryStringToNumber(value, styles, ref number, info))
                 return ParsingStatus.Failed;
 
-            if (!TryNumberToInt32(in number, out result))
-                return ParsingStatus.Overflow;
-
-            return ParsingStatus.OK;
+            return TryNumberToInt32(in number, out result) ? ParsingStatus.OK : ParsingStatus.Overflow;
         }
 
         /// <summary>Parses int limited to styles that make up NumberStyles.Integer.</summary>
@@ -791,7 +788,7 @@ namespace Backports.System
                 // Potential overflow now processing the 10th digit.
                 overflow = answer > int.MaxValue / 10;
                 answer = answer * 10 + num - '0';
-                overflow |= (uint)answer > int.MaxValue + (((uint)sign) >> 31);
+                overflow |= (uint)answer > int.MaxValue + ((uint)sign >> 31);
                 if ((uint)index >= (uint)value.Length)
                     goto DoneAtEndButPotentialOverflow;
 
@@ -962,7 +959,7 @@ namespace Backports.System
                 // Potential overflow now processing the 19th digit.
                 overflow = answer > long.MaxValue / 10;
                 answer = answer * 10 + num - '0';
-                overflow |= (ulong)answer > (ulong)long.MaxValue + (((uint)sign) >> 31);
+                overflow |= (ulong)answer > (ulong)long.MaxValue + ((uint)sign >> 31);
                 if ((uint)index >= (uint)value.Length)
                     goto DoneAtEndButPotentialOverflow;
 
@@ -1047,10 +1044,7 @@ namespace Backports.System
             if (!TryStringToNumber(value, styles, ref number, info))
                 return ParsingStatus.Failed;
 
-            if (!TryNumberToInt64(in number, out result))
-                return ParsingStatus.Overflow;
-
-            return ParsingStatus.OK;
+            return TryNumberToInt64(in number, out result) ? ParsingStatus.OK : ParsingStatus.Overflow;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1062,12 +1056,9 @@ namespace Backports.System
                 return TryParseUInt32IntegerStyle(value, styles, info, out result);
             }
 
-            if ((styles & NumberStyles.AllowHexSpecifier) != 0)
-            {
-                return TryParseUInt32HexNumberStyle(value, styles, out result);
-            }
-
-            return TryParseUInt32Number(value, styles, info, out result);
+            return (styles & NumberStyles.AllowHexSpecifier) != 0 
+                ? TryParseUInt32HexNumberStyle(value, styles, out result)
+                : TryParseUInt32Number(value, styles, info, out result);
         }
 
         private static ParsingStatus TryParseUInt32Number(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info, out uint result)
@@ -1075,13 +1066,9 @@ namespace Backports.System
             result = 0;
             var number = new NumberBuffer(NumberBufferKind.Integer, stackalloc byte[UInt32NumberBufferLength]);
 
-            if (!TryStringToNumber(value, styles, ref number, info))
-                return ParsingStatus.Failed;
-
-            if (!TryNumberToUInt32(in number, out result))
-                return ParsingStatus.Overflow;
-
-            return ParsingStatus.OK;
+            return TryStringToNumber(value, styles, ref number, info)
+                ? TryNumberToUInt32(in number, out result) ? ParsingStatus.OK : ParsingStatus.Overflow
+                : ParsingStatus.Failed;
         }
 
         /// <summary>Parses uint limited to styles that make up NumberStyles.Integer.</summary>
@@ -1192,7 +1179,7 @@ namespace Backports.System
                     goto HasTrailingChars;
                 index++;
                 // Potential overflow now processing the 10th digit.
-                overflow |= (uint)answer > uint.MaxValue / 10 || ((uint)answer == uint.MaxValue / 10 && num > '5');
+                overflow |= (uint)answer > uint.MaxValue / 10 || (uint)answer == uint.MaxValue / 10 && num > '5';
                 answer = answer * 10 + num - '0';
                 if ((uint)index >= (uint)value.Length)
                     goto DoneAtEndButPotentialOverflow;
@@ -1264,7 +1251,7 @@ namespace Backports.System
             if (value.IsEmpty)
                 goto FalseExit;
 
-            int index = 0;
+            var index = 0;
             int num = value[0];
 
             // Skip past any whitespace at the beginning.
@@ -1280,7 +1267,7 @@ namespace Backports.System
                 while (IsWhite(num));
             }
 
-            bool overflow = false;
+            var overflow = false;
             uint answer = 0;
 
             if (HexConverter.IsHexChar(num))
@@ -1302,13 +1289,13 @@ namespace Backports.System
                 // Parse up through 8 digits, as no overflow is possible
                 answer = (uint)HexConverter.FromChar(num); // first digit
                 index++;
-                for (int i = 0; i < 7; i++) // next 7 digits can't overflow
+                for (var i = 0; i < 7; i++) // next 7 digits can't overflow
                 {
                     if ((uint)index >= (uint)value.Length)
                         goto DoneAtEnd;
                     num = value[index];
 
-                    uint numValue = (uint)HexConverter.FromChar(num);
+                    var numValue = (uint)HexConverter.FromChar(num);
                     if (numValue == 0xFF)
                         goto HasTrailingChars;
                     index++;
@@ -1388,12 +1375,9 @@ namespace Backports.System
                 return TryParseUInt64IntegerStyle(value, styles, info, out result);
             }
 
-            if ((styles & NumberStyles.AllowHexSpecifier) != 0)
-            {
-                return TryParseUInt64HexNumberStyle(value, styles, out result);
-            }
-
-            return TryParseUInt64Number(value, styles, info, out result);
+            return (styles & NumberStyles.AllowHexSpecifier) != 0
+                ? TryParseUInt64HexNumberStyle(value, styles, out result) 
+                : TryParseUInt64Number(value, styles, info, out result);
         }
 
         private static ParsingStatus TryParseUInt64Number(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info, out ulong result)
@@ -1405,10 +1389,7 @@ namespace Backports.System
             if (!TryStringToNumber(value, styles, ref number, info))
                 return ParsingStatus.Failed;
 
-            if (!TryNumberToUInt64(in number, out result))
-                return ParsingStatus.Overflow;
-
-            return ParsingStatus.OK;
+            return TryNumberToUInt64(in number, out result) ? ParsingStatus.OK : ParsingStatus.Overflow;
         }
 
         /// <summary>Parses ulong limited to styles that make up NumberStyles.Integer.</summary>
@@ -1419,7 +1400,7 @@ namespace Backports.System
             if (value.IsEmpty)
                 goto FalseExit;
 
-            int index = 0;
+            var index = 0;
             int num = value[0];
 
             // Skip past any whitespace at the beginning.
@@ -1436,7 +1417,7 @@ namespace Backports.System
             }
 
             // Parse leading sign.
-            bool overflow = false;
+            var overflow = false;
             if ((styles & NumberStyles.AllowLeadingSign) != 0)
             {
                 if (info.HasInvariantNumberSigns())
@@ -1501,7 +1482,7 @@ namespace Backports.System
                 // Parse most digits, up to the potential for overflow, which can't happen until after 19 digits.
                 answer = num - '0'; // first digit
                 index++;
-                for (int i = 0; i < 18; i++) // next 18 digits can't overflow
+                for (var i = 0; i < 18; i++) // next 18 digits can't overflow
                 {
                     if ((uint)index >= (uint)value.Length)
                         goto DoneAtEndButPotentialOverflow;
@@ -1519,7 +1500,7 @@ namespace Backports.System
                     goto HasTrailingChars;
                 index++;
                 // Potential overflow now processing the 20th digit.
-                overflow |= (ulong)answer > ulong.MaxValue / 10 || ((ulong)answer == ulong.MaxValue / 10 && num > '5');
+                overflow |= (ulong)answer > ulong.MaxValue / 10 || (ulong)answer == ulong.MaxValue / 10 && num > '5';
                 answer = answer * 10 + num - '0';
                 if ((uint)index >= (uint)value.Length)
                     goto DoneAtEndButPotentialOverflow;
@@ -1547,7 +1528,7 @@ namespace Backports.System
             // ReSharper disable once BadChildStatementIndent
         DoneAtEnd:
             result = (ulong)answer;
-            ParsingStatus status = ParsingStatus.OK;
+            var status = ParsingStatus.OK;
         Exit:
             return status;
 
@@ -1591,7 +1572,7 @@ namespace Backports.System
             if (value.IsEmpty)
                 goto FalseExit;
 
-            int index = 0;
+            var index = 0;
             int num = value[0];
 
             // Skip past any whitespace at the beginning.
@@ -1607,7 +1588,7 @@ namespace Backports.System
                 while (IsWhite(num));
             }
 
-            bool overflow = false;
+            var overflow = false;
             ulong answer = 0;
 
             if (HexConverter.IsHexChar(num))
@@ -1629,13 +1610,13 @@ namespace Backports.System
                 // Parse up through 16 digits, as no overflow is possible
                 answer = (uint)HexConverter.FromChar(num); // first digit
                 index++;
-                for (int i = 0; i < 15; i++) // next 15 digits can't overflow
+                for (var i = 0; i < 15; i++) // next 15 digits can't overflow
                 {
                     if ((uint)index >= (uint)value.Length)
                         goto DoneAtEnd;
                     num = value[index];
 
-                    uint numValue = (uint)HexConverter.FromChar(num);
+                    var numValue = (uint)HexConverter.FromChar(num);
                     if (numValue == 0xFF)
                         goto HasTrailingChars;
                     index++;
@@ -1671,7 +1652,7 @@ namespace Backports.System
             // ReSharper disable once BadChildStatementIndent
         DoneAtEnd:
             result = answer;
-            ParsingStatus status = ParsingStatus.OK;
+            var status = ParsingStatus.OK;
         Exit:
             return status;
 
@@ -1839,10 +1820,7 @@ namespace Backports.System
             if (!TryStringToNumber(value, styles, ref number, info))
                 return ParsingStatus.Failed;
 
-            if (!TryNumberToDecimal(in number, ref result))
-                return ParsingStatus.Overflow;
-
-            return ParsingStatus.OK;
+            return TryNumberToDecimal(in number, ref result) ? ParsingStatus.OK : ParsingStatus.Overflow;
         }
 
         internal static bool TryParseDouble(ReadOnlySpan<char> value, NumberStyles styles, NumberFormatInfo info, out double result)
@@ -2109,7 +2087,7 @@ namespace Backports.System
         // Ternary op is a workaround for https://github.com/dotnet/runtime/issues/4207
         // ReSharper disable once RedundantTernaryExpression
 #pragma warning disable IDE0075 // Simplify conditional expression
-        private static bool IsWhite(int ch) => ch == 0x20 || (uint)(ch - 0x09) <= (0x0D - 0x09) ? true : false;
+        private static bool IsWhite(int ch) => ch == 0x20 || (uint)(ch - 0x09) <= 0x0D - 0x09 ? true : false;
 #pragma warning restore IDE0075 // Simplify conditional expression
 
         private static bool IsDigit(int ch) => (uint)ch - '0' <= 9;

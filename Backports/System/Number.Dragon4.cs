@@ -24,10 +24,10 @@ namespace Backports.System
             uint mantissaHighBitIdx;
             var hasUnequalMargins = false;
 
-            if ((mantissa >> DiyFp.DoubleImplicitBitIndex) != 0)
+            if (mantissa >> DiyFp.DoubleImplicitBitIndex != 0)
             {
                 mantissaHighBitIdx = DiyFp.DoubleImplicitBitIndex;
-                hasUnequalMargins = (mantissa == (1UL << DiyFp.DoubleImplicitBitIndex));
+                hasUnequalMargins = mantissa == 1UL << DiyFp.DoubleImplicitBitIndex;
             }
             else
             {
@@ -35,10 +35,10 @@ namespace Backports.System
                 mantissaHighBitIdx = (uint)BitOperations.Log2(mantissa);
             }
 
-            var length = (int)(Dragon4(mantissa, exponent, mantissaHighBitIdx, hasUnequalMargins, cutoffNumber, isSignificantDigits, number.DigitsMut, out int decimalExponent));
+            var length = (int)Dragon4(mantissa, exponent, mantissaHighBitIdx, hasUnequalMargins, cutoffNumber, isSignificantDigits, number.DigitsMut, out var decimalExponent);
 
             number.Scale = decimalExponent + 1;
-            number.DigitsMut[length] = (byte)('\0');
+            number.DigitsMut[length] = (byte)'\0';
             number.DigitsCount = length;
         }
 
@@ -79,15 +79,15 @@ namespace Backports.System
             Debug.Assert(v > 0);
             Debug.Assert(v.IsFinite());
 
-            uint mantissa = ExtractFractionAndBiasedExponent(value, out int exponent);
+            var mantissa = ExtractFractionAndBiasedExponent(value, out var exponent);
 
             uint mantissaHighBitIdx;
-            bool hasUnequalMargins = false;
+            var hasUnequalMargins = false;
 
-            if ((mantissa >> DiyFp.SingleImplicitBitIndex) != 0)
+            if (mantissa >> DiyFp.SingleImplicitBitIndex != 0)
             {
                 mantissaHighBitIdx = DiyFp.SingleImplicitBitIndex;
-                hasUnequalMargins = (mantissa == (1U << DiyFp.SingleImplicitBitIndex));
+                hasUnequalMargins = mantissa == 1U << DiyFp.SingleImplicitBitIndex;
             }
             else
             {
@@ -95,10 +95,10 @@ namespace Backports.System
                 mantissaHighBitIdx = (uint)BitOperations.Log2(mantissa);
             }
 
-            var length = (int)(Dragon4(mantissa, exponent, mantissaHighBitIdx, hasUnequalMargins, cutoffNumber, isSignificantDigits, number.DigitsMut, out int decimalExponent));
+            var length = (int)Dragon4(mantissa, exponent, mantissaHighBitIdx, hasUnequalMargins, cutoffNumber, isSignificantDigits, number.DigitsMut, out var decimalExponent);
 
             number.Scale = decimalExponent + 1;
-            number.DigitsMut[length] = (byte)('\0');
+            number.DigitsMut[length] = (byte)'\0';
             number.DigitsCount = length;
         }
 
@@ -137,9 +137,10 @@ namespace Backports.System
 
             // For normalized IEEE floating-point values, each time the exponent is incremented the margin also doubles.
             // That creates a subset of transition numbers where the high margin is twice the size of the low margin.
-            BigInteger optionalMarginHigh;
             ref var pScaledMarginHigh = ref scale;
 
+            // ReSharper disable once TooWideLocalVariableScope
+            BigInteger optionalMarginHigh;
             if (hasUnequalMargins)
             {
                 if (exponent > 0)   // We have no fractional component
@@ -147,7 +148,7 @@ namespace Backports.System
                     // 1) Expand the input value by multiplying out the mantissa and exponent.
                     //    This represents the input value in its whole number representation.
                     // 2) Apply an additional scale of 2 such that later comparisons against the margin values are simplified.
-                    // 3) Set the margin value to the loweset mantissa bit's scale.
+                    // 3) Set the margin value to the lowest mantissa bit's scale.
 
                     // scaledValue      = 2 * 2 * mantissa * 2^exponent
                     BigInteger.SetUInt64(out scaledValue, 4 * mantissa);
@@ -323,7 +324,7 @@ namespace Backports.System
             // Output the exponent of the first digit we will print
             decimalExponent = --digitExponent;
 
-            // In preparation for calling BigInteger.HeuristicDivie(), we need to scale up our values such that the highest block of the denominator is greater than or equal to 8.
+            // In preparation for calling BigInteger.HeuristicDivide(), we need to scale up our values such that the highest block of the denominator is greater than or equal to 8.
             // We also need to guarantee that the numerator can never have a length greater than the denominator after each loop iteration.
             // This requires the highest block of the denominator to be less than or equal to 429496729 which is the highest number that can be multiplied by 10 without overflowing to a new block.
 
@@ -479,7 +480,7 @@ namespace Backports.System
                 var compare = BigInteger.Compare(in scaledValue, in scale);
                 roundDown = compare < 0;
 
-                // if we are directly in the middle, round towards the even digit (i.e. IEEE rouding rules)
+                // if we are directly in the middle, round towards the even digit (i.e. IEEE rounding rules)
                 if (compare == 0)
                 {
                     roundDown = (outputDigit & 1) == 0;

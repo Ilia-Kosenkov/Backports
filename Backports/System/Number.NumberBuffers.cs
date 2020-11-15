@@ -28,7 +28,7 @@ namespace Backports.System
             public bool IsNegative;
             public bool HasNonZeroTail;
             public NumberBufferKind Kind;
-            private Span<byte> _digits;
+            private readonly Span<byte> _digits;
             public Span<byte> DigitsMut => _digits;
 
 //            public NumberBuffer(NumberBufferKind kind, byte* digits, int digitsLength)
@@ -66,7 +66,7 @@ namespace Backports.System
                 DigitsMut.Fill(0xCC);
 #endif
 
-                DigitsMut[0] = (byte)('\0');
+                DigitsMut[0] = (byte)'\0';
                 CheckConsistency();
             }
 
@@ -74,7 +74,7 @@ namespace Backports.System
             public readonly void CheckConsistency()
             {
 #if DEBUG
-                Debug.Assert(Kind == NumberBufferKind.Integer || (Kind == NumberBufferKind.Decimal) || (Kind == NumberBufferKind.FloatingPoint));
+                Debug.Assert(Kind == NumberBufferKind.Integer || Kind == NumberBufferKind.Decimal || Kind == NumberBufferKind.FloatingPoint);
                 Debug.Assert(Digits[0] != '0', "Leading zeros should never be stored in a Number");
 
                 int numDigits;
@@ -110,7 +110,7 @@ namespace Backports.System
             //
             public override readonly string ToString()
             {
-                StringBuilder sb = new StringBuilder();
+                StringBuilder sb = new();
 
                 sb.Append('[');
                 sb.Append('"');
@@ -120,7 +120,7 @@ namespace Backports.System
                     if (digit == 0)
                         break;
 
-                    sb.Append((char)(digit));
+                    sb.Append((char)digit);
                 }
 
                 sb.Append('"');
