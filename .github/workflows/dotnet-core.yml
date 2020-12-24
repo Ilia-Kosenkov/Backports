@@ -44,12 +44,16 @@ jobs:
       if: startsWith(runner.os, 'macOS')
       run: brew install --cask mono-mdk
       
+      # https://github.com/actions/setup-dotnet/issues/155
+    - name: Fixing Windows restore issue
+      run: |
+        dotnet clean -c Release && dotnet nuget locals all --clear
+      
     - name: Install dependencies
       run: dotnet restore
       
     - name: Build
       run: |
-        dotnet clean -c Release && dotnet nuget locals all --clear
         dotnet build -c Release --no-restore
       
     - name: Test .NET Standard 2.1 using .NET 5.0
