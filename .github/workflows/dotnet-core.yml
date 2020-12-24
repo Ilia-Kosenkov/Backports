@@ -38,7 +38,7 @@ jobs:
     
     - name: Setup Mono on MacOS
       if: startsWith(runner.os, 'macOS')
-      run: brew install mono --overwrite
+      run: brew cask install mono-mdk
       
     - name: Install dependencies
       run: dotnet restore
