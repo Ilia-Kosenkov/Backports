@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         dotnet-version: [ '5.0.100' ]
-        os: ['Windows-latest', 'ubuntu-latest']
+        os: ['Windows-latest', 'ubuntu-latest', 'macOS-latest']
         
     runs-on: ${{ matrix.os }}
     
@@ -32,9 +32,13 @@ jobs:
       with:
         dotnet-version: 5.0.100
     
-    - name: Setup Mono
+    - name: Setup Mono on Linux
       if: startsWith(runner.os, 'linux')
       run: sudo apt install mono-devel -y
+    
+    - name: Setup Mono on MacOS
+      if: startsWith(runner.os, 'macOS')
+      run: brew install mono
       
     - name: Install dependencies
       run: dotnet restore
