@@ -37,7 +37,7 @@ jobs:
         dotnet-version: 5.0.100
       
       # https://github.com/actions/setup-dotnet/issues/155
-    - name: Fixing Windows restore issue
+    - name: Resetting nuget
       run: |
         dotnet clean -c Release && dotnet nuget locals all --clear
       
