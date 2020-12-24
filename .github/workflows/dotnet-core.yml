@@ -20,6 +20,10 @@ jobs:
         dotnet-version: [ '5.0.100' ]
         os: ['Windows-latest', 'ubuntu-latest', 'macOS-latest']
         
+    defaults:
+      run:
+        shell: pwsh
+        
     runs-on: ${{ matrix.os }}
     
     name: ${{ matrix.os }} with .NET ${{ matrix.dotnet-version }}
@@ -44,7 +48,9 @@ jobs:
       run: dotnet restore
       
     - name: Build
-      run: dotnet build -c Release --no-restore
+      run: |
+        dotnet clean -c Release && dotnet nuget locals all --clear
+        dotnet build -c Release --no-restore
       
     - name: Test .NET Standard 2.1 using .NET 5.0
       run: dotnet test --no-restore --verbosity normal -f net5.0
