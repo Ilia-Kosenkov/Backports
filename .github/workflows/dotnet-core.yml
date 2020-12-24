@@ -35,14 +35,6 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 5.0.100
-    
-    - name: Setup Mono on Linux
-      if: startsWith(runner.os, 'linux')
-      run: sudo apt install mono-devel -y
-    
-    - name: Setup Mono on MacOS
-      if: startsWith(runner.os, 'macOS')
-      run: brew install --cask mono-mdk
       
       # https://github.com/actions/setup-dotnet/issues/155
     - name: Fixing Windows restore issue
