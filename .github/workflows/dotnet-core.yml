@@ -11,6 +11,7 @@ on:
       - main
       - master
       - staging
+  workflow_dispatch:
 
 jobs:
   build_and_test:
