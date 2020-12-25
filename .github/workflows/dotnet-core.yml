@@ -6,11 +6,19 @@ on:
       - main
       - master
       - staging
+    paths:
+      - '**/*cs'
+      - '**/*csproj'
+      - '**/*sln'
   pull_request:
     branches: 
       - main
       - master
       - staging
+    paths:
+      - '**/*cs'
+      - '**/*csproj'
+      - '**/*sln'
   workflow_dispatch:
 
 jobs:
