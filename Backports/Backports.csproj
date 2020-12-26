@@ -5,12 +5,9 @@
 		<LangVersion>9</LangVersion>
 		<Nullable>enable</Nullable>
 		<AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+		<Optimize>true</Optimize>
 	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
-	  <Optimize>true</Optimize>
-	</PropertyGroup>
-
+	
 	<ItemGroup>
 	  <PackageReference Include="System.Memory" Version="4.5.4" />
 	</ItemGroup>

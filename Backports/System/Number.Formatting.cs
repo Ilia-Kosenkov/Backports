@@ -273,14 +273,14 @@ namespace Backports.System
         internal const int CharStackBufferSize = 64;//32;
         private const string PosNumberFormat = "#";
 
-        private static readonly string[] s_singleDigitStringCache = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+        private static readonly string[] SingleDigitStringCache = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
-        private static readonly string[] s_posCurrencyFormats =
+        private static readonly string[] PosCurrencyFormats =
         {
             "$#", "#$", "$ #", "# $"
         };
 
-        private static readonly string[] s_negCurrencyFormats =
+        private static readonly string[] NegCurrencyFormats =
         {
             "($#)", "-$#", "$-#", "$#-",
             "(#$)", "-#$", "#-$", "#$-",
@@ -289,12 +289,12 @@ namespace Backports.System
             "$- #"
         };
 
-        private static readonly string[] s_posPercentFormats =
+        private static readonly string[] PosPercentFormats =
         {
             "# %", "#%", "%#", "% #"
         };
 
-        private static readonly string[] s_negPercentFormats =
+        private static readonly string[] NegPercentFormats =
         {
             "-# %", "-#%", "-%#",
             "%-#", "%#-",
@@ -303,7 +303,7 @@ namespace Backports.System
             "% -#", "#- %"
         };
 
-        private static readonly string[] s_negNumberFormats =
+        private static readonly string[] NegNumberFormats =
         {
             "(#)", "-#", "- #", "#-", "# -",
         };
@@ -1772,15 +1772,11 @@ namespace Backports.System
                                 if (scientific)
                                 {
                                     if (src < format.Length && format[src] == '0')
-                                    {
                                         // Handles E0, which should format the same as E-0
                                         i++;
-                                    }
                                     else if (src + 1 < format.Length && format[src] == '+' && format[src + 1] == '0')
-                                    {
                                         // Handles E+0
                                         positiveSign = true;
-                                    }
                                     else if (src + 1 < format.Length && format[src] == '-' && format[src + 1] == '0')
                                     {
                                         // Handles E-0
@@ -1828,8 +1824,8 @@ namespace Backports.System
         private static void FormatCurrency(ref ValueStringBuilder sb, in NumberBuffer number, int nMaxDigits, NumberFormatInfo info)
         {
             string fmt = number.IsNegative ?
-                s_negCurrencyFormats[info.CurrencyNegativePattern] :
-                s_posCurrencyFormats[info.CurrencyPositivePattern];
+                NegCurrencyFormats[info.CurrencyNegativePattern] :
+                PosCurrencyFormats[info.CurrencyPositivePattern];
 
             foreach (var ch in fmt)
             {
@@ -1977,7 +1973,7 @@ namespace Backports.System
         private static void FormatNumber(ref ValueStringBuilder sb, in NumberBuffer number, int nMaxDigits, NumberFormatInfo info)
         {
             string fmt = number.IsNegative ?
-                s_negNumberFormats[info.NumberNegativePattern] :
+                NegNumberFormats[info.NumberNegativePattern] :
                 PosNumberFormat;
 
             foreach (var ch in fmt)
@@ -2104,8 +2100,8 @@ namespace Backports.System
         private static void FormatPercent(ref ValueStringBuilder sb, in NumberBuffer number, int nMaxDigits, NumberFormatInfo info)
         {
             string fmt = number.IsNegative ?
-                s_negPercentFormats[info.PercentNegativePattern] :
-                s_posPercentFormats[info.PercentPositivePattern];
+                NegPercentFormats[info.PercentNegativePattern] :
+                PosPercentFormats[info.PercentPositivePattern];
 
             foreach (var ch in fmt)
             {
@@ -2129,7 +2125,7 @@ namespace Backports.System
 
         internal static void RoundNumber(ref NumberBuffer number, int pos, bool isCorrectlyRounded)
         {
-            var dig = number.DigitsMut;
+            Span<byte> dig = number.DigitsMut;
 
             var i = 0;
             while (i < pos && dig[i] != '\0')
@@ -2263,7 +2259,6 @@ namespace Backports.System
                 exponent -= 1075;
             }
             else
-            {
                 // For denormalized value, according to https://en.wikipedia.org/wiki/Double-precision_floating-point_format
                 // value = 0.fraction * 2^(1 - 1023)
                 //       = (mantissa / 2^52) * 2^(-1022)
@@ -2271,7 +2266,6 @@ namespace Backports.System
                 //       = mantissa * 2^(-1074)
                 // So f = mantissa, e = -1074
                 exponent = -1074;
-            }
 
             return fraction;
         }
@@ -2327,7 +2321,6 @@ namespace Backports.System
                 exponent -= 150;
             }
             else
-            {
                 // For denormalized value, according to https://en.wikipedia.org/wiki/Single-precision_floating-point_format
                 // value = 0.fraction * 2^(1 - 127)
                 //       = (mantissa / 2^23) * 2^(-126)
@@ -2335,7 +2328,6 @@ namespace Backports.System
                 //       = mantissa * 2^(-149)
                 // So f = mantissa, e = -149
                 exponent = -149;
-            }
 
             return fraction;
         }

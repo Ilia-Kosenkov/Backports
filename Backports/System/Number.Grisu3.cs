@@ -39,7 +39,7 @@ namespace Backports.System
             private const int MaximalTargetExponent = -32;
             private const int MinimalTargetExponent = -60;
 
-            private static readonly short[] s_CachedPowersBinaryExponent = {
+            private static readonly short[] CachedPowersBinaryExponent = {
                 -1220,
                 -1193,
                 -1166,
@@ -129,7 +129,7 @@ namespace Backports.System
                 1066,
             };
 
-            private static readonly short[] s_CachedPowersDecimalExponent = {
+            private static readonly short[] CachedPowersDecimalExponent = {
                 CachedPowersMinDecimalExponent,
                 -340,
                 -332,
@@ -219,7 +219,7 @@ namespace Backports.System
                 CachedPowersPowerMaxDecimalExponent,
             };
 
-            private static readonly ulong[] s_CachedPowersSignificand = {
+            private static readonly ulong[] CachedPowersSignificand = {
                 0xFA8FD5A0081C0288,
                 0xBAAEE17FA23EBF76,
                 0x8B16FB203055AC76,
@@ -309,7 +309,7 @@ namespace Backports.System
                 0xAF87023B9BF0EE6B,
             };
 
-            private static readonly uint[] s_SmallPowersOfTen = {
+            private static readonly uint[] SmallPowersOfTen = {
                 1,          // 10^0
                 10,         // 10^1
                 100,        // 10^2
@@ -540,15 +540,15 @@ namespace Backports.System
 
                 // 1233/4096 is approximately 1/log2(10)
                 var exponentGuess = ((numberBits + 1) * 1233) >> 12;
-                Debug.Assert((uint)exponentGuess < s_SmallPowersOfTen.Length);
+                Debug.Assert((uint)exponentGuess < SmallPowersOfTen.Length);
 
-                var power = s_SmallPowersOfTen[exponentGuess];
+                var power = SmallPowersOfTen[exponentGuess];
 
                 // We don't have any guarantees that 2^numberBits <= number
                 if (number < power)
                 {
                     exponentGuess--;
-                    power = s_SmallPowersOfTen[exponentGuess];
+                    power = SmallPowersOfTen[exponentGuess];
                 }
 
                 exponentPlusOne = exponentGuess + 1;
@@ -606,7 +606,7 @@ namespace Backports.System
                 //      If requestedDigits >= 11, integrals is not able to exhaust the count by itself since 10^(11 -1) > uint.MaxValue >= integrals.
                 //      If integrals < 10^(requestedDigits - 1), integrals cannot exhaust the count.
                 //      Otherwise, integrals might be able to exhaust the count and we need to execute the rest of the code.
-                if (fractionals == 0 && (requestedDigits >= 11 || integrals < s_SmallPowersOfTen[requestedDigits - 1]))
+                if (fractionals == 0 && (requestedDigits >= 11 || integrals < SmallPowersOfTen[requestedDigits - 1]))
                 {
                     Debug.Assert(buffer[0] == '\0');
                     length = 0;
@@ -882,19 +882,19 @@ namespace Backports.System
             // Returns a cached power-of-ten with a binary exponent in the range [minExponent; maxExponent] (boundaries included).
             private static DiyFp GetCachedPowerForBinaryExponentRange(int minExponent, int maxExponent, out int decimalExponent)
             {
-                Debug.Assert(s_CachedPowersSignificand.Length == s_CachedPowersBinaryExponent.Length);
-                Debug.Assert(s_CachedPowersSignificand.Length == s_CachedPowersDecimalExponent.Length);
+                Debug.Assert(CachedPowersSignificand.Length == CachedPowersBinaryExponent.Length);
+                Debug.Assert(CachedPowersSignificand.Length == CachedPowersDecimalExponent.Length);
 
                 var k = Math.Ceiling((minExponent + DiyFp.SignificandSize - 1) * D1Log210);
                 var index = (CachedPowersOffset + (int)k - 1) / CachedPowersDecimalExponentDistance + 1;
 
-                Debug.Assert((uint)index < s_CachedPowersSignificand.Length);
+                Debug.Assert((uint)index < CachedPowersSignificand.Length);
 
-                Debug.Assert(minExponent <= s_CachedPowersBinaryExponent[index]);
-                Debug.Assert(s_CachedPowersBinaryExponent[index] <= maxExponent);
+                Debug.Assert(minExponent <= CachedPowersBinaryExponent[index]);
+                Debug.Assert(CachedPowersBinaryExponent[index] <= maxExponent);
 
-                decimalExponent = s_CachedPowersDecimalExponent[index];
-                return new DiyFp(s_CachedPowersSignificand[index], s_CachedPowersBinaryExponent[index]);
+                decimalExponent = CachedPowersDecimalExponent[index];
+                return new DiyFp(CachedPowersSignificand[index], CachedPowersBinaryExponent[index]);
             }
 
             // Rounds the buffer upwards if the result is closer to v by possibly adding 1 to the buffer.

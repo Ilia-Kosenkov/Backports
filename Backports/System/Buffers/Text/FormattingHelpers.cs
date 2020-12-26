@@ -147,9 +147,7 @@ namespace Backports.System.Buffers.Text
                     digitsWritten = 0;
                 }
                 else
-                {
                     digitsWritten++;
-                }
             }
 
             Debug.Assert(value < 10);
@@ -291,9 +289,7 @@ namespace Backports.System.Buffers.Text
                 }
             }
             else
-            {
-                part = (uint)value;
-            }
+                part = (uint) value;
 
             switch (part)
             {
