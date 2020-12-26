@@ -1,3 +1,5 @@
+![Build & Test](https://github.com/Ilia-Kosenkov/Backports/workflows/Build%20&%20Test/badge.svg?branch=master)
+
 # Backports
 Backporting some Span APIs to .NET Standard2.0
 
