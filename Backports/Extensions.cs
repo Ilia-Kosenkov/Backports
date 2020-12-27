@@ -135,11 +135,6 @@ namespace Backports
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ref readonly T Inc<T>(in T @this) where T : unmanaged =>
             ref Unsafe.Add(ref Unsafe.AsRef(in @this), 1);
-        
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ref readonly T Add<T>(in T source, int elementOffset) where T : unmanaged =>
-            ref Unsafe.Add(ref Unsafe.AsRef(in source), elementOffset);
     }
 }
 

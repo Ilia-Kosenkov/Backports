@@ -351,7 +351,7 @@ namespace Backports.System
             
             p = ref UInt32ToDecChars(ref p, rep.ULo, 0);
 
-            var i = (int)RefTools.Ref.ByteOffset(in p, in Add(in buffer, DecimalPrecision));
+            var i = (int)RefTools.Ref.ByteOffset(in p, in RefTools.Ref.Add(in buffer, DecimalPrecision));
                 
             //(int)((buffer + DecimalPrecision) - p);
 
@@ -913,7 +913,7 @@ namespace Backports.System
 
             //var i = (int)(buffer + Int32Precision - p);
             //var i = (int)Unsafe.ByteOffset(ref p, ref Unsafe.Add(ref buffer, Int32Precision));
-            var i = (int) RefTools.Ref.ByteOffset(in p, in Add(in buffer, Int32Precision));
+            var i = (int) RefTools.Ref.ByteOffset(in p, in RefTools.Ref.Add(in buffer, Int32Precision));
 
             number.DigitsCount = i;
             number.Scale = i;
@@ -1010,7 +1010,7 @@ namespace Backports.System
             ref readonly var p = ref UInt32ToDecChars(ref Unsafe.Add(ref buffer, UInt32Precision), value, 0);
 
             //var i = (int)(buffer + UInt32Precision - p);
-            var i = (int) RefTools.Ref.ByteOffset(in p, in Add(in buffer, UInt32Precision));
+            var i = (int) RefTools.Ref.ByteOffset(in p, in RefTools.Ref.Add(in buffer, UInt32Precision));
             
 
             number.DigitsCount = i;
@@ -1096,7 +1096,7 @@ namespace Backports.System
             p = ref UInt32ToDecChars(ref p, Low32(value), 0);
 
             //var i = (int)(buffer + Int64Precision - p);
-            var i = (int) RefTools.Ref.ByteOffset(in p, in Add(in buffer, Int64Precision));
+            var i = (int) RefTools.Ref.ByteOffset(in p, in RefTools.Ref.Add(in buffer, Int64Precision));
 
             number.DigitsCount = i;
             number.Scale = i;
@@ -1191,7 +1191,7 @@ namespace Backports.System
             p = ref UInt32ToDecChars(ref p, Low32(value), 0);
 
             //var i = (int)(buffer + UInt64Precision - p);
-            var i = (int) RefTools.Ref.ByteOffset(in p, in Add(in buffer, UInt64Precision));
+            var i = (int) RefTools.Ref.ByteOffset(in p, in RefTools.Ref.Add(in buffer, UInt64Precision));
 
             number.DigitsCount = i;
             number.Scale = i;
@@ -1896,7 +1896,7 @@ namespace Backports.System
                         ref var p = ref Unsafe.Add(ref spanPtr, bufferSize - 1);
                         for (var i = digPos - 1; i >= 0; i--)
                         {
-                            p = i < digStart ? (char)Add(in dig, i) : '0';
+                            p = i < digStart ? (char) RefTools.Ref.Add(in dig, i) : '0';
                             p = ref RefTools.Ref.DecMut(ref p);
 
                             if (groupSize <= 0) 
@@ -1919,7 +1919,7 @@ namespace Backports.System
                         }
                         
                         Debug.Assert((long)RefTools.Ref.ItemOffset(in p, in spanPtr) >= 1, "Underflow");
-                        dig = ref Add(in dig, digStart);
+                        dig = ref RefTools.Ref.Add(in dig, digStart);
                     }
                 }
                 else
@@ -2038,7 +2038,7 @@ namespace Backports.System
 
             Span<char> digits = stackalloc char[MaxUInt32DecDigits];
             ref readonly var p = ref UInt32ToDecChars(ref Unsafe.Add(ref digits[0],  MaxUInt32DecDigits), (uint)value, minDigits);
-            sb.Append(in p, (int) RefTools.Ref.ItemOffset(in p, in Add(in digits[0], MaxUInt32DecDigits)));
+            sb.Append(in p, (int) RefTools.Ref.ItemOffset(in p, in RefTools.Ref.Add(in digits[0], MaxUInt32DecDigits)));
         }
 
         private static void FormatGeneral(ref ValueStringBuilder sb, in NumberBuffer number, int nMaxDigits, NumberFormatInfo info, char expChar, bool bSuppressScientific)
