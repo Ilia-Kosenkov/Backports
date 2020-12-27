@@ -33,7 +33,7 @@ jobs:
       run:
         shell: pwsh
     
-    enb: 
+    env: 
       GITHUB_NUGET_RO: ${{ secrets.GITHUB_TOKEN }}
 
     runs-on: ${{ matrix.os }}
