@@ -7,9 +7,10 @@
 		<AllowUnsafeBlocks>false</AllowUnsafeBlocks>
 		<Optimize>true</Optimize>
 	</PropertyGroup>
-	
-	<ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
 	  <PackageReference Include="RefTools" Version="0.1.2" />
+	</ItemGroup>
+	<ItemGroup>
 	  <PackageReference Include="System.Memory" Version="4.5.4" />
 	</ItemGroup>
 
