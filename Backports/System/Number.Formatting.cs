@@ -11,8 +11,6 @@ using System.Runtime.CompilerServices;
 using Backports.System.Buffers.Text;
 using Backports.System.Text;
 
-using static Backports.Ref;
-
 namespace Backports.System
 {
     // The Format methods provided by the numeric classes convert
@@ -368,7 +366,7 @@ namespace Backports.System
                 //p = ref Ref.Increment(ref p);
                 dst = src;
                 dst = ref RefTools.Ref.IncMut(ref dst);
-                src = ref Inc(in src);
+                src = ref RefTools.Ref.Inc(in src);
             }
             //*dst = (byte)('\0');
             dst = (byte) '\0';
@@ -927,7 +925,7 @@ namespace Backports.System
                 //p = ref Ref.Increment(ref p);
                 dst = src;
                 dst = ref RefTools.Ref.IncMut(ref dst);
-                src = ref Inc(in src);
+                src = ref RefTools.Ref.Inc(in src);
             }
 
             dst = (byte)'\0';
@@ -1023,7 +1021,7 @@ namespace Backports.System
                 //dst = ref Ref.Increment(ref dst);
                 dst = ref RefTools.Ref.IncMut(ref dst);
                 //p = ref Ref.Increment(ref p);
-                p = ref Inc(in p);
+                p = ref RefTools.Ref.Inc(in p);
             }
 
             dst = (byte)'\0';
@@ -1205,7 +1203,7 @@ namespace Backports.System
                 //p = ref IncMut(ref p);
                 dst = src;
                 dst = ref RefTools.Ref.IncMut(ref dst);
-                src = ref Inc(in src);
+                src = ref RefTools.Ref.Inc(in src);
                 //*dst++ = *p++;
             }
 
@@ -1672,7 +1670,7 @@ namespace Backports.System
                                     if (cur != 0)
                                     {
                                         sb.Append((char) cur);
-                                        cur = ref Inc(in cur);
+                                        cur = ref RefTools.Ref.Inc(in cur);
                                     }
                                     else
                                         sb.Append('0');
@@ -1707,7 +1705,7 @@ namespace Backports.System
                                     if (cur != 0)
                                     {
                                         ch = (char) cur;
-                                        cur = ref Inc(in cur);
+                                        cur = ref RefTools.Ref.Inc(in cur);
                                     }
                                     else
                                         ch = digPos > lastDigit ? '0' : '\0';
@@ -1929,7 +1927,7 @@ namespace Backports.System
                         if (dig != 0)
                         {
                             sb.Append((char) dig);
-                            dig = ref Inc(in dig);
+                            dig = ref RefTools.Ref.Inc(in dig);
                         }
                         else
                             sb.Append('0');
@@ -1961,7 +1959,7 @@ namespace Backports.System
                 if (dig != 0)
                 {
                     sb.Append((char)dig);
-                    dig = ref Inc(in dig);
+                    dig = ref RefTools.Ref.Inc(in dig);
                 }
                 else
                     sb.Append('0');
@@ -2000,7 +1998,7 @@ namespace Backports.System
             if (dig != 0)
             {
                 sb.Append((char) dig);
-                dig = ref Inc(in dig);
+                dig = ref RefTools.Ref.Inc(in dig);
             }
             else
                 sb.Append('0');
@@ -2014,7 +2012,7 @@ namespace Backports.System
                 if (dig != 0)
                 {
                     sb.Append((char)dig);
-                    dig = ref Inc(in dig);
+                    dig = ref RefTools.Ref.Inc(in dig);
                 }
                 else
                     sb.Append('0');
@@ -2065,7 +2063,7 @@ namespace Backports.System
                     if (dig != 0)
                     {
                         sb.Append((char) dig);
-                        dig = ref Inc(in dig);
+                        dig = ref RefTools.Ref.Inc(in dig);
                     }
                     else
                         sb.Append('0');
@@ -2089,7 +2087,7 @@ namespace Backports.System
                 while (dig != 0)
                 {
                     sb.Append((char) dig);
-                    dig = ref Inc(in dig);
+                    dig = ref RefTools.Ref.Inc(in dig);
                 }
             }
 
