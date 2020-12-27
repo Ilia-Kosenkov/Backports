@@ -143,15 +143,6 @@ namespace Backports
         public static ref T DecMut<T>(ref T @this) where T : unmanaged => ref Unsafe.Subtract(ref @this, 1);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static nint Offset<T>(in T origin, in T target) where T : unmanaged =>
-            new(Unsafe.ByteOffset(ref Unsafe.AsRef(in origin), ref Unsafe.AsRef(in target)).ToInt64() / Unsafe.SizeOf<T>());
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static nint Offset(in byte origin, in byte target) =>
-            Unsafe.ByteOffset(ref Unsafe.AsRef(in origin), ref Unsafe.AsRef(in target));
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ref readonly T Add<T>(in T source, int elementOffset) where T : unmanaged =>
             ref Unsafe.Add(ref Unsafe.AsRef(in source), elementOffset);
     }
