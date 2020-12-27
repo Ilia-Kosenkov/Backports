@@ -131,18 +131,11 @@ namespace Backports
 
     internal static class Ref
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ref T Increment<T>(this ref T origin) where T : unmanaged => ref Unsafe.Add(ref origin, 1);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ref T Decrement<T>(this ref T origin) where T : unmanaged => ref Unsafe.Subtract(ref origin, 1);
-
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ref readonly T Inc<T>(in T @this) where T : unmanaged =>
             ref Unsafe.Add(ref Unsafe.AsRef(in @this), 1);
         
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ref readonly T Dec<T>(in T @this) where T : unmanaged =>
-            ref Unsafe.Subtract(ref Unsafe.AsRef(in @this), 1);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ref T IncMut<T>(ref T @this) where T : unmanaged => ref Unsafe.Add(ref @this, 1);
@@ -161,10 +154,6 @@ namespace Backports
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ref readonly T Add<T>(in T source, int elementOffset) where T : unmanaged =>
             ref Unsafe.Add(ref Unsafe.AsRef(in source), elementOffset);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ref readonly T Sub<T>(in T source, int elementOffset) where T : unmanaged =>
-            ref Unsafe.Subtract(ref Unsafe.AsRef(in source), elementOffset);
     }
 }
 
