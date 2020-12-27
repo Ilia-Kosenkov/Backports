@@ -32,7 +32,10 @@ jobs:
     defaults:
       run:
         shell: pwsh
-        
+    
+    env: 
+      GITHUB_NUGET_RO: ${{ secrets.GITHUB_TOKEN }}
+
     runs-on: ${{ matrix.os }}
     
     name: ${{ matrix.os }} with .NET ${{ matrix.dotnet-version }}

@@ -759,7 +759,7 @@ namespace Backports.System
                 result = default;
                 result._length = maxResultLength;
                 //Buffer.ZeroMemory((byte*)result.GetBlocksPointer(), (uint)maxResultLength * sizeof(uint));
-                Buffer.ZeroMemory(ref GetBlockMut(ref result), (uint)maxResultLength * sizeof(uint));
+                RefTools.Buffer.ZeroMemory(ref GetBlockMut(ref result), (uint)maxResultLength * sizeof(uint));
 
                 var smallIndex = 0;
                 var resultStartIndex = 0;
@@ -810,7 +810,7 @@ namespace Backports.System
                 Debug.Assert(unchecked((uint)result._length) <= MaxBlockCount);
                 if (blocksToShift > 0)
                     //Buffer.ZeroMemory((byte*)result.GetBlocksPointer(), blocksToShift * sizeof(uint));
-                    Buffer.ZeroMemory(ref GetBlockMut(ref result), blocksToShift * sizeof(uint));
+                    RefTools.Buffer.ZeroMemory(ref GetBlockMut(ref result), blocksToShift * sizeof(uint));
                 //result._blocks[blocksToShift] = 1U << (int)remainingBitsToShift;
                 AtMut(ref result, blocksToShift) = 1U << (int)remainingBitsToShift;
             }
@@ -1105,7 +1105,7 @@ namespace Backports.System
                 var rhsLength = value._length;
                 result = default;
                 result._length = rhsLength;
-                Buffer.Memcpy(ref AtMut(ref result, 0), in At(in value, 0), rhsLength);
+                RefTools.Buffer.Memcpy(ref AtMut(ref result, 0), in At(in value, 0), rhsLength);
             }
 
             public static void SetZero(out BigInteger result)
@@ -1145,7 +1145,7 @@ namespace Backports.System
 
                     // Zero the remaining low blocks
                     //Buffer.ZeroMemory((byte*)GetBlocksPointer(), blocksToShift * sizeof(uint));
-                    Buffer.ZeroMemory(ref GetBlockMut(ref this), blocksToShift * sizeof(uint));
+                    RefTools.Buffer.ZeroMemory(ref GetBlockMut(ref this), blocksToShift * sizeof(uint));
 
                 }
                 else
@@ -1186,7 +1186,7 @@ namespace Backports.System
                     // Zero the remaining low blocks
                     // Using different memory zeroing method
                     //Buffer.ZeroMemory((byte*)GetBlocksPointer(), blocksToShift * sizeof(uint));
-                    Buffer.ZeroMemory(ref GetBlockMut(ref this), blocksToShift * sizeof(uint));
+                    RefTools.Buffer.ZeroMemory(ref GetBlockMut(ref this), blocksToShift * sizeof(uint));
                     // Check if the terminating block has no set bits
                     //if (_blocks[_length - 1] == 0) _length--;
                     if (At(in this, _length - 1) == 0) 
