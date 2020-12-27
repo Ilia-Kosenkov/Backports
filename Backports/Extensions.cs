@@ -138,11 +138,6 @@ namespace Backports
         
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ref T IncMut<T>(ref T @this) where T : unmanaged => ref Unsafe.Add(ref @this, 1);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ref T DecMut<T>(ref T @this) where T : unmanaged => ref Unsafe.Subtract(ref @this, 1);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ref readonly T Add<T>(in T source, int elementOffset) where T : unmanaged =>
             ref Unsafe.Add(ref Unsafe.AsRef(in source), elementOffset);
     }

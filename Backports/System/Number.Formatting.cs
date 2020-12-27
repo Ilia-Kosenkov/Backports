@@ -367,7 +367,7 @@ namespace Backports.System
                 //dst = ref Ref.Increment(ref dst);
                 //p = ref Ref.Increment(ref p);
                 dst = src;
-                dst = ref IncMut(ref dst);
+                dst = ref RefTools.Ref.IncMut(ref dst);
                 src = ref Inc(in src);
             }
             //*dst = (byte)('\0');
@@ -926,7 +926,7 @@ namespace Backports.System
                 //dst = ref Ref.Increment(ref dst);
                 //p = ref Ref.Increment(ref p);
                 dst = src;
-                dst = ref IncMut(ref dst);
+                dst = ref RefTools.Ref.IncMut(ref dst);
                 src = ref Inc(in src);
             }
 
@@ -959,7 +959,7 @@ namespace Backports.System
 
                 for (var i = sNegative.Length - 1; i >= 0; i--)
                 {
-                    (p = ref DecMut(ref p)) = sNegative[i];
+                    (p = ref RefTools.Ref.DecMut(ref p)) = sNegative[i];
                 }
 
                 //Debug.Assert(p == buffer);
@@ -994,7 +994,7 @@ namespace Backports.System
             {
                 var digit = (byte)(value & 0xF);
                 
-                (buffer = ref DecMut(ref buffer)) = (char)(digit + (digit < 10 ? (byte)'0' : hexBase));
+                (buffer = ref RefTools.Ref.DecMut(ref buffer)) = (char)(digit + (digit < 10 ? (byte)'0' : hexBase));
                 value >>= 4;
             }
             return ref buffer;
@@ -1021,7 +1021,7 @@ namespace Backports.System
             {
                 dst = p;
                 //dst = ref Ref.Increment(ref dst);
-                dst = ref IncMut(ref dst);
+                dst = ref RefTools.Ref.IncMut(ref dst);
                 //p = ref Ref.Increment(ref p);
                 p = ref Inc(in p);
             }
@@ -1037,7 +1037,7 @@ namespace Backports.System
             while (--digits >= 0 || value != 0)
             {
                 value = MathP.DivRem(value, 10, out var remainder);
-                (bufferEnd = ref DecMut(ref bufferEnd)) = (byte)(remainder + '0');
+                (bufferEnd = ref RefTools.Ref.DecMut(ref bufferEnd)) = (byte)(remainder + '0');
             }
             return ref bufferEnd;
         }
@@ -1047,7 +1047,7 @@ namespace Backports.System
             while (--digits >= 0 || value != 0)
             {
                 value = MathP.DivRem(value, 10, out var remainder);
-                (bufferEnd = ref DecMut(ref bufferEnd)) = (char)(remainder + '0');
+                (bufferEnd = ref RefTools.Ref.DecMut(ref bufferEnd)) = (char)(remainder + '0');
             }
             return ref bufferEnd;
         }
@@ -1069,7 +1069,7 @@ namespace Backports.System
                 do
                 {
                     value = MathP.DivRem(value, 10, out var remainder);
-                    (p = ref DecMut(ref p)) = (char)(remainder + '0');
+                    (p = ref RefTools.Ref.DecMut(ref p)) = (char)(remainder + '0');
                 }
                 while (value != 0);
             }
@@ -1106,8 +1106,8 @@ namespace Backports.System
             {
                 //*dst++ = *p++;
                 dst = p;
-                dst = ref IncMut(ref dst);
-                p = ref IncMut(ref p);
+                dst = ref RefTools.Ref.IncMut(ref dst);
+                p = ref RefTools.Ref.IncMut(ref p);
             }
 
             dst = (byte)'\0';
@@ -1146,7 +1146,7 @@ namespace Backports.System
 
                 for (var i = sNegative.Length - 1; i >= 0; i--)
                     // *(--p)
-                    (p = ref DecMut(ref p)) = sNegative[i];
+                    (p = ref RefTools.Ref.DecMut(ref p)) = sNegative[i];
 
                 Debug.Assert(Unsafe.AreSame(ref p, ref buffer));
             }
@@ -1204,7 +1204,7 @@ namespace Backports.System
                 //dst = ref IncMut(ref dst);
                 //p = ref IncMut(ref p);
                 dst = src;
-                dst = ref IncMut(ref dst);
+                dst = ref RefTools.Ref.IncMut(ref dst);
                 src = ref Inc(in src);
                 //*dst++ = *p++;
             }
@@ -1897,7 +1897,7 @@ namespace Backports.System
                         for (var i = digPos - 1; i >= 0; i--)
                         {
                             p = i < digStart ? (char)Add(in dig, i) : '0';
-                            p = ref DecMut(ref p);
+                            p = ref RefTools.Ref.DecMut(ref p);
 
                             if (groupSize <= 0) 
                                 continue;
@@ -1907,7 +1907,7 @@ namespace Backports.System
                             for (var j = sGroup!.Length - 1; j >= 0; j--)
                             {
                                 p = sGroup[j];
-                                p = ref DecMut(ref p);
+                                p = ref RefTools.Ref.DecMut(ref p);
                             }
 
                             if (groupSizeIndex < groupDigits.Length - 1)
