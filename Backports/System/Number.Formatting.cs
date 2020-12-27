@@ -11,6 +11,8 @@ using System.Runtime.CompilerServices;
 using Backports.System.Buffers.Text;
 using Backports.System.Text;
 
+using static RefTools.Ref;
+
 namespace Backports.System
 {
     // The Format methods provided by the numeric classes convert
@@ -349,7 +351,7 @@ namespace Backports.System
             
             p = ref UInt32ToDecChars(ref p, rep.ULo, 0);
 
-            var i = (int)RefTools.Ref.ByteOffset(in p, in RefTools.Ref.Add(in buffer, DecimalPrecision));
+            var i = (int)ByteOffset(in p, in Add(in buffer, DecimalPrecision));
                 
             //(int)((buffer + DecimalPrecision) - p);
 
@@ -365,8 +367,8 @@ namespace Backports.System
                 //dst = ref Ref.Increment(ref dst);
                 //p = ref Ref.Increment(ref p);
                 dst = src;
-                dst = ref RefTools.Ref.IncMut(ref dst);
-                src = ref RefTools.Ref.Inc(in src);
+                dst = ref IncMut(ref dst);
+                src = ref Inc(in src);
             }
             //*dst = (byte)('\0');
             dst = (byte) '\0';
@@ -911,7 +913,7 @@ namespace Backports.System
 
             //var i = (int)(buffer + Int32Precision - p);
             //var i = (int)Unsafe.ByteOffset(ref p, ref Unsafe.Add(ref buffer, Int32Precision));
-            var i = (int) RefTools.Ref.ByteOffset(in p, in RefTools.Ref.Add(in buffer, Int32Precision));
+            var i = (int) ByteOffset(in p, in Add(in buffer, Int32Precision));
 
             number.DigitsCount = i;
             number.Scale = i;
@@ -924,8 +926,8 @@ namespace Backports.System
                 //dst = ref Ref.Increment(ref dst);
                 //p = ref Ref.Increment(ref p);
                 dst = src;
-                dst = ref RefTools.Ref.IncMut(ref dst);
-                src = ref RefTools.Ref.Inc(in src);
+                dst = ref IncMut(ref dst);
+                src = ref Inc(in src);
             }
 
             dst = (byte)'\0';
@@ -957,7 +959,7 @@ namespace Backports.System
 
                 for (var i = sNegative.Length - 1; i >= 0; i--)
                 {
-                    (p = ref RefTools.Ref.DecMut(ref p)) = sNegative[i];
+                    (p = ref DecMut(ref p)) = sNegative[i];
                 }
 
                 //Debug.Assert(p == buffer);
@@ -992,7 +994,7 @@ namespace Backports.System
             {
                 var digit = (byte)(value & 0xF);
                 
-                (buffer = ref RefTools.Ref.DecMut(ref buffer)) = (char)(digit + (digit < 10 ? (byte)'0' : hexBase));
+                (buffer = ref DecMut(ref buffer)) = (char)(digit + (digit < 10 ? (byte)'0' : hexBase));
                 value >>= 4;
             }
             return ref buffer;
@@ -1008,7 +1010,7 @@ namespace Backports.System
             ref readonly var p = ref UInt32ToDecChars(ref Unsafe.Add(ref buffer, UInt32Precision), value, 0);
 
             //var i = (int)(buffer + UInt32Precision - p);
-            var i = (int) RefTools.Ref.ByteOffset(in p, in RefTools.Ref.Add(in buffer, UInt32Precision));
+            var i = (int) ByteOffset(in p, in Add(in buffer, UInt32Precision));
             
 
             number.DigitsCount = i;
@@ -1019,9 +1021,9 @@ namespace Backports.System
             {
                 dst = p;
                 //dst = ref Ref.Increment(ref dst);
-                dst = ref RefTools.Ref.IncMut(ref dst);
+                dst = ref IncMut(ref dst);
                 //p = ref Ref.Increment(ref p);
-                p = ref RefTools.Ref.Inc(in p);
+                p = ref Inc(in p);
             }
 
             dst = (byte)'\0';
@@ -1035,7 +1037,7 @@ namespace Backports.System
             while (--digits >= 0 || value != 0)
             {
                 value = MathP.DivRem(value, 10, out var remainder);
-                (bufferEnd = ref RefTools.Ref.DecMut(ref bufferEnd)) = (byte)(remainder + '0');
+                (bufferEnd = ref DecMut(ref bufferEnd)) = (byte)(remainder + '0');
             }
             return ref bufferEnd;
         }
@@ -1045,7 +1047,7 @@ namespace Backports.System
             while (--digits >= 0 || value != 0)
             {
                 value = MathP.DivRem(value, 10, out var remainder);
-                (bufferEnd = ref RefTools.Ref.DecMut(ref bufferEnd)) = (char)(remainder + '0');
+                (bufferEnd = ref DecMut(ref bufferEnd)) = (char)(remainder + '0');
             }
             return ref bufferEnd;
         }
@@ -1067,7 +1069,7 @@ namespace Backports.System
                 do
                 {
                     value = MathP.DivRem(value, 10, out var remainder);
-                    (p = ref RefTools.Ref.DecMut(ref p)) = (char)(remainder + '0');
+                    (p = ref DecMut(ref p)) = (char)(remainder + '0');
                 }
                 while (value != 0);
             }
@@ -1094,7 +1096,7 @@ namespace Backports.System
             p = ref UInt32ToDecChars(ref p, Low32(value), 0);
 
             //var i = (int)(buffer + Int64Precision - p);
-            var i = (int) RefTools.Ref.ByteOffset(in p, in RefTools.Ref.Add(in buffer, Int64Precision));
+            var i = (int) ByteOffset(in p, in Add(in buffer, Int64Precision));
 
             number.DigitsCount = i;
             number.Scale = i;
@@ -1104,8 +1106,8 @@ namespace Backports.System
             {
                 //*dst++ = *p++;
                 dst = p;
-                dst = ref RefTools.Ref.IncMut(ref dst);
-                p = ref RefTools.Ref.IncMut(ref p);
+                dst = ref IncMut(ref dst);
+                p = ref IncMut(ref p);
             }
 
             dst = (byte)'\0';
@@ -1140,11 +1142,11 @@ namespace Backports.System
                     digits -= 9;
                 }
                 p = ref UInt32ToDecChars(ref p, Low32(value), digits);
-                Debug.Assert((int) RefTools.Ref.ItemOffset(in buffer, in p) == sNegative.Length);
+                Debug.Assert((int) ItemOffset(in buffer, in p) == sNegative.Length);
 
                 for (var i = sNegative.Length - 1; i >= 0; i--)
                     // *(--p)
-                    (p = ref RefTools.Ref.DecMut(ref p)) = sNegative[i];
+                    (p = ref DecMut(ref p)) = sNegative[i];
 
                 Debug.Assert(Unsafe.AreSame(ref p, ref buffer));
             }
@@ -1189,7 +1191,7 @@ namespace Backports.System
             p = ref UInt32ToDecChars(ref p, Low32(value), 0);
 
             //var i = (int)(buffer + UInt64Precision - p);
-            var i = (int) RefTools.Ref.ByteOffset(in p, in RefTools.Ref.Add(in buffer, UInt64Precision));
+            var i = (int) ByteOffset(in p, in Add(in buffer, UInt64Precision));
 
             number.DigitsCount = i;
             number.Scale = i;
@@ -1202,8 +1204,8 @@ namespace Backports.System
                 //dst = ref IncMut(ref dst);
                 //p = ref IncMut(ref p);
                 dst = src;
-                dst = ref RefTools.Ref.IncMut(ref dst);
-                src = ref RefTools.Ref.Inc(in src);
+                dst = ref IncMut(ref dst);
+                src = ref Inc(in src);
                 //*dst++ = *p++;
             }
 
@@ -1670,7 +1672,7 @@ namespace Backports.System
                                     if (cur != 0)
                                     {
                                         sb.Append((char) cur);
-                                        cur = ref RefTools.Ref.Inc(in cur);
+                                        cur = ref Inc(in cur);
                                     }
                                     else
                                         sb.Append('0');
@@ -1705,7 +1707,7 @@ namespace Backports.System
                                     if (cur != 0)
                                     {
                                         ch = (char) cur;
-                                        cur = ref RefTools.Ref.Inc(in cur);
+                                        cur = ref Inc(in cur);
                                     }
                                     else
                                         ch = digPos > lastDigit ? '0' : '\0';
@@ -1894,8 +1896,8 @@ namespace Backports.System
                         ref var p = ref Unsafe.Add(ref spanPtr, bufferSize - 1);
                         for (var i = digPos - 1; i >= 0; i--)
                         {
-                            p = i < digStart ? (char) RefTools.Ref.Add(in dig, i) : '0';
-                            p = ref RefTools.Ref.DecMut(ref p);
+                            p = i < digStart ? (char) Add(in dig, i) : '0';
+                            p = ref DecMut(ref p);
 
                             if (groupSize <= 0) 
                                 continue;
@@ -1905,7 +1907,7 @@ namespace Backports.System
                             for (var j = sGroup!.Length - 1; j >= 0; j--)
                             {
                                 p = sGroup[j];
-                                p = ref RefTools.Ref.DecMut(ref p);
+                                p = ref DecMut(ref p);
                             }
 
                             if (groupSizeIndex < groupDigits.Length - 1)
@@ -1916,8 +1918,8 @@ namespace Backports.System
                             digitCount = 0;
                         }
                         
-                        Debug.Assert((long)RefTools.Ref.ItemOffset(in p, in spanPtr) >= 1, "Underflow");
-                        dig = ref RefTools.Ref.Add(in dig, digStart);
+                        Debug.Assert((long)ItemOffset(in p, in spanPtr) >= 1, "Underflow");
+                        dig = ref Add(in dig, digStart);
                     }
                 }
                 else
@@ -1927,7 +1929,7 @@ namespace Backports.System
                         if (dig != 0)
                         {
                             sb.Append((char) dig);
-                            dig = ref RefTools.Ref.Inc(in dig);
+                            dig = ref Inc(in dig);
                         }
                         else
                             sb.Append('0');
@@ -1959,7 +1961,7 @@ namespace Backports.System
                 if (dig != 0)
                 {
                     sb.Append((char)dig);
-                    dig = ref RefTools.Ref.Inc(in dig);
+                    dig = ref Inc(in dig);
                 }
                 else
                     sb.Append('0');
@@ -1998,7 +2000,7 @@ namespace Backports.System
             if (dig != 0)
             {
                 sb.Append((char) dig);
-                dig = ref RefTools.Ref.Inc(in dig);
+                dig = ref Inc(in dig);
             }
             else
                 sb.Append('0');
@@ -2012,7 +2014,7 @@ namespace Backports.System
                 if (dig != 0)
                 {
                     sb.Append((char)dig);
-                    dig = ref RefTools.Ref.Inc(in dig);
+                    dig = ref Inc(in dig);
                 }
                 else
                     sb.Append('0');
@@ -2036,7 +2038,7 @@ namespace Backports.System
 
             Span<char> digits = stackalloc char[MaxUInt32DecDigits];
             ref readonly var p = ref UInt32ToDecChars(ref Unsafe.Add(ref digits[0],  MaxUInt32DecDigits), (uint)value, minDigits);
-            sb.Append(in p, (int) RefTools.Ref.ItemOffset(in p, in RefTools.Ref.Add(in digits[0], MaxUInt32DecDigits)));
+            sb.Append(in p, (int) ItemOffset(in p, in Add(in digits[0], MaxUInt32DecDigits)));
         }
 
         private static void FormatGeneral(ref ValueStringBuilder sb, in NumberBuffer number, int nMaxDigits, NumberFormatInfo info, char expChar, bool bSuppressScientific)
@@ -2063,7 +2065,7 @@ namespace Backports.System
                     if (dig != 0)
                     {
                         sb.Append((char) dig);
-                        dig = ref RefTools.Ref.Inc(in dig);
+                        dig = ref Inc(in dig);
                     }
                     else
                         sb.Append('0');
@@ -2087,7 +2089,7 @@ namespace Backports.System
                 while (dig != 0)
                 {
                     sb.Append((char) dig);
-                    dig = ref RefTools.Ref.Inc(in dig);
+                    dig = ref Inc(in dig);
                 }
             }
 

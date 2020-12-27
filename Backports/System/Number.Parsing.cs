@@ -9,6 +9,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
+using static RefTools.Ref;
+
 namespace Backports.System
 {
     // The Parse methods provided by the numeric classes convert a
@@ -69,7 +71,7 @@ namespace Backports.System
                 //n += (*p++ - '0');
                 n += p - '0';
                 //p = ref Ref.Increment(ref p);
-                p = ref RefTools.Ref.Inc(in p);
+                p = ref Inc(in p);
             }
             if (number.IsNegative)
             {
@@ -105,7 +107,7 @@ namespace Backports.System
                     continue;
                 //n += (*p++ - '0');
                 n += p - '0';
-                p = ref RefTools.Ref.Inc(in p);
+                p = ref Inc(in p);
             }
             if (number.IsNegative)
             {
@@ -143,7 +145,7 @@ namespace Backports.System
                     continue;
                 //var newN = n + (uint)(*p++ - '0');
                 var newN = n + (uint) (p - '0');
-                p = ref RefTools.Ref.Inc(in p);
+                p = ref Inc(in p);
                 // Detect an overflow here...
                 if (newN < n)
                     return false;
@@ -172,7 +174,7 @@ namespace Backports.System
                     continue;
                 //var newN = n + (ulong)(*p++ - '0');
                 var newN = n + (ulong) (p - '0');
-                p = ref RefTools.Ref.Inc(in p);
+                p = ref Inc(in p);
                 // Detect an overflow here...
                 if (newN < n)
                     return false;
@@ -1491,7 +1493,7 @@ namespace Backports.System
                 low64 *= 10;
                 low64 += c - '0';
                 //c = *++p;
-                c = p = ref RefTools.Ref.Inc(in p);
+                c = p = ref Inc(in p);
                 if (low64 >= ulong.MaxValue / 10)
                     break;
                 if (c != 0) 
@@ -1524,7 +1526,7 @@ namespace Backports.System
                     if (low64 < c)
                         high++;
                     //c = *++p;
-                    c = p = ref RefTools.Ref.Inc(in p);
+                    c = p = ref Inc(in p);
                 }
 
                 e--;
@@ -1535,7 +1537,7 @@ namespace Backports.System
                 if (c == '5' && (low64 & 1) == 0)
                 {
                     //c = *++p;
-                    c = p = ref RefTools.Ref.Inc(in p);
+                    c = p = ref Inc(in p);
 
                     var hasZeroTail = !number.HasNonZeroTail;
 
@@ -1551,7 +1553,7 @@ namespace Backports.System
                     {
                         hasZeroTail &= c == '0';
                         //c = *++p;
-                        c = p = ref RefTools.Ref.Inc(in p);
+                        c = p = ref Inc(in p);
                     }
 
                     // We should either be at the end of the stream or have a non-zero tail
