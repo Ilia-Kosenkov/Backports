@@ -880,66 +880,45 @@ namespace Backports.System
 
         internal static string GetRealFormat(ReadOnlySpan<char> format, DateTimeFormatInfo dtfi)
         {
-            string realFormat = string.Empty;
-
-            switch (format[0])
+            string realFormat = format[0] switch
             {
-                case 'd':       // Short Date
-                    realFormat = dtfi.ShortDatePattern;
-                    break;
-                case 'D':       // Long Date
-                    realFormat = dtfi.LongDatePattern;
-                    break;
-                case 'f':       // Full (long date + short time)
-                    realFormat = dtfi.LongDatePattern + " " + dtfi.ShortTimePattern;
-                    break;
-                case 'F':       // Full (long date + long time)
-                    realFormat = dtfi.FullDateTimePattern;
-                    break;
-                case 'g':       // General (short date + short time)
-                    // TODO: Here
-                    //realFormat = dtfi.GeneralShortTimePattern;
-                    break;
-                case 'G':       // General (short date + long time)
-                    // TODO: Here
-                    //realFormat = dtfi.GeneralLongTimePattern;
-                    break;
-                case 'm':
-                case 'M':       // Month/Day Date
-                    realFormat = dtfi.MonthDayPattern;
-                    break;
-                case 'o':
-                case 'O':
-                    realFormat = RoundtripFormat;
-                    break;
-                case 'r':
-                case 'R':       // RFC 1123 Standard
-                    realFormat = dtfi.RFC1123Pattern;
-                    break;
-                case 's':       // Sortable without Time Zone Info
-                    realFormat = dtfi.SortableDateTimePattern;
-                    break;
-                case 't':       // Short Time
-                    realFormat = dtfi.ShortTimePattern;
-                    break;
-                case 'T':       // Long Time
-                    realFormat = dtfi.LongTimePattern;
-                    break;
-                case 'u':       // Universal with Sortable format
-                    realFormat = dtfi.UniversalSortableDateTimePattern;
-                    break;
-                case 'U':       // Universal with Full (long date + long time) format
-                    realFormat = dtfi.FullDateTimePattern;
-                    break;
-                case 'y':
-                case 'Y':       // Year/Month Date
-                    realFormat = dtfi.YearMonthPattern;
-                    break;
-                default:
-                    //throw new FormatException(SR.Format_InvalidString);
-                    throw new FormatException();
-
-            }
+                'd' => // Short Date
+                    dtfi.ShortDatePattern,
+                'D' => // Long Date
+                    dtfi.LongDatePattern,
+                'f' => // Full (long date + short time)
+                    dtfi.LongDatePattern + " " + dtfi.ShortTimePattern,
+                'F' => // Full (long date + long time)
+                    dtfi.FullDateTimePattern,
+                'g' =>                                                 // General (short date + short time)
+                    $"{dtfi.ShortDatePattern} {dtfi.ShortTimePattern}" //dtfi.GeneralShortTimePattern;
+               ,
+                'G' =>                                                // General (short date + long time)
+                    $"{dtfi.ShortDatePattern} {dtfi.LongTimePattern}" //dtfi.GeneralLongTimePattern;
+               ,
+                'm' => dtfi.MonthDayPattern,
+                'M' => // Month/Day Date
+                    dtfi.MonthDayPattern,
+                'o' => RoundtripFormat,
+                'O' => RoundtripFormat,
+                'r' => dtfi.RFC1123Pattern,
+                'R' => // RFC 1123 Standard
+                    dtfi.RFC1123Pattern,
+                's' => // Sortable without Time Zone Info
+                    dtfi.SortableDateTimePattern,
+                't' => // Short Time
+                    dtfi.ShortTimePattern,
+                'T' => // Long Time
+                    dtfi.LongTimePattern,
+                'u' => // Universal with Sortable format
+                    dtfi.UniversalSortableDateTimePattern,
+                'U' => // Universal with Full (long date + long time) format
+                    dtfi.FullDateTimePattern,
+                'y' => dtfi.YearMonthPattern,
+                'Y' => // Year/Month Date
+                    dtfi.YearMonthPattern,
+                _ => throw new FormatException()
+            };
             return realFormat;
         }
 
@@ -947,48 +926,49 @@ namespace Backports.System
         // we are going to use in the date time parsing.
         // This method also convert the dateTime if necessary (e.g. when the format is in Universal time),
         // and change dtfi if necessary (e.g. when the format should use invariant culture).
-        //
-        //private static string ExpandPredefinedFormat(ReadOnlySpan<char> format, ref DateTime dateTime, ref DateTimeFormatInfo dtfi, TimeSpan offset)
-        //{
-        //    switch (format[0])
-        //    {
-        //        case 'o':
-        //        case 'O':       // Round trip format
-        //            dtfi = DateTimeFormatInfo.InvariantInfo;
-        //            break;
-        //        case 'r':
-        //        case 'R':       // RFC 1123 Standard
-        //        case 'u':       // Universal time in sortable format.
-        //            if (offset.Ticks != NullOffset)
-        //            {
-        //                // Convert to UTC invariants mean this will be in range
-        //                dateTime -= offset;
-        //            }
-        //            dtfi = DateTimeFormatInfo.InvariantInfo;
-        //            break;
-        //        case 's':       // Sortable without Time Zone Info
-        //            dtfi = DateTimeFormatInfo.InvariantInfo;
-        //            break;
-        //        case 'U':       // Universal time in culture dependent format.
-        //            if (offset.Ticks != NullOffset)
-        //            {
-        //                // This format is not supported by DateTimeOffset
-        //                throw new FormatException(SR.Format_InvalidString);
-        //            }
-        //            // Universal time is always in Greogrian calendar.
-        //            //
-        //            // Change the Calendar to be Gregorian Calendar.
-        //            //
-        //            dtfi = (DateTimeFormatInfo)dtfi.Clone();
-        //            if (dtfi.Calendar.GetType() != typeof(GregorianCalendar))
-        //            {
-        //                dtfi.Calendar = GregorianCalendar.GetDefaultInstance();
-        //            }
-        //            dateTime = dateTime.ToUniversalTime();
-        //            break;
-        //    }
-        //    return GetRealFormat(format, dtfi);
-        //}
+
+        private static string ExpandPredefinedFormat(ReadOnlySpan<char> format, ref DateTime dateTime, ref DateTimeFormatInfo dtfi, TimeSpan offset)
+        {
+            switch (format[0])
+            {
+                case 'o':
+                case 'O':       // Round trip format
+                    dtfi = DateTimeFormatInfo.InvariantInfo;
+                    break;
+                case 'r':
+                case 'R':       // RFC 1123 Standard
+                case 'u':       // Universal time in sortable format.
+                    if (offset.Ticks != NullOffset)
+                    {
+                        // Convert to UTC invariants mean this will be in range
+                        dateTime -= offset;
+                    }
+                    dtfi = DateTimeFormatInfo.InvariantInfo;
+                    break;
+                case 's':       // Sortable without Time Zone Info
+                    dtfi = DateTimeFormatInfo.InvariantInfo;
+                    break;
+                case 'U':       // Universal time in culture dependent format.
+                    if (offset.Ticks != NullOffset)
+                    {
+                        // This format is not supported by DateTimeOffset
+                        //throw new FormatException(SR.Format_InvalidString);
+                        throw new FormatException();
+                    }
+                    // Universal time is always in Greogrian calendar.
+                    //
+                    // Change the Calendar to be Gregorian Calendar.
+                    //
+                    dtfi = (DateTimeFormatInfo)dtfi.Clone();
+                    if (dtfi.Calendar.GetType() != typeof(GregorianCalendar))
+                    {
+                        dtfi.Calendar = new GregorianCalendar(); //GregorianCalendar.GetDefaultInstance();
+                    }
+                    dateTime = dateTime.ToUniversalTime();
+                    break;
+            }
+            return GetRealFormat(format, dtfi);
+        }
 
         //internal static string Format(DateTime dateTime, string? format, IFormatProvider? provider)
         //{
