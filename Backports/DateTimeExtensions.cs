@@ -12,11 +12,14 @@ namespace Backports
         private const ulong TicksMask = 0x3FFFFFFFFFFFFFFF;
 
         // Number of 100ns ticks per time unit
-        private const  long TicksPerMillisecond = 10000;
-        internal const  long TicksPerSecond      = TicksPerMillisecond * 1000;
-        private const  long TicksPerMinute      = TicksPerSecond      * 60;
-        private const  long TicksPerHour        = TicksPerMinute      * 60;
+        internal const long TicksPerMillisecond = 10000;
+        internal const long TicksPerSecond      = TicksPerMillisecond * 1000;
+        internal const long TicksPerMinute      = TicksPerSecond      * 60;
+        internal const long TicksPerHour        = TicksPerMinute      * 60;
         internal const long TicksPerDay         = TicksPerHour        * 24;
+
+        internal const string JapaneseEraStart = "\u5143"; 
+        internal const char CJKYearSuff = '\u5e74';
 
         // Number of days in a non-leap year
         private const int DaysPerYear = 365;
@@ -164,6 +167,22 @@ namespace Backports
                 : $"{@this.ShortDatePattern} {@this.LongTimePattern} zzz";
 
         }
+
+        internal static bool HasForceTwoDigitYears(this DateTimeFormatInfo @this) =>
+            @this.Calendar switch
+            {
+                // Handle Japanese and Taiwan cases.
+                // If is y/yy, do not get (year % 100). "y" will print
+                // year without leading zero.  "yy" will print year with two-digit in leading zero.
+                // If pattern is yyy/yyyy/..., print year value with two-digit in leading zero.
+                // So year 5 is "05", and year 125 is "125".
+                // The reason for not doing (year % 100) is for Taiwan calendar.
+                // If year 125, then output 125 and not 25.
+                // Note: OS uses "yyyy" for Taiwan calendar by default.
+                JapaneseCalendar => true,
+                TaiwanCalendar   => true,
+                _                => false
+            };
     }
 }
 #endif

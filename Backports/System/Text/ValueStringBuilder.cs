@@ -225,6 +225,26 @@ namespace Backports.System.Text
             _pos += value.Length;
         }
 
+        public void Remove(int index, int length)
+        {
+            // WATCH: Check how remove works
+            if (index + length > _pos)
+                return;
+
+            _chars.Slice(index + length).CopyTo(_chars.Slice(index));
+            _pos -= length;
+        }
+
+        public void AppendFormatted(int value, ReadOnlySpan<char> format, IFormatProvider? provider = null)
+        {
+            var pos = _pos;
+            if ((uint) pos + 16 >= (uint) _chars.Length)
+                Grow(16);
+
+            value.TryFormat(_chars.Slice(pos), out var chars, format, provider);
+            pos += chars;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Span<char> AppendSpan(int length)
         {
