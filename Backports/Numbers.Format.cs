@@ -70,6 +70,10 @@ namespace Backports
             if (typeof(T) == typeof(decimal))
                 return System.Number.TryFormatDecimal(Unsafe.As<T, decimal>(ref @this), format, NumberFormatInfo.GetInstance(provider),
                     destination, out charsWritten);
+            if (typeof(T) == typeof(DateTime))
+                return System.DateTimeFormat.TryFormat(
+                    Unsafe.As<T, DateTime>(ref @this), destination, out charsWritten, format, provider
+                );
 
             //throw TypeDoesNotSupportTryFormat<T>();
             charsWritten = 0;
