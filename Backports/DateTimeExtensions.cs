@@ -88,5 +88,17 @@ namespace Backports
             minute = (int)m;
             hour = (int)(n % 24);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void GetTimePrecise(this DateTime @this, out int hour, out int minute, out int second, out int tick)
+        {
+            var n = Math.DivRem(@this.InternalTicks(), TicksPerSecond, out var m);
+            tick = (int)m;
+            n = Math.DivRem(n, 60, out m);
+            second = (int)m;
+            n = Math.DivRem(n, 60, out m);
+            minute = (int)m;
+            hour = (int)(n % 24);
+        }
     }
 }

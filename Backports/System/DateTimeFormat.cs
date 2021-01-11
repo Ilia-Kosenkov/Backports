@@ -1165,7 +1165,7 @@ namespace Backports.System
             { _ = destination[MinimumBytesNeeded - 1]; }
 
             dateTime.GetDate(out var year, out var month, out var day);
-            dateTime.GetTimePrecise(out int hour, out int minute, out int second, out int tick);
+            dateTime.GetTimePrecise(out var hour, out var minute, out var second, out var tick);
 
             WriteFourDecimalDigits((uint)year, destination, 0);
             destination[4] = '-';
