@@ -293,22 +293,19 @@ namespace Backports.System
         */
         private static string FormatHebrewMonthName(DateTime time, int month, int repeatCount, DateTimeFormatInfo dtfi)
         {
-            Debug.Assert(repeatCount != 3 || repeatCount != 4, "repeateCount should be 3 or 4");
+            Debug.Assert(repeatCount != 3 && repeatCount != 4, "repeatCount should be 3 or 4");
             if (dtfi.Calendar.IsLeapYear(dtfi.Calendar.GetYear(time)))
             {
+                throw new NotSupportedException("Hebrew_Month_Name");
                 // This month is in a leap year
-                return dtfi.InternalGetMonthName(month, MonthNameStyles.LeapYear, repeatCount == 3);
+                //return dtfi.InternalGetMonthName(month, MonthNameStyles.LeapYear, repeatCount == 3);
             }
             // This is in a regular year.
             if (month >= 7)
             {
                 month++;
             }
-            if (repeatCount == 3)
-            {
-                return dtfi.GetAbbreviatedMonthName(month);
-            }
-            return dtfi.GetMonthName(month);
+            return repeatCount == 3 ? dtfi.GetAbbreviatedMonthName(month) : dtfi.GetMonthName(month);
         }
 
         //
@@ -386,6 +383,7 @@ namespace Backports.System
             }
             return (int)format[pos + 1];
         }
+
 
         //
         //  IsUseGenitiveForm
@@ -639,18 +637,20 @@ namespace Backports.System
                             }
                             else
                             {
-                                if ((dtfi.FormatFlags & DateTimeFormatFlags.UseGenitiveMonth) != 0)
-                                {
-                                    result.Append(
-                                        dtfi.InternalGetMonthName(
-                                            month,
-                                            IsUseGenitiveForm(format, i, tokenLen, 'd') ? MonthNameStyles.Genitive : MonthNameStyles.Regular,
-                                            tokenLen == 3));
-                                }
-                                else
-                                {
-                                    result.Append(FormatMonth(month, tokenLen, dtfi));
-                                }
+                                result.Append(FormatMonth(month, tokenLen, dtfi));
+                                // TODO: Deal with month names
+                                //throw new NotSupportedException("Month_Name_Style");
+                                //if ((dtfi.FormatFlags & DateTimeFormatFlags.UseGenitiveMonth) != 0)
+                                //{
+                                //    result.Append(
+                                //        dtfi.InternalGetMonthName(
+                                //            month,
+                                //            IsUseGenitiveForm(format, i, tokenLen, 'd') ? MonthNameStyles.Genitive : MonthNameStyles.Regular,
+                                //            tokenLen == 3));
+                                //}
+                                //else
+                                //{
+                                //}
                             }
                         }
                         bTimeOnly = false;
@@ -721,10 +721,12 @@ namespace Backports.System
                         nextChar = ParseNextChar(format, i);
                         // nextChar will be -1 if we have already reached the end of the format string.
                         // Besides, we will not allow "%%" to appear in the pattern.
+
                         if (nextChar >= 0 && nextChar != '%')
                         {
-                            var nextCharChar = (char)nextChar;
-                            FormatCustomized(dateTime, MemoryMarshal.CreateReadOnlySpan<char>(ref nextCharChar, 1), dtfi, offset, ref result);
+                            // TODO: remove allocation
+                            ReadOnlySpan<char> nextCharFormat = new char[] {(char)nextChar};
+                            FormatCustomized(dateTime, nextCharFormat, dtfi, offset, ref result);
                             //Debug.Assert(ReferenceEquals(origStringBuilder, result));
                             tokenLen = 2;
                         }
@@ -773,7 +775,7 @@ namespace Backports.System
                         }
                         break;
                     default:
-                        // NOTENOTE : we can remove this rule if we enforce the enforced quote
+                        // NOTE : we can remove this rule if we enforce the enforced quote
                         // character rule.
                         // That is, if we ask everyone to use single quote or double quote to insert characters,
                         // then we can remove this default block.
