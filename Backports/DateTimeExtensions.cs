@@ -1,4 +1,6 @@
-﻿using System;
+﻿#if NETSTANDARD2_0
+
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -102,3 +104,4 @@ namespace Backports
         }
     }
 }
+#endif
