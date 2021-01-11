@@ -242,7 +242,7 @@ namespace Backports.System.Text
                 Grow(16);
 
             value.TryFormat(_chars.Slice(pos), out var chars, format, provider);
-            pos += chars;
+            _pos += chars;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
