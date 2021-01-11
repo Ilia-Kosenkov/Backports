@@ -102,6 +102,8 @@ namespace Backports
                 return Unsafe.As<T, double>(ref @this).TryFormat(destination, out charsWritten, format, provider);
             if (typeof(T) == typeof(decimal))
                 return Unsafe.As<T, decimal>(ref @this).TryFormat(destination, out charsWritten, format, provider);
+            if (typeof(T) == typeof(DateTime))
+                return Unsafe.As<T, DateTime>(ref @this).TryFormat(destination, out charsWritten, format, provider);
             //throw TypeDoesNotSupportTryFormat<T>();
             charsWritten = 0;
             return false;
@@ -121,7 +123,8 @@ namespace Backports
                 typeof(T) == typeof(ulong) ||
                 typeof(T) == typeof(float) ||
                 typeof(T) == typeof(double) ||
-                typeof(T) == typeof(decimal))
+                typeof(T) == typeof(decimal) ||
+                typeof(T) == typeof(DateTime))
                 return;
 
             throw new NotSupportedException($"{typeof(T)} does not support parsing/formatting");
