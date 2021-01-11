@@ -1,10 +1,8 @@
 ﻿#if NETSTANDARD2_0
 
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
-using System.Text;
 using RefTools;
 
 namespace Backports
@@ -15,7 +13,7 @@ namespace Backports
 
         // Number of 100ns ticks per time unit
         private const  long TicksPerMillisecond = 10000;
-        private const  long TicksPerSecond      = TicksPerMillisecond * 1000;
+        internal const  long TicksPerSecond      = TicksPerMillisecond * 1000;
         private const  long TicksPerMinute      = TicksPerSecond      * 60;
         private const  long TicksPerHour        = TicksPerMinute      * 60;
         internal const long TicksPerDay         = TicksPerHour        * 24;
@@ -123,15 +121,15 @@ namespace Backports
         /// Return the default pattern DateTimeOffset : shortDate + long time + time zone offset.
         /// This is used by DateTimeFormat.cs to get the pattern for short Date + long time +  time zone offset
         /// We put this internal property here so that we can avoid doing the
-        /// concatation every time somebody uses this form.
+        /// concatenation every time somebody uses this form.
         internal static string DateTimeOffsetPattern(this DateTimeFormatInfo @this)
         {
             /* LongTimePattern might contain a "z" as part of the format string in which case we don't want to append a time zone offset */
 
-            bool foundZ = false;
-            bool inQuote = false;
-            char quote = '\'';
-            for (int i = 0; !foundZ && i < @this.LongTimePattern.Length; i++)
+            var foundZ = false;
+            var inQuote = false;
+            var quote = '\'';
+            for (var i = 0; !foundZ && i < @this.LongTimePattern.Length; i++)
             {
                 switch (@this.LongTimePattern[i])
                 {
@@ -152,25 +150,18 @@ namespace Backports
                             quote = @this.LongTimePattern[i];
                             inQuote = true;
                         }
-                        else
-                        {
-                            /* we were in a quote and saw the other type of quote character, so we are still in a quote */
-                        }
 
                         break;
                     case '%':
                     case '\\':
                         i++; /* skip next character that is escaped by this backslash */
                         break;
-                    default:
-                        break;
                 }
             }
 
-            dateTimeOffsetPattern =
-                foundZ
-                    ? ShortDatePattern + " " + LongTimePattern
-                    : ShortDatePattern + " " + LongTimePattern + " zzz";
+            return foundZ
+                ? $"{@this.ShortDatePattern} {@this.LongTimePattern}"
+                : $"{@this.ShortDatePattern} {@this.LongTimePattern} zzz";
 
         }
     }
