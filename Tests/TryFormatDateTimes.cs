@@ -27,6 +27,18 @@ namespace Tests
             {
                 yield return "O";
                 yield return "R";
+                yield return "d";
+                yield return "D";
+                yield return "f";
+                yield return "F";
+                yield return "g";
+                yield return "G";
+                yield return "t";
+                yield return "T";
+                yield return "u";
+                yield return "U";
+                yield return "m";
+                yield return "M";
             }
         }
 
