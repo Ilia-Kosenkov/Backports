@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Backports;
 using NUnit.Framework;
@@ -45,6 +46,9 @@ namespace Tests
             get
             {
                 yield return System.Globalization.CultureInfo.InvariantCulture;
+                yield return new CultureInfo("en-US");
+                yield return new CultureInfo("ru-RU");
+                yield return new CultureInfo("fi-FI");
             }
         }
 
@@ -66,7 +70,7 @@ namespace Tests
         {
             Span<char> buff = stackalloc char[128];
             Assert.IsTrue(input.TryFormat(buff, out var nChars, format.AsSpan(), provider));
-            Assert.AreEqual(buff.Slice(0, nChars).ToString(), input.ToString(format, provider));
+            Assert.AreEqual(input.ToString(format, provider), buff.Slice(0, nChars).ToString());
         }
     }
 }
