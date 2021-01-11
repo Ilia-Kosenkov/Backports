@@ -63,8 +63,8 @@ namespace Backports.System
         "M"     "0"         month w/o leading zero                2
         "MM"    "00"        month with leading zero               02
         "MMM"               short month name (abbreviation)       Feb
-        "MMMM"              full month name                       Febuary
-        "MMMM*"             full month name                       Febuary
+        "MMMM"              full month name                       February
+        "MMMM*"             full month name                       February
 
         "y"     "0"         two digit year (year % 100) w/o leading zero           0
         "yy"    "00"        two digit year (year % 100) with leading zero          00
@@ -127,7 +127,7 @@ namespace Backports.System
         internal const int MaxSecondsFractionDigits = 7;
         internal const long NullOffset = long.MinValue;
 
-        internal static char[] allStandardFormats =
+        internal static char[] AllStandardFormats =
         {
             'd', 'D', 'f', 'F', 'g', 'G',
             'm', 'M', 'o', 'O', 'r', 'R',
@@ -137,14 +137,14 @@ namespace Backports.System
         internal const string RoundtripFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss.fffffffK";
         internal const string RoundtripDateTimeUnfixed = "yyyy'-'MM'-'ddTHH':'mm':'ss zzz";
 
-        private const int DEFAULT_ALL_DATETIMES_SIZE = 132;
+        private const int DefaultAllDatetimesSize = 132;
 
         internal static readonly DateTimeFormatInfo InvariantFormatInfo = CultureInfo.InvariantCulture.DateTimeFormat;
         internal static readonly string[] InvariantAbbreviatedMonthNames = InvariantFormatInfo.AbbreviatedMonthNames;
         internal static readonly string[] InvariantAbbreviatedDayNames = InvariantFormatInfo.AbbreviatedDayNames;
         internal const string Gmt = "GMT";
 
-        internal static string[] fixedNumberFormats = new string[] {
+        internal static string[] FixedNumberFormats = {
             "0",
             "00",
             "000",
@@ -377,7 +377,7 @@ namespace Backports.System
             {
                 return -1;
             }
-            return (int)format[pos + 1];
+            return format[pos + 1];
         }
 
 
@@ -434,7 +434,7 @@ namespace Backports.System
             if (i < format.Length)
             {
                 repeat = 0;
-                // Find a "d", so contine the walk to see how may "d" that we can find.
+                // Find a "d", so continue the walk to see how may "d" that we can find.
                 while (++i < format.Length && format[i] == patternToMatch)
                 {
                     repeat++;
@@ -513,7 +513,7 @@ namespace Backports.System
                             if (ch == 'f')
                             {
                                 // TODO: Append correctly
-                                result.AppendFormatted((int)fraction, fixedNumberFormats[tokenLen - 1].AsSpan(), CultureInfo.InvariantCulture);
+                                result.AppendFormatted((int)fraction, FixedNumberFormats[tokenLen - 1].AsSpan(), CultureInfo.InvariantCulture);
                             }
                             else
                             {
@@ -533,7 +533,7 @@ namespace Backports.System
                                 if (effectiveDigits > 0)
                                 {
                                     // TODO: Append correctly
-                                    result.AppendFormatted((int)fraction, fixedNumberFormats[effectiveDigits - 1].AsSpan(), CultureInfo.InvariantCulture);
+                                    result.AppendFormatted((int)fraction, FixedNumberFormats[effectiveDigits - 1].AsSpan(), CultureInfo.InvariantCulture);
                                 }
                                 else
                                 {
@@ -745,9 +745,9 @@ namespace Backports.System
                         break;
                     case '\\':
                         // Escaped character.  Can be used to insert a character into the format string.
-                        // For exmple, "\d" will insert the character 'd' into the string.
+                        // For example, "\d" will insert the character 'd' into the string.
                         //
-                        // NOTENOTE : we can remove this format character if we enforce the enforced quote
+                        // NOTE : we can remove this format character if we enforce the enforced quote
                         // character rule.
                         // That is, we ask everyone to use single quote or double quote to insert characters,
                         // then we can remove this character.
@@ -959,7 +959,7 @@ namespace Backports.System
                         //throw new FormatException(SR.Format_InvalidString);
                         throw new FormatException();
                     }
-                    // Universal time is always in Greogrian calendar.
+                    // Universal time is always in Gregorian calendar.
                     //
                     // Change the Calendar to be Gregorian Calendar.
                     //
@@ -973,42 +973,6 @@ namespace Backports.System
             }
             return GetRealFormat(format, dtfi);
         }
-
-        //internal static string Format(DateTime dateTime, string? format, IFormatProvider? provider)
-        //{
-        //    return Format(dateTime, format, provider, new TimeSpan(NullOffset));
-        //}
-
-        //internal static string Format(DateTime dateTime, string? format, IFormatProvider? provider, TimeSpan offset)
-        //{
-        //    if (format != null && format.Length == 1)
-        //    {
-        //        // Optimize for these standard formats that are not affected by culture.
-        //        switch (format[0])
-        //        {
-        //            // Round trip format
-        //            case 'o':
-        //            case 'O':
-        //                const int MinFormatOLength = 27, MaxFormatOLength = 33;
-        //                Span<char> span = stackalloc char[MaxFormatOLength];
-        //                TryFormatO(dateTime, offset, span, out int ochars);
-        //                Debug.Assert(ochars >= MinFormatOLength && ochars <= MaxFormatOLength);
-        //                return span.Slice(0, ochars).ToString();
-
-        //            // RFC1123
-        //            case 'r':
-        //            case 'R':
-        //                const int FormatRLength = 29;
-        //                string str = string.FastAllocateString(FormatRLength);
-        //                TryFormatR(dateTime, offset, new Span<char>(ref str.GetRawStringData(), str.Length), out int rchars);
-        //                Debug.Assert(rchars == str.Length);
-        //                return str;
-        //        }
-        //    }
-
-        //    DateTimeFormatInfo dtfi = DateTimeFormatInfo.GetInstance(provider);
-        //    return StringBuilderCache.GetStringAndRelease(FormatStringBuilder(dateTime, format, dtfi, offset));
-        //}
 
         internal static bool TryFormat(DateTime dateTime, Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider? provider) =>
             TryFormat(dateTime, destination, out charsWritten, format, provider, new TimeSpan(NullOffset));
@@ -1150,7 +1114,7 @@ namespace Backports.System
             dateTime.GetDate(out var year, out var month, out var day);
             dateTime.GetTimePrecise(out var hour, out var minute, out var second, out var tick);
 
-            WriteFourDecimalDigits((uint)year, destination, 0);
+            WriteFourDecimalDigits((uint)year, destination);
             destination[4] = '-';
             WriteTwoDecimalDigits((uint)month, destination, 5);
             destination[7] = '-';
