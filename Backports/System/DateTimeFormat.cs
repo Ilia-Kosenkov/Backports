@@ -1049,56 +1049,56 @@ namespace Backports.System
 
         private static StringBuilder FormatStringBuilder(DateTime dateTime, ReadOnlySpan<char> format, DateTimeFormatInfo dtfi, TimeSpan offset)
         {
-            throw new NotImplementedException();
-            //Debug.Assert(dtfi != null);
-            //if (format.Length == 0)
-            //{
-            //    bool timeOnlySpecialCase = false;
-            //    if (dateTime.Ticks < Calendar.TicksPerDay)
-            //    {
-            //        // If the time is less than 1 day, consider it as time of day.
-            //        // Just print out the short time format.
-            //        //
-            //        // This is a workaround for VB, since they use ticks less then one day to be
-            //        // time of day.  In cultures which use calendar other than Gregorian calendar, these
-            //        // alternative calendar may not support ticks less than a day.
-            //        // For example, Japanese calendar only supports date after 1868/9/8.
-            //        // This will pose a problem when people in VB get the time of day, and use it
-            //        // to call ToString(), which will use the general format (short date + long time).
-            //        // Since Japanese calendar does not support Gregorian year 0001, an exception will be
-            //        // thrown when we try to get the Japanese year for Gregorian year 0001.
-            //        // Therefore, the workaround allows them to call ToString() for time of day from a DateTime by
-            //        // formatting as ISO 8601 format.
-            //        switch (dtfi.Calendar.ID)
-            //        {
-            //            case CalendarId.JAPAN:
-            //            case CalendarId.TAIWAN:
-            //            case CalendarId.HIJRI:
-            //            case CalendarId.HEBREW:
-            //            case CalendarId.JULIAN:
-            //            case CalendarId.UMALQURA:
-            //            case CalendarId.PERSIAN:
-            //                timeOnlySpecialCase = true;
-            //                dtfi = DateTimeFormatInfo.InvariantInfo;
-            //                break;
-            //        }
-            //    }
-            //    if (offset.Ticks == NullOffset)
-            //    {
-            //        // Default DateTime.ToString case.
-            //        format = timeOnlySpecialCase ? "s" : "G";
-            //    }
-            //    else
-            //    {
-            //        // Default DateTimeOffset.ToString case.
-            //        format = timeOnlySpecialCase ? RoundtripDateTimeUnfixed : dtfi.DateTimeOffsetPattern;
-            //    }
-            //}
+            Debug.Assert(dtfi != null);
+            if (format.Length == 0)
+            {
+                bool timeOnlySpecialCase = false;
+                if (dateTime.Ticks < DateTimeExtensions.TicksPerDay)
+                {
+                    // If the time is less than 1 day, consider it as time of day.
+                    // Just print out the short time format.
+                    //
+                    // This is a workaround for VB, since they use ticks less then one day to be
+                    // time of day.  In cultures which use calendar other than Gregorian calendar, these
+                    // alternative calendar may not support ticks less than a day.
+                    // For example, Japanese calendar only supports date after 1868/9/8.
+                    // This will pose a problem when people in VB get the time of day, and use it
+                    // to call ToString(), which will use the general format (short date + long time).
+                    // Since Japanese calendar does not support Gregorian year 0001, an exception will be
+                    // thrown when we try to get the Japanese year for Gregorian year 0001.
+                    // Therefore, the workaround allows them to call ToString() for time of day from a DateTime by
+                    // formatting as ISO 8601 format.
+                    switch (dtfi.Calendar.ID)
+                    {
+                        case CalendarId.JAPAN:
+                        case CalendarId.TAIWAN:
+                        case CalendarId.HIJRI:
+                        case CalendarId.HEBREW:
+                        case CalendarId.JULIAN:
+                        case CalendarId.UMALQURA:
+                        case CalendarId.PERSIAN:
+                            timeOnlySpecialCase = true;
+                            dtfi = DateTimeFormatInfo.InvariantInfo;
+                            break;
+                    }
+                }
+                if (offset.Ticks == NullOffset)
+                {
+                    // Default DateTime.ToString case.
+                    format = (timeOnlySpecialCase ? "s" : "G").AsSpan();
+                }
+                else
+                {
+                    // Default DateTimeOffset.ToString case.
+                    format = (timeOnlySpecialCase ? RoundtripDateTimeUnfixed : dtfi.DateTimeOffsetPattern).AsSpan();
+                }
+            }
 
-            //if (format.Length == 1)
-            //{
-            //    format = ExpandPredefinedFormat(format, ref dateTime, ref dtfi, offset);
-            //}
+            if (format.Length == 1)
+            {
+                format = ExpandPredefinedFormat(format, ref dateTime, ref dtfi, offset).AsSpan();
+            }
+            throw new NotImplementedException();
 
             //return FormatCustomized(dateTime, format, dtfi, offset, result: null);
         }
