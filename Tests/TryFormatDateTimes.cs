@@ -38,6 +38,7 @@ namespace Tests
                 yield return "U";
                 yield return "m";
                 yield return "M";
+                yield return "yyyy/MM/dd:HH:mm:ss.ffffff";
             }
         }
 
