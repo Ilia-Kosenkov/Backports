@@ -3,15 +3,11 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
-using System.Text;
-using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using Backports.System.Globalization;
 using Backports.System.Text;
-using RefTools;
 
 namespace Backports.System
 {
@@ -637,20 +633,22 @@ namespace Backports.System
                             }
                             else
                             {
-                                result.Append(FormatMonth(month, tokenLen, dtfi));
                                 // TODO: Deal with month names
-                                //throw new NotSupportedException("Month_Name_Style");
+                                if ((dtfi.GetFormatFlags() & 0x00000001) != 0)
                                 //if ((dtfi.FormatFlags & DateTimeFormatFlags.UseGenitiveMonth) != 0)
-                                //{
-                                //    result.Append(
-                                //        dtfi.InternalGetMonthName(
-                                //            month,
-                                //            IsUseGenitiveForm(format, i, tokenLen, 'd') ? MonthNameStyles.Genitive : MonthNameStyles.Regular,
-                                //            tokenLen == 3));
-                                //}
-                                //else
-                                //{
-                                //}
+                                {
+                                    result.Append(
+                                        dtfi.InternalGetMonthName(
+                                            month,
+                                            IsUseGenitiveForm(format, i, tokenLen, 'd') 
+                                                ? 0x00000001 //MonthNameStyles.Genitive 
+                                                : 0x00000000, // MonthNameStyles.Regular,
+                                            tokenLen == 3));
+                                }
+                                else
+                                {
+                                    result.Append(FormatMonth(month, tokenLen, dtfi));
+                                }
                             }
                         }
                         bTimeOnly = false;

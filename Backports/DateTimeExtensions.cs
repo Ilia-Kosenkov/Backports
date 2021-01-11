@@ -2,6 +2,8 @@
 
 using System;
 using System.Globalization;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using RefTools;
 
@@ -9,6 +11,20 @@ namespace Backports
 {
     internal static class DateTimeExtensions
     {
+        private static readonly PropertyInfo GetFormatFlagsRef =
+            typeof(DateTimeFormatInfo)
+               .GetProperty(
+                    @"FormatFlags",
+                    BindingFlags.Instance | BindingFlags.NonPublic
+                )!;
+
+        private static readonly MethodInfo InternalGetMonthNameRef =
+            typeof(DateTimeFormatInfo)
+               .GetMethod(
+                    @"internalGetMonthName", // This has different capitalization in legacy
+                    BindingFlags.Instance | BindingFlags.NonPublic
+                )!;
+
         private const ulong TicksMask = 0x3FFFFFFFFFFFFFFF;
 
         // Number of 100ns ticks per time unit
@@ -183,6 +199,16 @@ namespace Backports
                 TaiwanCalendar   => true,
                 _                => false
             };
+
+        internal static int GetFormatFlags(this DateTimeFormatInfo @this)
+        {
+            return (int)GetFormatFlagsRef.GetValue(@this);
+        }
+
+        internal static string InternalGetMonthName(this DateTimeFormatInfo @this, int month, int flags, bool abbreviated)
+        {
+            return (string) InternalGetMonthNameRef.Invoke(@this, new object[] {month, flags, abbreviated});
+        }
     }
 }
 #endif
