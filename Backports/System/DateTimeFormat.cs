@@ -816,19 +816,19 @@ namespace Backports.System
             if (tokenLen <= 1)
             {
                 // 'z' format e.g "-7"
-                result.AppendFormatted(offset.Hours, "{0:0}".AsSpan(), CultureInfo.InvariantCulture);
+                result.AppendFormatted(offset.Hours, "0".AsSpan(), CultureInfo.InvariantCulture);
                 //result.AppendFormat(CultureInfo.InvariantCulture, "{0:0}", offset.Hours);
             }
             else
             {
                 // 'zz' or longer format e.g "-07"
-                result.AppendFormatted(offset.Hours, "{0:00}".AsSpan(), CultureInfo.InvariantCulture);
+                result.AppendFormatted(offset.Hours, "00".AsSpan(), CultureInfo.InvariantCulture);
                 //result.AppendFormat(CultureInfo.InvariantCulture, "{0:00}", offset.Hours);
 
                 if (tokenLen >= 3)
                 {
                     // 'zzz*' or longer format e.g "-07:30"
-                    result.AppendFormatted(offset.Minutes, ":{0:00}".AsSpan(), CultureInfo.InvariantCulture);
+                    result.AppendFormatted(offset.Minutes, ":00".AsSpan(), CultureInfo.InvariantCulture);
                     //result.AppendFormat(CultureInfo.InvariantCulture, ":{0:00}", offset.Minutes);
                 }
             }
