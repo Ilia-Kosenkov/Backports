@@ -47,8 +47,13 @@ namespace Tests
             {
                 yield return System.Globalization.CultureInfo.InvariantCulture;
                 yield return new CultureInfo("en-US");
+                yield return new CultureInfo("en-UK");
                 yield return new CultureInfo("ru-RU");
                 yield return new CultureInfo("fi-FI");
+                yield return new CultureInfo("se-FI");
+                yield return new CultureInfo("ja-JP");
+                yield return new CultureInfo("he-IL");
+
             }
         }
 
