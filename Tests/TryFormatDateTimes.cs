@@ -2,8 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Backports;
 using NUnit.Framework;
 
@@ -42,10 +40,19 @@ namespace Tests
             }
         }
 
+        public static IEnumerable<IFormatProvider> CultureInfo
+        {
+            get
+            {
+                yield return System.Globalization.CultureInfo.InvariantCulture;
+            }
+        }
+
         public static IEnumerable DateTime_TestCaseData =>
             from x in Dates
             from y in Formats
-            select new TestCaseData(x, y);
+            from z in CultureInfo
+            select new TestCaseData(x, y, z);
 
     }
 
@@ -55,11 +62,11 @@ namespace Tests
         
         [Test]
         [TestCaseSource(typeof(TryFormatDateTimesProvider), nameof(TryFormatDateTimesProvider.DateTime_TestCaseData))]
-        public void Test_DateTime(DateTime input, string format)
+        public void Test_DateTime(DateTime input, string format, IFormatProvider provider)
         {
             Span<char> buff = stackalloc char[128];
-            Assert.IsTrue(input.TryFormat(buff, out var nChars, format.AsSpan()));
-            Assert.AreEqual(buff.Slice(0, nChars).ToString(), input.ToString(format));
+            Assert.IsTrue(input.TryFormat(buff, out var nChars, format.AsSpan(), provider));
+            Assert.AreEqual(buff.Slice(0, nChars).ToString(), input.ToString(format, provider));
         }
     }
 }
