@@ -1233,8 +1233,8 @@ namespace Backports.System
                 dateTime -= offset;
             }
 
-            dateTime.GetDate(out int year, out int month, out int day);
-            dateTime.GetTime(out int hour, out int minute, out int second);
+            dateTime.GetDate(out var year, out var month, out var day);
+            dateTime.GetTime(out var hour, out var minute, out var second);
 
             string dayAbbrev = InvariantAbbreviatedDayNames[(int)dateTime.DayOfWeek];
             Debug.Assert(dayAbbrev.Length == 3);

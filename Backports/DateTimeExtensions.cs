@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using RefTools;
 
@@ -75,6 +76,17 @@ namespace Backports
             // compute month and day
             month = m;
             day = n - days[m - 1] + 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void GetTime(this DateTime @this, out int hour, out int minute, out int second)
+        {
+            var n = @this.InternalTicks() / TicksPerSecond;
+            n = Math.DivRem(n, 60, out var m);
+            second = (int)m;
+            n = Math.DivRem(n, 60, out m);
+            minute = (int)m;
+            hour = (int)(n % 24);
         }
     }
 }
