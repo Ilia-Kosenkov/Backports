@@ -213,7 +213,6 @@ namespace Backports.System
                 digits++;
             }
             //outputBuffer.Append(p, digits);
-            // WATCH: check this
             //outputBuffer.Append(buffer.Slice(i));
             foreach(var item in buffer.Slice(i))
                 outputBuffer.Append(item);
@@ -546,7 +545,6 @@ namespace Backports.System
                         {
                             if (resultBuilderIsPooled)
                             {
-                                // WATCH : Fix pooled builder
                                 result.Dispose();
                             }
                             //throw new FormatException(SR.Format_InvalidString);
@@ -625,7 +623,6 @@ namespace Backports.System
                             }
                             else
                             {
-                                // TODO: Deal with month names
                                 if ((dtfi.GetFormatFlags() & 0x00000001) != 0)
                                 //if ((dtfi.FormatFlags & DateTimeFormatFlags.UseGenitiveMonth) != 0)
                                 {
