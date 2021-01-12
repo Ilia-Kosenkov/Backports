@@ -238,7 +238,7 @@ namespace Backports.System.Text
         public void AppendFormatted(int value, ReadOnlySpan<char> format, IFormatProvider? provider = null)
         {
             var pos = _pos;
-            if ((uint) pos + 16 >= (uint) _chars.Length)
+            if ((uint) pos + 16 > (uint) _chars.Length)
                 Grow(16);
 
             value.TryFormat(_chars.Slice(pos), out var chars, format, provider);
