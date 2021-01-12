@@ -39,8 +39,10 @@ namespace Tests
                 yield return "m";
                 yield return "M";
                 yield return "s";
+                yield return "%d \\d \\M";
                 yield return "yyyy/MM/dd:HH:mm:ss.ffffff tt";
                 yield return "yyyy/MM/dd:HH:mm:ss.ffffff tt zz";
+                yield return "yyyy/MM/dddd FFFFF g  t K";
             }
         }
 
@@ -56,6 +58,10 @@ namespace Tests
                 yield return new CultureInfo("se-FI");
                 yield return new CultureInfo("ja-JP");
                 yield return new CultureInfo("he-IL");
+                yield return new CultureInfo("he-IL")
+                {
+                    DateTimeFormat = {Calendar = new HebrewCalendar()}
+                };
 
             }
         }
