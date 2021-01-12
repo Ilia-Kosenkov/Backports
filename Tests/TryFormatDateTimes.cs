@@ -39,6 +39,7 @@ namespace Tests
                 yield return "m";
                 yield return "M";
                 yield return "s";
+                yield return "yyyy/MM/dd:HH:mm:ss.ffffff tt";
                 yield return "yyyy/MM/dd:HH:mm:ss.ffffff tt zz";
             }
         }
@@ -64,7 +65,7 @@ namespace Tests
             from y in Formats
             from z in CultureInfo
             // Does not use custom formats with UTC
-            where x.Kind != DateTimeKind.Utc || y.Length < 4
+            where x.Kind != DateTimeKind.Utc || y.Length < 30
             select new TestCaseData(x, y, z);
 
     }
