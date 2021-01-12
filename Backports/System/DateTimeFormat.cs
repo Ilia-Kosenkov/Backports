@@ -137,6 +137,7 @@ namespace Backports.System
         internal const string RoundtripFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss.fffffffK";
         internal const string RoundtripDateTimeUnfixed = "yyyy'-'MM'-'ddTHH':'mm':'ss zzz";
 
+        // ReSharper disable once UnusedMember.Local
         private const int DefaultAllDatetimesSize = 132;
 
         internal static readonly DateTimeFormatInfo InvariantFormatInfo = CultureInfo.InvariantCulture.DateTimeFormat;
@@ -227,35 +228,29 @@ namespace Backports.System
         {
             var len = format.Length;
             var index = pos + 1;
-            while ((index < len) && (format[index] == patternChar))
-            {
+            while (index < len && format[index] == patternChar)
                 index++;
-            }
             return index - pos;
         }
 
         private static string FormatDayOfWeek(int dayOfWeek, int repeat, DateTimeFormatInfo dtfi)
         {
             Debug.Assert(dayOfWeek >= 0 && dayOfWeek <= 6, "dayOfWeek >= 0 && dayOfWeek <= 6");
-            if (repeat == 3)
-            {
-                return dtfi.GetAbbreviatedDayName((DayOfWeek)dayOfWeek);
-            }
+            return repeat == 3 
+                ? dtfi.GetAbbreviatedDayName((DayOfWeek)dayOfWeek) 
+                : dtfi.GetDayName((DayOfWeek)dayOfWeek);
             // Call dtfi.GetDayName() here, instead of accessing DayNames property, because we don't
             // want a clone of DayNames, which will hurt perf.
-            return dtfi.GetDayName((DayOfWeek)dayOfWeek);
         }
 
         private static string FormatMonth(int month, int repeatCount, DateTimeFormatInfo dtfi)
         {
             Debug.Assert(month >= 1 && month <= 12, "month >=1 && month <= 12");
-            if (repeatCount == 3)
-            {
-                return dtfi.GetAbbreviatedMonthName(month);
-            }
+            return repeatCount == 3 
+                ? dtfi.GetAbbreviatedMonthName(month)
+                : dtfi.GetMonthName(month);
             // Call GetMonthName() here, instead of accessing MonthNames property, because we don't
             // want a clone of MonthNames, which will hurt perf.
-            return dtfi.GetMonthName(month);
         }
 
         //
@@ -289,18 +284,17 @@ namespace Backports.System
         */
         private static string FormatHebrewMonthName(DateTime time, int month, int repeatCount, DateTimeFormatInfo dtfi)
         {
-            Debug.Assert(repeatCount != 3 && repeatCount != 4, "repeatCount should be 3 or 4");
+            Debug.Assert(repeatCount == 3 || repeatCount == 4, "repeatCount should be 3 or 4");
             if (dtfi.Calendar.IsLeapYear(dtfi.Calendar.GetYear(time)))
-            {
-                throw new NotSupportedException("Hebrew_Month_Name");
                 // This month is in a leap year
-                //return dtfi.InternalGetMonthName(month, MonthNameStyles.LeapYear, repeatCount == 3);
-            }
+                return dtfi.InternalGetMonthName(
+                    month,
+                    0x00000002, // MonthNameStyles.LeapYear,
+                    repeatCount == 3
+                );
             // This is in a regular year.
             if (month >= 7)
-            {
                 month++;
-            }
             return repeatCount == 3 ? dtfi.GetAbbreviatedMonthName(month) : dtfi.GetMonthName(month);
         }
 
@@ -326,7 +320,8 @@ namespace Backports.System
                     foundQuote = true;
                     break;
                 }
-                else if (ch == '\\')
+
+                if (ch == '\\')
                 {
                     // The following are used to support escaped character.
                     // Escaped character is also supported in the quoted string.
@@ -397,7 +392,7 @@ namespace Backports.System
         private static bool IsUseGenitiveForm(ReadOnlySpan<char> format, int index, int tokenLen, char patternToMatch)
         {
             int i;
-            int repeat = 0;
+            var repeat = 0;
             //
             // Look back to see if we can find "d" or "ddd"
             //
@@ -464,8 +459,8 @@ namespace Backports.System
             var resultBuilderIsPooled = result.Capacity == 0;
 
             // This is a flag to indicate if we are formatting the dates using Hebrew calendar.
-            var isHebrewCalendar = (cal is HebrewCalendar);
-            var isJapaneseCalendar = (cal is JapaneseCalendar);
+            var isHebrewCalendar = cal is HebrewCalendar;
+            var isJapaneseCalendar = cal is JapaneseCalendar;
             // This is a flag to indicate if we are formatting hour/minute/second only.
             var bTimeOnly = true;
 
@@ -508,13 +503,13 @@ namespace Backports.System
                         tokenLen = ParseRepeatPattern(format, i, ch);
                         if (tokenLen <= MaxSecondsFractionDigits)
                         {
-                            var fraction = (dateTime.Ticks % DateTimeExtensions.TicksPerSecond);
+                            var fraction = dateTime.Ticks % DateTimeExtensions.TicksPerSecond;
                             fraction /= (long)Math.Pow(10, 7 - tokenLen);
                             if (ch == 'f')
-                            {
-                                // TODO: Append correctly
-                                result.AppendFormatted((int)fraction, FixedNumberFormats[tokenLen - 1].AsSpan(), CultureInfo.InvariantCulture);
-                            }
+                                result.AppendFormatted(
+                                    (int) fraction, FixedNumberFormats[tokenLen - 1].AsSpan(),
+                                    CultureInfo.InvariantCulture
+                                );
                             else
                             {
                                 var effectiveDigits = tokenLen;
@@ -530,11 +525,12 @@ namespace Backports.System
                                         break;
                                     }
                                 }
+
                                 if (effectiveDigits > 0)
-                                {
-                                    // TODO: Append correctly
-                                    result.AppendFormatted((int)fraction, FixedNumberFormats[effectiveDigits - 1].AsSpan(), CultureInfo.InvariantCulture);
-                                }
+                                    result.AppendFormatted(
+                                        (int) fraction, FixedNumberFormats[effectiveDigits - 1].AsSpan(),
+                                        CultureInfo.InvariantCulture
+                                    );
                                 else
                                 {
                                     // No fraction to emit, so see if we should remove decimal also.
@@ -588,14 +584,10 @@ namespace Backports.System
                         {
                             var day = cal.GetDayOfMonth(dateTime);
                             if (isHebrewCalendar)
-                            {
                                 // For Hebrew calendar, we need to convert numbers to Hebrew text for yyyy, MM, and dd values.
                                 HebrewFormatDigits(ref result, day);
-                            }
                             else
-                            {
                                 FormatDigits(ref result, day, tokenLen);
-                            }
                         }
                         else
                         {
@@ -665,8 +657,8 @@ namespace Backports.System
                             // WATCH: Unclear how to resolve
                             //!LocalAppContextSwitches.FormatJapaneseFirstYearAsANumber && 
                             year == 1 &&
-                            ((i + tokenLen < format.Length && format[i + tokenLen] == DateTimeExtensions.CJKYearSuff) ||
-                             (i + tokenLen < format.Length - 1 && format[i + tokenLen] == '\'' && format[i + tokenLen + 1] == DateTimeExtensions.CJKYearSuff)))
+                            (i + tokenLen < format.Length && format[i + tokenLen] == DateTimeExtensions.CJKYearSuff ||
+                             i + tokenLen < format.Length - 1 && format[i + tokenLen] == '\'' && format[i + tokenLen + 1] == DateTimeExtensions.CJKYearSuff))
                         {
                             // We are formatting a Japanese date with year equals 1 and the year number is followed by the year sign \u5e74
                             // In Japanese dates, the first year in the era is not formatted as a number 1 instead it is formatted as \u5143 which means
@@ -674,13 +666,9 @@ namespace Backports.System
                             result.Append(DateTimeExtensions.JapaneseEraStart[0]);
                         }
                         else if (dtfi.HasForceTwoDigitYears())
-                        {
                             FormatDigits(ref result, year, tokenLen <= 2 ? tokenLen : 2);
-                        }
                         else if (cal is HebrewCalendar)
-                        {
                             HebrewFormatDigits(ref result, year);
-                        }
                         else
                         {
                             if (tokenLen <= 2)
@@ -723,7 +711,7 @@ namespace Backports.System
                         if (nextChar >= 0 && nextChar != '%')
                         {
                             // TODO: remove allocation
-                            ReadOnlySpan<char> nextCharFormat = new char[] {(char)nextChar};
+                            ReadOnlySpan<char> nextCharFormat = new[] {(char)nextChar};
                             FormatCustomized(dateTime, nextCharFormat, dtfi, offset, ref result);
                             //Debug.Assert(ReferenceEquals(origStringBuilder, result));
                             tokenLen = 2;
