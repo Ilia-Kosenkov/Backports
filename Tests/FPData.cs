@@ -5,7 +5,7 @@ using System.Globalization;
 namespace Tests
 {
     // ReSharper disable once InconsistentNaming
-    internal readonly struct FPData
+    public readonly struct FPData
     {
         private static int    SizeofHalf  { get; } = sizeof(float) / 2;
         public         byte[] HalfBytes   { get; }
@@ -38,9 +38,8 @@ namespace Tests
             var chars = input.AsSpan();
             Span<byte> buff = stackalloc byte[SizeofHalf + sizeof(float) + sizeof(double)];
             var strRep = chars[31..].Trim().ToString();
-            if (BitConverter.IsLittleEndian)
+            if (!BitConverter.IsLittleEndian)
             {
-                // Default arch
 
                 buff[13] = byte.Parse(chars[28..30], NumberStyles.HexNumber);
                 buff[12] = byte.Parse(chars[26..28], NumberStyles.HexNumber);
@@ -62,6 +61,7 @@ namespace Tests
             }
             else
             {
+                // Default arch
                 buff[13] = byte.Parse(chars[14..16], NumberStyles.HexNumber);
                 buff[12] = byte.Parse(chars[16..18], NumberStyles.HexNumber);
                 buff[11] = byte.Parse(chars[18..20], NumberStyles.HexNumber);
@@ -92,10 +92,8 @@ namespace Tests
             var chars = input.AsSpan();
             Span<byte> buff = stackalloc byte[SizeofHalf + sizeof(float) + sizeof(double)];
             var strRep = chars.Slice(31).Trim().ToString();
-            if (BitConverter.IsLittleEndian)
+            if (!BitConverter.IsLittleEndian)
             {
-                // Default arch
-
                 buff[13] = byte.Parse(chars.Slice(28, 2).ToString(), NumberStyles.HexNumber);
                 buff[12] = byte.Parse(chars.Slice(26, 2).ToString(), NumberStyles.HexNumber);
                 buff[11] = byte.Parse(chars.Slice(24, 2).ToString(), NumberStyles.HexNumber);
@@ -116,6 +114,8 @@ namespace Tests
             }
             else
             {
+                // Default arch
+
                 buff[13] = byte.Parse(chars.Slice(14, 2).ToString(), NumberStyles.HexNumber);
                 buff[12] = byte.Parse(chars.Slice(16, 2).ToString(), NumberStyles.HexNumber);
                 buff[11] = byte.Parse(chars.Slice(18, 2).ToString(), NumberStyles.HexNumber);

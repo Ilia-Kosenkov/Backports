@@ -6,7 +6,7 @@ using System.IO;
 namespace Tests
 {
     // ReSharper disable once InconsistentNaming
-    internal class FPDataSetProvider
+    public class FPDataSetProvider
     {
         private readonly string _path;
 
@@ -21,7 +21,7 @@ namespace Tests
             _path = path;
         }
 
-        public async IAsyncEnumerable<FPData> ReadTestData()
+        public async IAsyncEnumerable<FPData> ReadTestDataAsync()
         {
             using var reader = new StreamReader(new FileStream(_path, FileMode.Open, FileAccess.Read));
             while (!reader.EndOfStream)
@@ -35,5 +35,7 @@ namespace Tests
             }
         }
 
+        public override string ToString() =>
+            Path.GetFileNameWithoutExtension(_path);
     }
 }
