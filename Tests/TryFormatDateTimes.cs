@@ -20,6 +20,15 @@ namespace Tests
             }
         }
 
+        public static IEnumerable<DateTimeOffset> DateOffsets
+        {
+            get
+            {
+                //yield return DateTimeOffset.Now;
+                yield return DateTimeOffset.UtcNow;
+            }
+        }
+
         public static IEnumerable<string> Formats
         {
             get
@@ -74,6 +83,12 @@ namespace Tests
             where x.Kind != DateTimeKind.Utc || y.Length < 30
             select new TestCaseData(x, y, z);
 
+        public static IEnumerable DateTimeOffset_TestCaseData =>
+            from x in DateOffsets
+            from y in Formats
+            from z in CultureInfo
+            where y is not ("U" or "u")
+            select new TestCaseData(x, y, z);
     }
 
     [TestFixture]
@@ -88,5 +103,16 @@ namespace Tests
             Assert.IsTrue(input.TryFormat(buff, out var nChars, format.AsSpan(), provider));
             Assert.AreEqual(input.ToString(format, provider), buff.Slice(0, nChars).ToString());
         }
+
+        [Test]
+        [TestCaseSource(typeof(TryFormatDateTimesProvider), nameof(TryFormatDateTimesProvider.DateTimeOffset_TestCaseData))]
+        public void Test_DateTimeOffset(DateTimeOffset input, string format, IFormatProvider provider)
+        {
+            Span<char> buff = stackalloc char[128];
+            var result = input.TryFormat(buff, out var nChars, format.AsSpan(), provider);
+            Assert.IsTrue(result);
+            Assert.AreEqual(input.ToString(format, provider), buff.Slice(0, nChars).ToString());
+        }
+
     }
 }

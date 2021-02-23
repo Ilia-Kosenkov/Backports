@@ -209,6 +209,19 @@ namespace Backports
         {
             return (string) InternalGetMonthNameRef.Invoke(@this, new object[] {month, flags, abbreviated});
         }
+
+        internal static ref readonly DateTimeOffsetView AsView(in DateTimeOffset offset) =>
+            ref Ref.As<DateTimeOffset, DateTimeOffsetView>(in offset);
+
+        internal static DateTime ClockDateTime(this DateTimeOffset @this)
+        {
+            ref readonly var view = ref AsView(in @this);
+            var temp = new DateTime(view.DateTime.AddMinutes(view.Offset).Ticks, DateTimeKind.Unspecified);
+            
+            var temp2 = @this.DateTime;
+            var temp3 = temp2 == temp;
+            return temp;
+        }
     }
 }
 #endif
