@@ -46,12 +46,21 @@ namespace Tests
         {
             await foreach (var item in provider.ReadTestDataAsync())
             {
-                if (item.StrRep == "6250000000000000000000000000000000e-12")
+#if !NET40_OR_GREATER
+                // Disabled for .NET Core-based runtimes
+                if(string.Equals(
+                    item.StrRep,
+                    "6250000000000000000000000000000000e-12", 
+                    StringComparison.Ordinal
+                    )
+                )
                 {
                     // Avoid rare parsing issue
                     // https://github.com/dotnet/runtime/issues/48648
+                    // https://github.com/pgovind/runtime/commit/9897a27aaace156628735acdcb06938e3a24ce15
                     continue;
                 }
+#endif
                 Assert.IsTrue(
                     item.StrRep.AsSpan().TryParse(
                         NumberStyles.Any, NumberFormatInfo.InvariantInfo, out float single

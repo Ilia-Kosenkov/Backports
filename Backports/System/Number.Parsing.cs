@@ -184,8 +184,18 @@ namespace Backports.System
             return true;
         }
 
-        private static bool TryParseNumber(ReadOnlySpan<char> str, NumberStyles styles, ref NumberBuffer number, NumberFormatInfo info, out int parsed)
+        // Per https://github.com/pgovind/runtime/commit/9897a27aaace156628735acdcb06938e3a24ce15
+        // To fix https://github.com/dotnet/runtime/issues/48648
+        private static bool TryParseNumber(ReadOnlySpan<char> str, NumberStyles styles, 
+                                             ref NumberBuffer number, NumberFormatInfo info, out int parsed)
         {
+            static char IncPtr(ref ReadOnlySpan<char> p)
+            {
+                p = p.Length > 0 ? p.Slice(1) : p;
+                //ch = ++p < strEnd ? *p : '\0';
+                return p.IsEmpty ? '\0' : p[0];
+            }
+
             Debug.Assert(!str.IsEmpty);
             Debug.Assert((styles & NumberStyles.AllowHexSpecifier) == 0);
 
@@ -226,7 +236,7 @@ namespace Backports.System
 
             var state = 0;
             ReadOnlySpan<char> p = str;
-            //var ch = p < strEnd ? *p : '\0';
+            //char ch = p < strEnd ? *p : '\0';
             var ch = p.IsEmpty ? '\0' : p[0];
             ReadOnlySpan<char> next;
 
@@ -234,8 +244,11 @@ namespace Backports.System
             {
                 // Eat whitespace unless we've found a sign which isn't followed by a currency symbol.
                 // "-Kr 1231.47" is legal but "- 1231.47" is not.
-                if (!IsWhite(ch) || (styles & NumberStyles.AllowLeadingWhite) == 0 || (state & stateSign) != 0 &&
-                    (state & stateCurrency) == 0 && info.NumberNegativePattern != 2)
+                if (!IsWhite(ch)
+                  || (styles & NumberStyles.AllowLeadingWhite) == 0
+                  || (state & stateSign)       != 0
+                  && (state & stateCurrency)   == 0
+                  && info.NumberNegativePattern != 2)
                 {
                     if ((styles & NumberStyles.AllowLeadingSign) != 0 && (state & stateSign) == 0 &&
                         ((next = MatchChars(p, info.PositiveSign.AsSpan())).IsNotEmpty() ||
@@ -263,14 +276,14 @@ namespace Backports.System
                     }
                 }
 
-                p = p.Length > 0 ? p.Slice(1) : p;
                 //ch = ++p < strEnd ? *p : '\0';
-                ch = p.IsEmpty ? '\0' : p[0];
+                ch = IncPtr(ref p);
             }
 
             var digCount = 0;
             var digEnd = 0;
-            var maxDigCount = number.DigitsMut.Length - 1;
+            var maxDigCount = number.Digits.Length - 1;
+            var numberOfTrailingZeros = 0;
 
             while (true)
             {
@@ -282,10 +295,10 @@ namespace Backports.System
                     {
                         if (digCount < maxDigCount)
                         {
-                            number.DigitsMut[digCount++] = (byte)ch;
+                            number.DigitsMut[digCount] = (byte)ch;
                             if (ch != '0' || number.Kind != NumberBufferKind.Integer)
                             {
-                                digEnd = digCount;
+                                digEnd = digCount + 1;
                             }
                         }
                         else if (ch != '0')
@@ -301,31 +314,56 @@ namespace Backports.System
                         }
 
                         if ((state & stateDecimal) == 0)
+                        {
                             number.Scale++;
+                        }
+
+                        if (digCount < maxDigCount)
+                        {
+                            // Handle a case like "53.0". We need to ignore trailing zeros in the fractional part for floating point numbers, so we keep a count of the number of trailing zeros and update digCount later
+                            if (ch == '0')
+                            {
+                                numberOfTrailingZeros++;
+                            }
+                            else
+                            {
+                                numberOfTrailingZeros = 0;
+                            }
+                        }
+                        digCount++;
                         state |= stateNonZero;
                     }
                     else if ((state & stateDecimal) != 0)
+                    {
                         number.Scale--;
+                    }
                 }
-                else if ((styles & NumberStyles.AllowDecimalPoint) != 0 && (state & stateDecimal) == 0 &&
-                         ((next = MatchChars(p, decSep.AsSpan())).IsNotEmpty() || parsingCurrency &&
-                             (state & stateCurrency) == 0 &&
-                            (next = MatchChars(p, info.NumberDecimalSeparator.AsSpan())).IsNotEmpty()))
+                else if ((styles & NumberStyles.AllowDecimalPoint) != 0 
+                      && (state & stateDecimal) == 0
+                      && ((next = MatchChars(p, decSep.AsSpan())).IsNotEmpty() 
+                       || parsingCurrency 
+                       && (state & stateCurrency) == 0                                         
+                       && (next = MatchChars(p, info.NumberDecimalSeparator.AsSpan())).IsNotEmpty()))
                 {
                     state |= stateDecimal;
                     p = next;
                 }
-                else if ((styles & NumberStyles.AllowThousands) != 0 && (state & stateDigits) != 0 &&
-                         (state & stateDecimal) == 0 && ((next = MatchChars(p, groupSep.AsSpan())).IsNotEmpty() ||
-                                                         parsingCurrency && (state & stateCurrency) == 0 &&
-                                                         (next = MatchChars(p, info.NumberGroupSeparator.AsSpan())).IsNotEmpty()))
+                else if ((styles & NumberStyles.AllowThousands) != 0
+                      && (state  & stateDigits)                 != 0
+                      && (state & stateDecimal)                == 0
+                      && ((next = MatchChars(p, groupSep.AsSpan())).IsNotEmpty()
+                       || parsingCurrency
+                       && (state & stateCurrency) == 0
+                       && (next = MatchChars(p, info.NumberGroupSeparator.AsSpan())).IsNotEmpty()))
+                {
                     p = next;
+                }
                 else
+                {
                     break;
-
-                p = p.Length > 0 ? p.Slice(1) : p;
+                }
                 //ch = ++p < strEnd ? *p : '\0';
-                ch = p.IsEmpty ? '\0' : p[0];
+                ch = IncPtr(ref p);
             }
 
             var negExp = false;
@@ -335,13 +373,14 @@ namespace Backports.System
             {
                 if ((ch == 'E' || ch == 'e') && (styles & NumberStyles.AllowExponent) != 0)
                 {
-                    var temp = p;
-                    p = p.Length > 0 ? p.Slice(1) : p;
+                    ReadOnlySpan<char> temp = p;
                     //ch = ++p < strEnd ? *p : '\0';
-                    ch = p.IsEmpty ? '\0' : p[0];
-
+                    ch = IncPtr(ref p);
+                    
                     if ((next = MatchChars(p, info.PositiveSign.AsSpan())).IsNotEmpty())
+                    {
                         ch = (p = next.Slice(1)).IsNotEmpty() ? p[0] : '\0';
+                    }
                     else if ((next = MatchChars(p, info.NegativeSign.AsSpan())).IsNotEmpty())
                     {
                         ch = (p = next.Slice(1)).IsNotEmpty() ? p[0] : '\0';
@@ -353,66 +392,86 @@ namespace Backports.System
                         do
                         {
                             exp = exp * 10 + (ch - '0');
-                            p = p.Length > 0 ? p.Slice(1) : p;
                             //ch = ++p < strEnd ? *p : '\0';
-                            ch = p.IsEmpty ? '\0' : p[0];
+                            ch = IncPtr(ref p);
 
                             if (exp > 1000)
                             {
                                 exp = 9999;
                                 while (IsDigit(ch))
                                 {
-                                    p = p.Length > 0 ? p.Slice(1) : p;
                                     //ch = ++p < strEnd ? *p : '\0';
-                                    ch = p.IsEmpty ? '\0' : p[0];
+                                    ch = IncPtr(ref p);
                                 }
                             }
                         } while (IsDigit(ch));
                         if (negExp)
+                        {
                             exp = -exp;
+                        }
                         number.Scale += exp;
                     }
                     else
                     {
                         p = temp;
-                        p = p.Length > 0 ? p.Slice(1) : p;
                         //ch = ++p < strEnd ? *p : '\0';
-                        ch = p.IsEmpty ? '\0' : p[0];
+                        ch = IncPtr(ref p);
                     }
                 }
+
+                if (number.Kind == NumberBufferKind.FloatingPoint && !number.HasNonZeroTail)
+                {
+                    // Adjust the number buffer for trailing zeros
+                    var numberOfFractionalDigits = digEnd - number.Scale;
+                    if (numberOfFractionalDigits > 0)
+                    {
+                        numberOfTrailingZeros = Math.Min(numberOfTrailingZeros, numberOfFractionalDigits);
+                        number.DigitsCount = digEnd - numberOfTrailingZeros;
+                        number.DigitsMut[number.DigitsCount] = (byte)'\0';
+                    }
+                }
+
                 while (true)
                 {
                     if (!IsWhite(ch) || (styles & NumberStyles.AllowTrailingWhite) == 0)
                     {
-                        if ((styles & NumberStyles.AllowTrailingSign) != 0 && (state & stateSign) == 0 &&
-                            ((next = MatchChars(p, info.PositiveSign.AsSpan())).IsNotEmpty() ||
-                             (next = MatchChars(p, info.NegativeSign.AsSpan())).IsNotEmpty() && (number.IsNegative = true)))
+                        if ((styles & NumberStyles.AllowTrailingSign) != 0 
+                         && (state & stateSign) == 0
+                         && ((next = MatchChars(p, info.PositiveSign.AsSpan())).IsNotEmpty()
+                          || (next = MatchChars(p, info.NegativeSign.AsSpan())).IsNotEmpty() && (number.IsNegative = true)))
                         {
                             state |= stateSign;
                             p = next;
                         }
                         else if (ch == ')' && (state & stateParens) != 0)
+                        {
                             state &= ~stateParens;
+                        }
                         else if (currSymbol != null && (next = MatchChars(p, currSymbol.AsSpan())).IsNotEmpty())
                         {
                             currSymbol = null;
                             p = next;
                         }
                         else
+                        {
                             break;
+                        }
                     }
-                    p = p.Length > 0 ? p.Slice(1) : p;
                     //ch = ++p < strEnd ? *p : '\0';
-                    ch = p.IsEmpty ? '\0' : p[0];
+                    ch = IncPtr(ref p);
                 }
                 if ((state & stateParens) == 0)
                 {
                     if ((state & stateNonZero) == 0)
                     {
                         if (number.Kind != NumberBufferKind.Decimal)
+                        {
                             number.Scale = 0;
+                        }
                         if (number.Kind == NumberBufferKind.Integer && (state & stateDecimal) == 0)
+                        {
                             number.IsNegative = false;
+                        }
                     }
                     //str = p; // assignment
                     parsed = str.Length - p.Length;
@@ -421,7 +480,7 @@ namespace Backports.System
             }
             //str = p; // assignment
             parsed = str.Length - p.Length;
-            return false;
+            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
