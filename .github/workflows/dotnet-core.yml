@@ -27,7 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ['Windows-latest', 'ubuntu-latest', 'macOS-latest']
-        preview_version: ['net6.0']
+        preview_version: 'net6.0'
         
     defaults:
       run:
@@ -48,7 +48,7 @@ jobs:
       with:
         dotnet-version: '5.0.x'
 
-    - name: Setup .NET
+    - name: Setup .NET preview
       if: strategy.matrix.preview_version != ''
       uses: actions/setup-dotnet@v1
       with:
@@ -73,7 +73,7 @@ jobs:
 
     - name: Test .NET Standard 2.1 using .NET 6.0 preview
       if: strategy.matrix.preview_version != ''
-      run: dotnet test --no-restore --verbosity normal -f net6.0
+      run: dotnet test --no-restore --verbosity normal -f $env:DOTNET_EXTRA_TARGET
       env:
         DOTNET_EXTRA_TARGET: ${{ strategy.matrix.preview_version }}
 
