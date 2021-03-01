@@ -26,7 +26,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dotnet-version: [ '5.0.100' ]
         os: ['Windows-latest', 'ubuntu-latest', 'macOS-latest']
         
     defaults:
@@ -35,6 +34,7 @@ jobs:
     
     env: 
       GITHUB_NUGET_RO: ${{ secrets.GITHUB_TOKEN }}
+      # DOTNET_EXTRA_TARGET: 'net6.0'
 
     runs-on: ${{ matrix.os }}
     
@@ -46,7 +46,13 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.100
+        dotnet-version: '5.0.x'
+
+    - name: Setup .NET
+      if: ${{ DOTNET_EXTRA_TARGET != '' }}
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '6.0.100-preview.1.21103.13'
       
       # https://github.com/actions/setup-dotnet/issues/155
     - name: Resetting nuget
@@ -64,7 +70,11 @@ jobs:
     - name: Build
       run: |
         dotnet build -c Release --no-restore
-      
+
+    - name: Test .NET Standard 2.1 using .NET 6.0 preview
+      if: ${{ DOTNET_EXTRA_TARGET != '' }}
+      run: dotnet test --no-restore --verbosity normal -f net6.0
+
     - name: Test .NET Standard 2.1 using .NET 5.0
       run: dotnet test --no-restore --verbosity normal -f net5.0
       
