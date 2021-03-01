@@ -26,8 +26,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dotnet-version: [ '5.0.100' ]
         os: ['Windows-latest', 'ubuntu-latest', 'macOS-latest']
+        preview_version: ['net6.0']
         
     defaults:
       run:
@@ -35,10 +35,11 @@ jobs:
     
     env: 
       GITHUB_NUGET_RO: ${{ secrets.GITHUB_TOKEN }}
+      DOTNET_EXTRA_TARGET: ${{ matrix.preview_version }}
 
     runs-on: ${{ matrix.os }}
     
-    name: ${{ matrix.os }} with .NET ${{ matrix.dotnet-version }}
+    name: ${{ matrix.os }}
     
     steps:
     - uses: actions/checkout@v2
@@ -46,7 +47,13 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.100
+        dotnet-version: '5.0.x'
+
+    - name: Setup .NET preview
+      if: matrix.preview_version != ''
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '6.0.100-preview.1.21103.13'
       
       # https://github.com/actions/setup-dotnet/issues/155
     - name: Resetting nuget
@@ -64,9 +71,13 @@ jobs:
     - name: Build
       run: |
         dotnet build -c Release --no-restore
-      
+
+    - name: Test .NET Standard 2.1 using .NET 6.0 preview
+      if: matrix.preview_version != ''
+      run: dotnet test -c Release --no-restore --verbosity normal -f "$env:DOTNET_EXTRA_TARGET"
+
     - name: Test .NET Standard 2.1 using .NET 5.0
-      run: dotnet test --no-restore --verbosity normal -f net5.0
+      run: dotnet test -c Release --no-restore --verbosity normal -f net5.0
       
     - name: Test .NET Standard 2.0 using Legacy Framework / Mono
-      run: dotnet test --no-restore --verbosity normal -f net4.8
+      run: dotnet test -c Release --no-restore --verbosity normal -f net4.8
