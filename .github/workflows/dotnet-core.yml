@@ -38,7 +38,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     
-    name: ${{ matrix.os }} with .NET ${{ matrix.dotnet-version }}
+    name: ${{ matrix.os }} with .NET ${{ matrix.preview_version }}
     
     steps:
     - uses: actions/checkout@v2
@@ -75,7 +75,7 @@ jobs:
       if: matrix.preview_version != ''
       run: dotnet test --no-restore --verbosity normal -f $env:DOTNET_EXTRA_TARGET
       env:
-        DOTNET_EXTRA_TARGET: ${{ strategy.matrix.preview_version }}
+        DOTNET_EXTRA_TARGET: ${{ matrix.preview_version }}
 
     - name: Test .NET Standard 2.1 using .NET 5.0
       run: dotnet test --no-restore --verbosity normal -f net5.0
