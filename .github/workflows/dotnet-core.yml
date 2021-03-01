@@ -27,6 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ['Windows-latest', 'ubuntu-latest', 'macOS-latest']
+        preview_version: ['net6.0']
         
     defaults:
       run:
@@ -34,7 +35,6 @@ jobs:
     
     env: 
       GITHUB_NUGET_RO: ${{ secrets.GITHUB_TOKEN }}
-      # DOTNET_EXTRA_TARGET: 'net6.0'
 
     runs-on: ${{ matrix.os }}
     
@@ -49,7 +49,7 @@ jobs:
         dotnet-version: '5.0.x'
 
     - name: Setup .NET
-      if: ${{ DOTNET_EXTRA_TARGET != '' }}
+      if: strategy.matrix.preview_version != ''
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '6.0.100-preview.1.21103.13'
@@ -72,8 +72,10 @@ jobs:
         dotnet build -c Release --no-restore
 
     - name: Test .NET Standard 2.1 using .NET 6.0 preview
-      if: ${{ DOTNET_EXTRA_TARGET != '' }}
+      if: strategy.matrix.preview_version != ''
       run: dotnet test --no-restore --verbosity normal -f net6.0
+      env:
+        DOTNET_EXTRA_TARGET: ${{ strategy.matrix.preview_version }}
 
     - name: Test .NET Standard 2.1 using .NET 5.0
       run: dotnet test --no-restore --verbosity normal -f net5.0
