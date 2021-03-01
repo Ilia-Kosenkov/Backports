@@ -35,10 +35,11 @@ jobs:
     
     env: 
       GITHUB_NUGET_RO: ${{ secrets.GITHUB_TOKEN }}
+      DOTNET_EXTRA_TARGET: ${{ matrix.preview_version }}
 
     runs-on: ${{ matrix.os }}
     
-    name: ${{ matrix.os }} with .NET ${{ matrix.preview_version }}
+    name: ${{ matrix.os }}
     
     steps:
     - uses: actions/checkout@v2
@@ -73,12 +74,10 @@ jobs:
 
     - name: Test .NET Standard 2.1 using .NET 6.0 preview
       if: matrix.preview_version != ''
-      run: dotnet test --no-restore --verbosity normal -f $env:DOTNET_EXTRA_TARGET
-      env:
-        DOTNET_EXTRA_TARGET: ${{ matrix.preview_version }}
+      run: dotnet test -c Release --no-restore --verbosity normal -f "$env:DOTNET_EXTRA_TARGET"
 
     - name: Test .NET Standard 2.1 using .NET 5.0
-      run: dotnet test --no-restore --verbosity normal -f net5.0
+      run: dotnet test -c Release --no-restore --verbosity normal -f net5.0
       
     - name: Test .NET Standard 2.0 using Legacy Framework / Mono
-      run: dotnet test --no-restore --verbosity normal -f net4.8
+      run: dotnet test -c Release --no-restore --verbosity normal -f net4.8
