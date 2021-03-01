@@ -27,7 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ['Windows-latest', 'ubuntu-latest', 'macOS-latest']
-        # preview_version: ['net6.0']
+        preview_version: ['net6.0']
         
     defaults:
       run:
